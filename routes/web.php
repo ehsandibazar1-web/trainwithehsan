@@ -40,5 +40,8 @@ Route::get('/', function () {
 
                                                     return '<pre>Cache cleared successfully.</pre>';
                                                     });
-
-                                                
+                                                    
+                                                Route::get('/system-migrate-9x4kq2', function () {
+                                                        Artisan::call('migrate', ['--force' => true]);
+                                                            return '<pre>' . Artisan::output() . '</pre>';
+                                                            });
