@@ -1,8 +1,8 @@
-@extends('layouts.master')
+@extends('layouts.master-tr')
 
-@section('title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
-@section('meta_description', 'Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, 15+ years of experience. Courses for complete beginners, women and men, in person or through the training app.')
-@section('canonical', url('/'))
+@section('title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
+@section('meta_description', 'Ehsan Dibazar ile İstanbul\'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, 15+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.')
+@section('canonical', url('/tr'))
 
 @section('json-ld')
 <script type="application/ld+json">
@@ -13,7 +13,7 @@
       "@@type": "Organization",
       "@@id": "https://trainwithehsan.com/#organization",
       "name": "Train with Ehsan",
-      "url": "https://trainwithehsan.com",
+      "url": "https://trainwithehsan.com/tr",
       "founder": { "@@id": "https://trainwithehsan.com/#person" },
       "areaServed": "Istanbul, Türkiye"
     },
@@ -24,7 +24,7 @@
       "jobTitle": "Self-Defense & Brazilian Jiu-Jitsu Instructor",
       "description": "Martial arts instructor with an MSc in Sport Science and 15+ years of teaching experience, based in Istanbul.",
       "knowsAbout": ["Self-defense", "Brazilian Jiu-Jitsu", "Martial Intelligence"],
-      "url": "https://trainwithehsan.com/about"
+      "url": "https://trainwithehsan.com/tr/about"
     }
   ]
 }
@@ -204,18 +204,18 @@
         <div class="hero-slide active">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Self-Defense &amp; Martial Arts Training</h1>
-                    <div class="sub">For complete beginners — no athletic background, no age limit,
-                        for both women and men. In Istanbul or online.</div>
+                    <h1>Kendini Savunma ve Dövüş Sanatları Eğitimi</h1>
+                    <div class="sub">Tam başlangıç seviyesi için — spor geçmişi ve yaş sınırı yok,
+                        kadın ve erkekler için. İstanbul\'da veya online.</div>
                 </div>
             </div>
         </div>
         <div class="hero-slide">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Brazilian Jiu-Jitsu: the art of leverage</h1>
-                    <div class="sub">Built so a smaller person can control a stronger attacker —
-                        skill and position instead of raw strength.</div>
+                    <h1>Brezilya Jiu-Jitsu: kaldıraç sanatı</h1>
+                    <div class="sub">Küçük yapılı birinin daha güçlü bir saldırganı kontrol edebilmesi
+                        için geliştirildi — kaba güç yerine teknik ve pozisyon.</div>
                 </div>
             </div>
         </div>
@@ -223,8 +223,8 @@
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>Martial Intelligence</h1>
-                    <div class="sub">Decision-making under pressure — the skill that matters most
-                        in a real confrontation.</div>
+                    <div class="sub">Baskı altında karar verme — gerçek bir çatışmada en çok
+                        önem taşıyan beceri.</div>
                 </div>
             </div>
         </div>
@@ -241,15 +241,15 @@
             <div class="row-video">
                 <div class="video-card">
                     <span class="video-icon">▶</span>
-                    <div class="text-video">Why train martial arts &amp; self-defense</div>
+                    <div class="text-video">Neden dövüş sanatları ve kendini savunma eğitimi almalısınız</div>
                 </div>
                 <div class="video-card">
                     <span class="video-icon">▶</span>
-                    <div class="text-video">How the training works</div>
+                    <div class="text-video">Eğitim nasıl işliyor</div>
                 </div>
                 <div class="video-card">
                     <span class="video-icon">▶</span>
-                    <div class="text-video">What is self-defense &amp; martial sport</div>
+                    <div class="text-video">Kendini savunma ve dövüş sporu nedir</div>
                 </div>
             </div>
         </div>
@@ -260,20 +260,20 @@
         <div class="wrap">
             <div class="about-grid">
                 <div>
-                    <h2 class="abou-company">The Ehsan Dibazar Self-Defense Academy app</h2>
-                    <div class="sub-title">Step-by-step video training, anywhere</div>
+                    <h2 class="abou-company">Ehsan Dibazar Kendini Savunma Akademisi uygulaması</h2>
+                    <div class="sub-title">Adım adım video eğitimi, her yerde</div>
                     <div class="about-text">
-                        The training app contains structured video courses that teach the
-                        process of self-defense step by step, so you can learn at your own
-                        pace. Our focus is on giving you the most effective training programs
-                        in martial arts and self-defense — with real quality, in the right
-                        order, so you actually reach your goal.
+                        Eğitim uygulaması, kendini savunma sürecini adım adım öğreten
+                        yapılandırılmış video kursları içerir; böylece kendi hızınızda
+                        öğrenebilirsiniz. Amacımız, dövüş sanatları ve kendini savunmada
+                        gerçek kalitede, doğru sırayla en etkili eğitim programlarını
+                        size sunmaktır — böylece hedefinize gerçekten ulaşırsınız.
                     </div>
                     <div class="about-cta">
-                        <a href="{{ url('/courses') }}" class="show-more">Download the app</a>
+                        <a href="{{ url('/tr/courses') }}" class="show-more">Uygulamayı indirin</a>
                     </div>
                 </div>
-                <div class="img-about-box"><span>App</span></div>
+                <div class="img-about-box"><span>Uygulama</span></div>
             </div>
         </div>
     </section>
@@ -281,23 +281,23 @@
     {{-- ============ دوره‌های آموزشی و محصولات (پس‌زمینه #363636) ============ --}}
     <section class="counter">
         <div class="wrap">
-            <h2 class="title-counter">Courses &amp; Products</h2>
+            <h2 class="title-counter">Kurslar ve Ürünler</h2>
             <div class="sun-counter">
-                Choose the format that fits you — in-person coaching in Istanbul,
-                remote training through the app, or Brazilian Jiu-Jitsu classes.
+                Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama
+                üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.
             </div>
             <div class="learn-grid">
-                <a href="{{ url('/courses') }}" class="l-box">
-                    <div class="img-learn"><b>In-Person</b></div>
-                    <span class="l-title">In-Person Coaching</span>
+                <a href="{{ url('/tr/courses') }}" class="l-box">
+                    <div class="img-learn"><b>Yüz Yüze</b></div>
+                    <span class="l-title">Yüz Yüze Koçluk</span>
                 </a>
-                <a href="{{ url('/courses') }}" class="l-box">
-                    <div class="img-learn"><b>Remote</b></div>
-                    <span class="l-title">Remote Training (App)</span>
+                <a href="{{ url('/tr/courses') }}" class="l-box">
+                    <div class="img-learn"><b>Uzaktan</b></div>
+                    <span class="l-title">Uzaktan Eğitim (Uygulama)</span>
                 </a>
-                <a href="{{ url('/courses') }}" class="l-box">
+                <a href="{{ url('/tr/courses') }}" class="l-box">
                     <div class="img-learn"><b>BJJ</b></div>
-                    <span class="l-title">Brazilian Jiu-Jitsu</span>
+                    <span class="l-title">Brezilya Jiu-Jitsu</span>
                 </a>
             </div>
         </div>
@@ -306,41 +306,41 @@
     {{-- ============ مطالب آموزشی (پس‌زمینه #e1e1e1، کارت سفید) ============ --}}
     <section class="section-news">
         <div class="wrap">
-            <h3 class="title-section">Training Articles</h3>
+            <h3 class="title-section">Eğitim Makaleleri</h3>
             <div class="sub-title-section">
-                <a href="{{ url('/blog') }}">View the full archive ⟶</a>
+                <a href="{{ url('/tr/blog') }}">Tüm arşivi görüntüle ⟶</a>
             </div>
             {{-- بعداً این بخش با دیتای دیتابیس داینامیک می‌شود --}}
             <div class="news-grid">
-                <a class="news-card" href="{{ url('/blog') }}">
+                <a class="news-card" href="{{ url('/tr/blog') }}">
                     <div class="img-news"><b>01</b></div>
-                    <div class="title-news">Why technique alone won't save you</div>
+                    <div class="title-news">Sadece teknik neden sizi kurtarmaz</div>
                     <div class="news-short-text">
-                        What actually happens to your body and mind in the first three seconds
-                        of a real confrontation — and why decision-making, not memorized moves,
-                        is the skill that determines the outcome. How to train for it.
+                        Gerçek bir çatışmanın ilk üç saniyesinde bedeninize ve zihninize ne olur
+                        — ve sonucu belirleyen becerinin neden ezberlenmiş hareketler değil,
+                        karar verme olduğu. Bunun için nasıl antrenman yapılır.
                     </div>
-                    <div class="news-more-row"><span class="more-news">Read more</span></div>
+                    <div class="news-more-row"><span class="more-news">Devamı</span></div>
                 </a>
-                <a class="news-card" href="{{ url('/blog') }}">
+                <a class="news-card" href="{{ url('/tr/blog') }}">
                     <div class="img-news"><b>02</b></div>
-                    <div class="title-news">BJJ for smaller people: the honest truth</div>
+                    <div class="title-news">Küçük yapılılar için BJJ: dürüst gerçek</div>
                     <div class="news-short-text">
-                        Can a 55 kg beginner really control a 90 kg attacker? A clear look at
-                        what leverage, position and technique make possible — and what they
-                        don't — based on real training experience.
+                        55 kiloluk bir başlangıç seviyesi, 90 kiloluk bir saldırganı gerçekten
+                        kontrol edebilir mi? Kaldıraç, pozisyon ve tekniğin neyi mümkün kıldığına
+                        — ve neyi kılmadığına — gerçek eğitim deneyimine dayanarak net bir bakış.
                     </div>
-                    <div class="news-more-row"><span class="more-news">Read more</span></div>
+                    <div class="news-more-row"><span class="more-news">Devamı</span></div>
                 </a>
-                <a class="news-card" href="{{ url('/blog') }}">
+                <a class="news-card" href="{{ url('/tr/blog') }}">
                     <div class="img-news"><b>03</b></div>
-                    <div class="title-news">Self-defense for women: where to start</div>
+                    <div class="title-news">Kadınlar için kendini savunma: nereden başlamalı</div>
                     <div class="news-short-text">
-                        The most common threat scenarios women face in real life, and the first
-                        three skills worth learning before anything else — no athletic
-                        background required.
+                        Kadınların gerçek hayatta karşılaştığı en yaygın tehdit senaryoları ve
+                        her şeyden önce öğrenilmeye değer ilk üç beceri — spor geçmişi
+                        gerektirmez.
                     </div>
-                    <div class="news-more-row"><span class="more-news">Read more</span></div>
+                    <div class="news-more-row"><span class="more-news">Devamı</span></div>
                 </a>
             </div>
         </div>
@@ -351,13 +351,13 @@
         <div class="wrap">
             <div class="result-grid">
                 <div>
-                    <h2 class="abou-company">Member Results</h2>
+                    <h2 class="abou-company">Üye Sonuçları</h2>
                     <div class="sub-title">
-                        Martial arts and self-defense training that builds real capability —
-                        and gives people stronger, more confident lives.
+                        Gerçek yetenek kazandıran dövüş sanatları ve kendini savunma eğitimi —
+                        insanlara daha güçlü ve özgüvenli bir yaşam sunar.
                     </div>
                     <div class="about-cta">
-                        <a href="{{ url('/about') }}" class="show-more">View all member results</a>
+                        <a href="{{ url('/tr/about') }}" class="show-more">Tüm üye sonuçlarını görüntüle</a>
                     </div>
                 </div>
                 <div>
@@ -381,7 +381,7 @@
                 <div class="insta-link">
                     <div class="insta-logo">◎</div>
                     <div class="text-link">
-                        <a href="https://instagram.com" rel="noopener">Follow us on Instagram</a>
+                        <a href="https://instagram.com" rel="noopener">Instagram’da takip edin</a>
                     </div>
                 </div>
                 <div class="bg-ins"></div>

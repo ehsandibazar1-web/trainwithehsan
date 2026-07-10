@@ -1,24 +1,23 @@
 <!DOCTYPE html>
-<html lang="@yield('lang', 'en')" dir="ltr">
+<html lang="@yield('lang', 'tr')" dir="ltr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>@yield('title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence Training in Istanbul')</title>
-    <meta name="description" content="@yield('meta_description', 'Self-defense and Brazilian Jiu-Jitsu training in Istanbul for complete beginners. Learn to make the right decision under pressure — the Martial Intelligence method by Ehsan Dibazar.')">
+    <title>@yield('title', 'Ehsan Dibazar — İstanbul\'da Kendini Savunma ve Martial Intelligence Eğitimi')</title>
+    <meta name="description" content="@yield('meta_description', 'İstanbul\'da tam başlangıç seviyesi için kendini savunma ve Brezilya Jiu-Jitsu eğitimi. Baskı altında doğru kararı vermeyi öğrenin — Ehsan Dibazar\'ın Martial Intelligence metodu.')">
     <meta name="robots" content="index,follow">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
-    {{-- hreflang: فعال‌سازی بعد از آماده شدن نسخهٔ ترکی --}}
-    {{-- <link rel="alternate" hreflang="en" href="https://trainwithehsan.com@yield('path_suffix')"> --}}
-    {{-- <link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr@yield('path_suffix')"> --}}
-    {{-- <link rel="alternate" hreflang="x-default" href="https://trainwithehsan.com@yield('path_suffix')"> --}}
+    <link rel="alternate" hreflang="en" href="https://trainwithehsan.com@yield('path_suffix')">
+    <link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr@yield('path_suffix')">
+    <link rel="alternate" hreflang="x-default" href="https://trainwithehsan.com@yield('path_suffix')">
 
     <meta property="og:site_name" content="Train with Ehsan">
     <meta property="og:type" content="@yield('og_type', 'website')">
-    <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
-    <meta property="og:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">
+    <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Kendini Savunma ve Martial Intelligence')">
+    <meta property="og:description" content="@yield('og_description', 'İstanbul\'da başlangıç seviyesi için kendini savunma eğitimi. Sadece teknik değil, baskı altında karar verme becerisi.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
     <meta name="theme-color" content="#d9bb75">
 
@@ -189,33 +188,33 @@
         <button class="panel-close" id="panelClose" aria-label="Close menu">×</button>
     </div>
     <ul>
-        <li><a href="{{ url('/') }}" @if(request()->is('/')) aria-current="page" @endif>Home</a></li>
-        <li><a href="{{ url('/about') }}" @if(request()->is('about')) aria-current="page" @endif>About</a></li>
-        <li><a href="{{ url('/martial-intelligence') }}" @if(request()->is('martial-intelligence')) aria-current="page" @endif>Martial Intelligence</a></li>
-        <li><a href="{{ url('/courses') }}" @if(request()->is('courses*')) aria-current="page" @endif>Courses</a></li>
-        <li><a href="{{ url('/blog') }}" @if(request()->is('blog*')) aria-current="page" @endif>Blog</a></li>
-        <li><a href="{{ url('/contact') }}" @if(request()->is('contact')) aria-current="page" @endif>Contact</a></li>
-        <li><a href="{{ url('/tr') }}" rel="noopener">Türkçe</a></li>
+        <li><a href="{{ url('/tr') }}" @if(request()->is('tr')) aria-current="page" @endif>Ana Sayfa</a></li>
+        <li><a href="{{ url('/tr/about') }}" @if(request()->is('tr/about')) aria-current="page" @endif>Hakkımda</a></li>
+        <li><a href="{{ url('/tr/martial-intelligence') }}" @if(request()->is('tr/martial-intelligence')) aria-current="page" @endif>Martial Intelligence</a></li>
+        <li><a href="{{ url('/tr/courses') }}" @if(request()->is('tr/courses*')) aria-current="page" @endif>Kurslar</a></li>
+        <li><a href="{{ url('/tr/blog') }}" @if(request()->is('tr/blog*')) aria-current="page" @endif>Blog</a></li>
+        <li><a href="{{ url('/tr/contact') }}" @if(request()->is('tr/contact')) aria-current="page" @endif>İletişim</a></li>
+        <li><a href="{{ url('/') }}" rel="noopener">English</a></li>
     </ul>
 </nav>
 
 <header class="site-header">
     <div class="wrap nav-bar">
-        <a href="{{ url('/') }}" class="brand-badge">
+        <a href="{{ url('/tr') }}" class="brand-badge">
             <span class="badge-icon">ED</span>
             <span class="brand-text">
                 <b>Ehsan Dibazar</b>
-                <small>Defensive Tactics</small>
+                <small>Savunma Teknikleri</small>
             </span>
         </a>
         <ul class="nav-links">
-            <li><a href="{{ url('/') }}" @if(request()->is('/')) aria-current="page" @endif>Home</a></li>
-            <li><a href="{{ url('/about') }}" @if(request()->is('about')) aria-current="page" @endif>About</a></li>
-            <li><a href="{{ url('/martial-intelligence') }}" @if(request()->is('martial-intelligence')) aria-current="page" @endif>Martial Intelligence</a></li>
-            <li><a href="{{ url('/courses') }}" @if(request()->is('courses*')) aria-current="page" @endif>Courses</a></li>
-            <li><a href="{{ url('/blog') }}" @if(request()->is('blog*')) aria-current="page" @endif>Blog</a></li>
-            <li><a href="{{ url('/tr') }}" rel="noopener" style="font-size:12px;border:1px solid #3a3a3a">TR</a></li>
-            <li><a href="{{ url('/contact') }}" class="nav-cta">Contact</a></li>
+            <li><a href="{{ url('/tr') }}" @if(request()->is('tr')) aria-current="page" @endif>Ana Sayfa</a></li>
+            <li><a href="{{ url('/tr/about') }}" @if(request()->is('tr/about')) aria-current="page" @endif>Hakkımda</a></li>
+            <li><a href="{{ url('/tr/martial-intelligence') }}" @if(request()->is('tr/martial-intelligence')) aria-current="page" @endif>Martial Intelligence</a></li>
+            <li><a href="{{ url('/tr/courses') }}" @if(request()->is('tr/courses*')) aria-current="page" @endif>Kurslar</a></li>
+            <li><a href="{{ url('/tr/blog') }}" @if(request()->is('tr/blog*')) aria-current="page" @endif>Blog</a></li>
+            <li><a href="{{ url('/') }}" rel="noopener" style="font-size:12px;border:1px solid #3a3a3a">EN</a></li>
+            <li><a href="{{ url('/tr/contact') }}" class="nav-cta">İletişim</a></li>
         </ul>
         <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
     </div>
@@ -229,12 +228,12 @@
 <div class="newsletter">
     <div class="wrap newsletter-row">
         <div>
-            <h3>Get the latest articles</h3>
-            <p>Subscribe to receive new articles and training tips by email.</p>
+            <h3>Son makaleleri alın</h3>
+            <p>Yeni makaleleri ve antrenman ipuçlarını e-posta ile almak için abone olun.</p>
         </div>
-        <form class="newsletter-form" action="{{ url('/contact') }}" method="get">
-            <input type="email" name="email" placeholder="Enter your email" required>
-            <button type="submit">Subscribe</button>
+        <form class="newsletter-form" action="{{ url('/tr/contact') }}" method="get">
+            <input type="email" name="email" placeholder="E-posta adresiniz" required>
+            <button type="submit">Abone Ol</button>
         </form>
     </div>
 </div>
@@ -244,31 +243,31 @@
         <div class="footer-grid">
             <div>
                 <div class="footer-badge">ED</div>
-                <h4>Ehsan Dibazar — Defensive Tactics</h4>
+                <h4>Ehsan Dibazar — Savunma Teknikleri</h4>
                 <p class="footer-about">
-                    Self-defense and Brazilian Jiu-Jitsu training in Istanbul, built on the
-                    Martial Intelligence method: decision-making under pressure, not just technique.
+                    İstanbul\'da Martial Intelligence metoduna dayalı kendini savunma ve
+                    Brezilya Jiu-Jitsu eğitimi: sadece teknik değil, baskı altında doğru karar verme.
                 </p>
             </div>
             <div>
-                <h4>Training</h4>
+                <h4>Eğitim</h4>
                 <ul>
-                    <li><a href="{{ url('/courses') }}">Courses</a></li>
-                    <li><a href="{{ url('/martial-intelligence') }}">Martial Intelligence</a></li>
-                    <li><a href="{{ url('/blog') }}">Blog</a></li>
+                    <li><a href="{{ url('/tr/courses') }}">Kurslar</a></li>
+                    <li><a href="{{ url('/tr/martial-intelligence') }}">Martial Intelligence</a></li>
+                    <li><a href="{{ url('/tr/blog') }}">Blog</a></li>
                 </ul>
             </div>
             <div>
-                <h4>Contact</h4>
+                <h4>İletişim</h4>
                 <ul>
-                    <li><a href="{{ url('/about') }}">About Ehsan</a></li>
-                    <li><a href="{{ url('/contact') }}">Get in touch</a></li>
-                    <li><a href="{{ url('/tr') }}" rel="noopener">Türkçe — trainwithehsan.com/tr</a></li>
+                    <li><a href="{{ url('/tr/about') }}">Ehsan Hakkında</a></li>
+                    <li><a href="{{ url('/tr/contact') }}">İletişime Geç</a></li>
+                    <li><a href="{{ url('/') }}" rel="noopener">English — trainwithehsan.com</a></li>
                 </ul>
             </div>
         </div>
         <div class="footer-note">
-            <span>© {{ date('Y') }} <span class="color">Ehsan Dibazar</span>. All rights reserved.</span>
+            <span>© {{ date('Y') }} <span class="color">Ehsan Dibazar</span>. Tüm hakları saklıdır.</span>
             <span>Istanbul, Türkiye</span>
         </div>
     </div>
