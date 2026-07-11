@@ -38,9 +38,11 @@ return [
             'report' => false,
         ],
 
+        // فایل‌های آپلودی مستقیم در public_html/storage ذخیره می‌شوند
+        // (به‌جای symlink که روی این هاست غیرفعال است)
         'public' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
+            'root' => '/home/u2772578/public_html/storage',
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,

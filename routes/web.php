@@ -35,14 +35,11 @@ Route::get('/system-cache-flush-7k2p9x', function () {
     return '<pre>Cache cleared successfully.</pre>';
 });
 Route::get('/system-storage-link-4m8kw1', function () {
-        $target = '/home/u2772578/repositories/trainwithehsan/storage/app/public';
-            $link = '/home/u2772578/public_html/storage';
+        $dir = '/home/u2772578/public_html/storage';
 
-                if (file_exists($link)) {
-                        return '<pre>Link already exists.</pre>';
-                            }
+            if (! is_dir($dir)) {
+                    mkdir($dir, 0755, true);
+                        }
 
-                                symlink($target, $link);
-
-                                    return '<pre>Storage link created successfully.</pre>';
-                                    });
+                            return '<pre>Storage directory ready: ' . $dir . '</pre>';
+                            });
