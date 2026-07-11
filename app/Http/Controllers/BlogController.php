@@ -6,6 +6,30 @@ use App\Models\Article;
 
 class BlogController extends Controller
 {
+    // صفحه اصلی — انگلیسی (با آخرین مقالات)
+    public function home()
+    {
+        $latestArticles = Article::published()
+            ->locale('en')
+            ->orderByDesc('published_at')
+            ->take(3)
+            ->get();
+
+        return view('home', compact('latestArticles'));
+    }
+
+    // صفحه اصلی — ترکی
+    public function homeTr()
+    {
+        $latestArticles = Article::published()
+            ->locale('tr')
+            ->orderByDesc('published_at')
+            ->take(3)
+            ->get();
+
+        return view('tr.home', compact('latestArticles'));
+    }
+
     // لیست مقالات — انگلیسی
     public function index()
     {

@@ -310,38 +310,22 @@
             <div class="sub-title-section">
                 <a href="{{ url('/blog') }}">View the full archive ⟶</a>
             </div>
-            {{-- بعداً این بخش با دیتای دیتابیس داینامیک می‌شود --}}
+            {{-- کارت‌های مقالات — داینامیک از دیتابیس --}}
             <div class="news-grid">
-                <a class="news-card" href="{{ url('/blog') }}">
-                    <div class="img-news"><b>01</b></div>
-                    <div class="title-news">Why technique alone won't save you</div>
-                    <div class="news-short-text">
-                        What actually happens to your body and mind in the first three seconds
-                        of a real confrontation — and why decision-making, not memorized moves,
-                        is the skill that determines the outcome. How to train for it.
+                @forelse($latestArticles ?? collect() as $article)
+                <a class="news-card" href="{{ url('/blog/' . $article->slug) }}">
+                    <div class="img-news" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}');background-size:cover;background-position:center" @endif>
+                        @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
                     </div>
+                    <div class="title-news">{{ $article->title }}</div>
+                    <div class="news-short-text">{{ $article->excerpt }}</div>
                     <div class="news-more-row"><span class="more-news">Read more</span></div>
                 </a>
-                <a class="news-card" href="{{ url('/blog') }}">
-                    <div class="img-news"><b>02</b></div>
-                    <div class="title-news">BJJ for smaller people: the honest truth</div>
-                    <div class="news-short-text">
-                        Can a 55 kg beginner really control a 90 kg attacker? A clear look at
-                        what leverage, position and technique make possible — and what they
-                        don't — based on real training experience.
-                    </div>
-                    <div class="news-more-row"><span class="more-news">Read more</span></div>
-                </a>
-                <a class="news-card" href="{{ url('/blog') }}">
-                    <div class="img-news"><b>03</b></div>
-                    <div class="title-news">Self-defense for women: where to start</div>
-                    <div class="news-short-text">
-                        The most common threat scenarios women face in real life, and the first
-                        three skills worth learning before anything else — no athletic
-                        background required.
-                    </div>
-                    <div class="news-more-row"><span class="more-news">Read more</span></div>
-                </a>
+                @empty
+                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">
+                    New articles are coming soon.
+                </p>
+                @endforelse
             </div>
         </div>
     </section>

@@ -4,13 +4,9 @@ use App\Http\Controllers\BlogController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('home');
-});
+Route::get('/', [BlogController::class, 'home']);
 
-Route::get('/tr', function () {
-    return view('tr.home');
-});
+Route::get('/tr', [BlogController::class, 'homeTr']);
 
 Route::get('/about', function () {
     return view('about');
@@ -34,12 +30,3 @@ Route::get('/system-cache-flush-7k2p9x', function () {
 
     return '<pre>Cache cleared successfully.</pre>';
 });
-Route::get('/system-storage-link-4m8kw1', function () {
-        $dir = '/home/u2772578/public_html/storage';
-
-            if (! is_dir($dir)) {
-                    mkdir($dir, 0755, true);
-                        }
-
-                            return '<pre>Storage directory ready: ' . $dir . '</pre>';
-                            });

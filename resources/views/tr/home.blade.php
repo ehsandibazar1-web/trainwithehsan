@@ -310,38 +310,22 @@
             <div class="sub-title-section">
                 <a href="{{ url('/tr/blog') }}">Tüm arşivi görüntüle ⟶</a>
             </div>
-            {{-- بعداً این بخش با دیتای دیتابیس داینامیک می‌شود --}}
+            {{-- کارت‌های مقالات — داینامیک از دیتابیس --}}
             <div class="news-grid">
-                <a class="news-card" href="{{ url('/tr/blog') }}">
-                    <div class="img-news"><b>01</b></div>
-                    <div class="title-news">Sadece teknik neden sizi kurtarmaz</div>
-                    <div class="news-short-text">
-                        Gerçek bir çatışmanın ilk üç saniyesinde bedeninize ve zihninize ne olur
-                        — ve sonucu belirleyen becerinin neden ezberlenmiş hareketler değil,
-                        karar verme olduğu. Bunun için nasıl antrenman yapılır.
+                @forelse($latestArticles ?? collect() as $article)
+                <a class="news-card" href="{{ url('/tr/blog/' . $article->slug) }}">
+                    <div class="img-news" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}');background-size:cover;background-position:center" @endif>
+                        @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
                     </div>
+                    <div class="title-news">{{ $article->title }}</div>
+                    <div class="news-short-text">{{ $article->excerpt }}</div>
                     <div class="news-more-row"><span class="more-news">Devamı</span></div>
                 </a>
-                <a class="news-card" href="{{ url('/tr/blog') }}">
-                    <div class="img-news"><b>02</b></div>
-                    <div class="title-news">Küçük yapılılar için BJJ: dürüst gerçek</div>
-                    <div class="news-short-text">
-                        55 kiloluk bir başlangıç seviyesi, 90 kiloluk bir saldırganı gerçekten
-                        kontrol edebilir mi? Kaldıraç, pozisyon ve tekniğin neyi mümkün kıldığına
-                        — ve neyi kılmadığına — gerçek eğitim deneyimine dayanarak net bir bakış.
-                    </div>
-                    <div class="news-more-row"><span class="more-news">Devamı</span></div>
-                </a>
-                <a class="news-card" href="{{ url('/tr/blog') }}">
-                    <div class="img-news"><b>03</b></div>
-                    <div class="title-news">Kadınlar için kendini savunma: nereden başlamalı</div>
-                    <div class="news-short-text">
-                        Kadınların gerçek hayatta karşılaştığı en yaygın tehdit senaryoları ve
-                        her şeyden önce öğrenilmeye değer ilk üç beceri — spor geçmişi
-                        gerektirmez.
-                    </div>
-                    <div class="news-more-row"><span class="more-news">Devamı</span></div>
-                </a>
+                @empty
+                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">
+                    Yakında yeni makaleler eklenecek.
+                </p>
+                @endforelse
             </div>
         </div>
     </section>
