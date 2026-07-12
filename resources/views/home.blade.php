@@ -194,37 +194,45 @@
         padding:5px 31px;font-weight:500;transition:.2s linear;font-size:14px;
     }
     .text-link a:hover{background-color:var(--gold);color:#252525}
+
+    /* ===== مودال ویدیو ===== */
+    .video-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+    .video-modal.open{display:flex}
+    .video-modal__inner{width:min(860px,100%);aspect-ratio:16/9;background:#000;position:relative}
+    .video-modal__inner iframe,.video-modal__inner video{width:100%;height:100%;border:0}
+    .video-modal__close{position:absolute;top:-42px;right:0;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
+    .js-video[data-embed=""][data-file=""]{cursor:default}
 </style>
 @endsection
 
 @section('content')
+    @php($s = $s ?? [])
+    @php($members = $members ?? [])
+    @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
 
     {{-- ============ اسلایدر هیرو ============ --}}
     <div class="hero-slider">
         <div class="hero-slide active">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Self-Defense &amp; Martial Arts Training</h1>
-                    <div class="sub">For complete beginners — no athletic background, no age limit,
-                        for both women and men. In Istanbul or online.</div>
+                    <h1>{{ $v('hero1_title', 'Self-Defense & Martial Arts Training') }}</h1>
+                    <div class="sub">{{ $v('hero1_sub', 'For complete beginners — no athletic background, no age limit, for both women and men. In Istanbul or online.') }}</div>
                 </div>
             </div>
         </div>
         <div class="hero-slide">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Brazilian Jiu-Jitsu: the art of leverage</h1>
-                    <div class="sub">Built so a smaller person can control a stronger attacker —
-                        skill and position instead of raw strength.</div>
+                    <h1>{{ $v('hero2_title', 'Brazilian Jiu-Jitsu: the art of leverage') }}</h1>
+                    <div class="sub">{{ $v('hero2_sub', 'Built so a smaller person can control a stronger attacker — skill and position instead of raw strength.') }}</div>
                 </div>
             </div>
         </div>
         <div class="hero-slide">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Martial Intelligence</h1>
-                    <div class="sub">Decision-making under pressure — the skill that matters most
-                        in a real confrontation.</div>
+                    <h1>{{ $v('hero3_title', 'Martial Intelligence') }}</h1>
+                    <div class="sub">{{ $v('hero3_sub', 'Decision-making under pressure — the skill that matters most in a real confrontation.') }}</div>
                 </div>
             </div>
         </div>
@@ -238,19 +246,16 @@
     {{-- ============ ردیف ویدیو (overlap روی اسلایدر) ============ --}}
     <section class="video-section">
         <div class="wrap">
+            @php($videoDefaults = ['Why train martial arts & self-defense', 'How the training works', 'What is self-defense & martial sport'])
             <div class="row-video">
-                <div class="video-card">
+                @foreach([1, 2, 3] as $i)
+                @php($vEmbed = $v("video{$i}_embed"))
+                @php($vFile = $v("video{$i}_file"))
+                <div class="video-card js-video" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
                     <span class="video-icon">▶</span>
-                    <div class="text-video">Why train martial arts &amp; self-defense</div>
+                    <div class="text-video">{{ $v("video{$i}_caption", $videoDefaults[$i - 1]) }}</div>
                 </div>
-                <div class="video-card">
-                    <span class="video-icon">▶</span>
-                    <div class="text-video">How the training works</div>
-                </div>
-                <div class="video-card">
-                    <span class="video-icon">▶</span>
-                    <div class="text-video">What is self-defense &amp; martial sport</div>
-                </div>
+                @endforeach
             </div>
         </div>
     </section>
@@ -260,57 +265,46 @@
         <div class="wrap">
             <div class="about-grid">
                 <div>
-                    <h2 class="abou-company">The Ehsan Dibazar Self-Defense Academy app</h2>
-                    <div class="sub-title">Step-by-step video training, anywhere</div>
-                    <div class="about-text">
-                        The training app contains structured video courses that teach the
-                        process of self-defense step by step, so you can learn at your own
-                        pace. Our focus is on giving you the most effective training programs
-                        in martial arts and self-defense — with real quality, in the right
-                        order, so you actually reach your goal.
-                    </div>
+                    <h2 class="abou-company">{{ $v('app_title', 'The Ehsan Dibazar Self-Defense Academy app') }}</h2>
+                    <div class="sub-title">{{ $v('app_subtitle', 'Step-by-step video training, anywhere') }}</div>
+                    <div class="about-text">{{ $v('app_text', 'The training app contains structured video courses that teach the process of self-defense step by step, so you can learn at your own pace. Our focus is on giving you the most effective training programs in martial arts and self-defense — with real quality, in the right order, so you actually reach your goal.') }}</div>
                     <div class="about-cta">
-                        <a href="{{ url('/courses') }}" class="show-more">Download the app</a>
+                        <a href="{{ url('/courses') }}" class="show-more">{{ $v('app_button_label', 'Download the app') }}</a>
                     </div>
                 </div>
-                <div class="img-about-box"><span>App</span></div>
+                <div class="img-about-box" @if($v('app_image')) style="background-image:url('{{ asset('storage/' . $v('app_image')) }}');background-size:cover;background-position:center" @endif>
+                    @unless($v('app_image'))<span>App</span>@endunless
+                </div>
             </div>
         </div>
     </section>
 
-    {{-- ============ دوره‌های آموزشی و محصولات (پس‌زمینه #363636) ============ --}}
+    {{-- ============ دوره‌های آموزشی و محصولات ============ --}}
     <section class="counter">
         <div class="wrap">
-            <h2 class="title-counter">Courses &amp; Products</h2>
-            <div class="sun-counter">
-                Choose the format that fits you — in-person coaching in Istanbul,
-                remote training through the app, or Brazilian Jiu-Jitsu classes.
-            </div>
+            <h2 class="title-counter">{{ $v('courses_title', 'Courses & Products') }}</h2>
+            <div class="sun-counter">{{ $v('courses_subtitle', 'Choose the format that fits you — in-person coaching in Istanbul, remote training through the app, or Brazilian Jiu-Jitsu classes.') }}</div>
+            @php($courseDefaults = [['In-Person', 'In-Person Coaching'], ['Remote', 'Remote Training (App)'], ['BJJ', 'Brazilian Jiu-Jitsu']])
             <div class="learn-grid">
+                @foreach([1, 2, 3] as $i)
                 <a href="{{ url('/courses') }}" class="l-box">
-                    <div class="img-learn"><b>In-Person</b></div>
-                    <span class="l-title">In-Person Coaching</span>
+                    <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
+                        @unless($v("course{$i}_image"))<b>{{ $courseDefaults[$i - 1][0] }}</b>@endunless
+                    </div>
+                    <span class="l-title">{{ $v("course{$i}_label", $courseDefaults[$i - 1][1]) }}</span>
                 </a>
-                <a href="{{ url('/courses') }}" class="l-box">
-                    <div class="img-learn"><b>Remote</b></div>
-                    <span class="l-title">Remote Training (App)</span>
-                </a>
-                <a href="{{ url('/courses') }}" class="l-box">
-                    <div class="img-learn"><b>BJJ</b></div>
-                    <span class="l-title">Brazilian Jiu-Jitsu</span>
-                </a>
+                @endforeach
             </div>
         </div>
     </section>
 
-    {{-- ============ مطالب آموزشی (پس‌زمینه #e1e1e1، کارت سفید) ============ --}}
+    {{-- ============ مطالب آموزشی (داینامیک از دیتابیس) ============ --}}
     <section class="section-news">
         <div class="wrap">
             <h3 class="title-section">Training Articles</h3>
             <div class="sub-title-section">
                 <a href="{{ url('/blog') }}">View the full archive ⟶</a>
             </div>
-            {{-- کارت‌های مقالات — داینامیک از دیتابیس --}}
             <div class="news-grid">
                 @forelse($latestArticles ?? collect() as $article)
                 <a class="news-card" href="{{ url('/blog/' . $article->slug) }}">
@@ -322,71 +316,75 @@
                     <div class="news-more-row"><span class="more-news">Read more</span></div>
                 </a>
                 @empty
-                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">
-                    New articles are coming soon.
-                </p>
+                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">New articles are coming soon.</p>
                 @endforelse
             </div>
         </div>
     </section>
 
-    {{-- ============ نتایج اعضا (سفید، عکس دایره‌ای) ============ --}}
+    {{-- ============ نتایج اعضا ============ --}}
     <section class="result-section">
         <div class="wrap">
             <div class="result-grid">
                 <div>
-                    <h2 class="abou-company">Member Results</h2>
-                    <div class="sub-title">
-                        Martial arts and self-defense training that builds real capability —
-                        and gives people stronger, more confident lives.
-                    </div>
+                    <h2 class="abou-company">{{ $v('members_title', 'Member Results') }}</h2>
+                    <div class="sub-title">{{ $v('members_subtitle', 'Martial arts and self-defense training that builds real capability — and gives people stronger, more confident lives.') }}</div>
                     <div class="about-cta">
-                        <a href="{{ url('/about') }}" class="show-more">View all member results</a>
+                        <a href="{{ url('/about') }}" class="show-more">{{ $v('members_button_label', 'View all member results') }}</a>
                     </div>
                 </div>
                 <div>
+                    @php($membersList = !empty($members) ? $members : [['name' => 'Sajjad'], ['name' => 'Davoud'], ['name' => 'Omid'], ['name' => 'Mohammad'], ['name' => 'Amir'], ['name' => 'Sara']])
                     <ul class="user-list">
-                        <li><div class="img-user">S</div>Sajjad</li>
-                        <li><div class="img-user">D</div>Davoud</li>
-                        <li><div class="img-user">O</div>Omid</li>
-                        <li><div class="img-user">M</div>Mohammad</li>
-                        <li><div class="img-user">A</div>Amir</li>
-                        <li><div class="img-user">S</div>Sara</li>
+                        @foreach($membersList as $m)
+                        <li>
+                            <div class="img-user" @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
+                                @if(empty($m['photo'])){{ mb_substr($m['name'] ?? '', 0, 1) }}@endif
+                            </div>{{ $m['name'] ?? '' }}
+                        </li>
+                        @endforeach
                     </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    {{-- ============ اینستاگرام — نوار اول (#ebebeb) ============ --}}
+    {{-- ============ اینستاگرام — نوار اول ============ --}}
     <section class="inst2">
         <div class="wrap">
             <div class="inst-grid">
                 <div class="insta-link">
                     <div class="insta-logo">◎</div>
                     <div class="text-link">
-                        <a href="https://instagram.com" rel="noopener">Follow us on Instagram</a>
+                        <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">Follow us on Instagram</a>
                     </div>
                 </div>
-                <div class="bg-ins"></div>
+                <div class="bg-ins" @if($v('insta1_image')) style="background-image:url('{{ asset('storage/' . $v('insta1_image')) }}');background-size:cover;background-position:center" @endif></div>
             </div>
         </div>
     </section>
 
-    {{-- ============ اینستاگرام — نوار دوم (سفید) ============ --}}
+    {{-- ============ اینستاگرام — نوار دوم ============ --}}
     <section class="inst">
         <div class="wrap">
             <div class="inst-grid">
-                <div class="bg-ins"></div>
+                <div class="bg-ins" @if($v('insta2_image')) style="background-image:url('{{ asset('storage/' . $v('insta2_image')) }}');background-size:cover;background-position:center" @endif></div>
                 <div class="insta-link">
                     <div class="insta-logo">◎</div>
                     <div class="text-link">
-                        <a href="https://instagram.com" rel="noopener">@@ehsandibazar</a>
+                        <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">@@ehsandibazar</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    {{-- ============ مودال پخش ویدیو ============ --}}
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal__inner">
+            <button class="video-modal__close" aria-label="Close">×</button>
+        </div>
+    </div>
 
 @endsection
 
@@ -407,6 +405,40 @@
         });
         function reset() { clearInterval(timer); timer = setInterval(next, 5000); }
         if (slides.length) { show(0); reset(); }
+    })();
+
+    (function () {
+        var modal = document.getElementById('videoModal');
+        if (!modal) return;
+        var inner = modal.querySelector('.video-modal__inner');
+        var closeBtn = modal.querySelector('.video-modal__close');
+        function close() {
+            modal.classList.remove('open');
+            inner.querySelectorAll('iframe,video').forEach(function (el) { el.remove(); });
+        }
+        document.querySelectorAll('.js-video').forEach(function (card) {
+            card.addEventListener('click', function () {
+                var embed = card.getAttribute('data-embed');
+                var file = card.getAttribute('data-file');
+                if (!embed && !file) return;
+                var el;
+                if (embed) {
+                    el = document.createElement('iframe');
+                    el.src = embed;
+                    el.setAttribute('allow', 'autoplay; fullscreen');
+                    el.setAttribute('allowfullscreen', '');
+                } else {
+                    el = document.createElement('video');
+                    el.src = file;
+                    el.controls = true;
+                    el.autoplay = true;
+                }
+                inner.appendChild(el);
+                modal.classList.add('open');
+            });
+        });
+        closeBtn.addEventListener('click', close);
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
     })();
 </script>
 @endsection

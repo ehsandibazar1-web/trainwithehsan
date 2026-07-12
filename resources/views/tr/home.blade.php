@@ -194,37 +194,45 @@
         padding:5px 31px;font-weight:500;transition:.2s linear;font-size:14px;
     }
     .text-link a:hover{background-color:var(--gold);color:#252525}
+
+    /* ===== مودال ویدیو ===== */
+    .video-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
+    .video-modal.open{display:flex}
+    .video-modal__inner{width:min(860px,100%);aspect-ratio:16/9;background:#000;position:relative}
+    .video-modal__inner iframe,.video-modal__inner video{width:100%;height:100%;border:0}
+    .video-modal__close{position:absolute;top:-42px;right:0;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
+    .js-video[data-embed=""][data-file=""]{cursor:default}
 </style>
 @endsection
 
 @section('content')
+    @php($s = $s ?? [])
+    @php($members = $members ?? [])
+    @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
 
     {{-- ============ اسلایدر هیرو ============ --}}
     <div class="hero-slider">
         <div class="hero-slide active">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Kendini Savunma ve Dövüş Sanatları Eğitimi</h1>
-                    <div class="sub">Tam başlangıç seviyesi için — spor geçmişi ve yaş sınırı yok,
-                        kadın ve erkekler için. İstanbul\'da veya online.</div>
+                    <h1>{{ $v('hero1_title', 'Kendini Savunma ve Dövüş Sanatları Eğitimi') }}</h1>
+                    <div class="sub">{{ $v('hero1_sub', 'Tam başlangıç seviyesi için — spor geçmişi ve yaş sınırı yok, kadın ve erkekler için. İstanbul\'da veya online.') }}</div>
                 </div>
             </div>
         </div>
         <div class="hero-slide">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Brezilya Jiu-Jitsu: kaldıraç sanatı</h1>
-                    <div class="sub">Küçük yapılı birinin daha güçlü bir saldırganı kontrol edebilmesi
-                        için geliştirildi — kaba güç yerine teknik ve pozisyon.</div>
+                    <h1>{{ $v('hero2_title', 'Brezilya Jiu-Jitsu: kaldıraç sanatı') }}</h1>
+                    <div class="sub">{{ $v('hero2_sub', 'Küçük yapılı birinin daha güçlü bir saldırganı kontrol edebilmesi için geliştirildi — kaba güç yerine teknik ve pozisyon.') }}</div>
                 </div>
             </div>
         </div>
         <div class="hero-slide">
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>Martial Intelligence</h1>
-                    <div class="sub">Baskı altında karar verme — gerçek bir çatışmada en çok
-                        önem taşıyan beceri.</div>
+                    <h1>{{ $v('hero3_title', 'Martial Intelligence') }}</h1>
+                    <div class="sub">{{ $v('hero3_sub', 'Baskı altında karar verme — gerçek bir çatışmada en çok önem taşıyan beceri.') }}</div>
                 </div>
             </div>
         </div>
@@ -238,19 +246,16 @@
     {{-- ============ ردیف ویدیو (overlap روی اسلایدر) ============ --}}
     <section class="video-section">
         <div class="wrap">
+            @php($videoDefaults = ['Neden dövüş sanatları ve kendini savunma eğitimi almalısınız', 'Eğitim nasıl işliyor', 'Kendini savunma ve dövüş sporu nedir'])
             <div class="row-video">
-                <div class="video-card">
+                @foreach([1, 2, 3] as $i)
+                @php($vEmbed = $v("video{$i}_embed"))
+                @php($vFile = $v("video{$i}_file"))
+                <div class="video-card js-video" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
                     <span class="video-icon">▶</span>
-                    <div class="text-video">Neden dövüş sanatları ve kendini savunma eğitimi almalısınız</div>
+                    <div class="text-video">{{ $v("video{$i}_caption", $videoDefaults[$i - 1]) }}</div>
                 </div>
-                <div class="video-card">
-                    <span class="video-icon">▶</span>
-                    <div class="text-video">Eğitim nasıl işliyor</div>
-                </div>
-                <div class="video-card">
-                    <span class="video-icon">▶</span>
-                    <div class="text-video">Kendini savunma ve dövüş sporu nedir</div>
-                </div>
+                @endforeach
             </div>
         </div>
     </section>
@@ -260,57 +265,46 @@
         <div class="wrap">
             <div class="about-grid">
                 <div>
-                    <h2 class="abou-company">Ehsan Dibazar Kendini Savunma Akademisi uygulaması</h2>
-                    <div class="sub-title">Adım adım video eğitimi, her yerde</div>
-                    <div class="about-text">
-                        Eğitim uygulaması, kendini savunma sürecini adım adım öğreten
-                        yapılandırılmış video kursları içerir; böylece kendi hızınızda
-                        öğrenebilirsiniz. Amacımız, dövüş sanatları ve kendini savunmada
-                        gerçek kalitede, doğru sırayla en etkili eğitim programlarını
-                        size sunmaktır — böylece hedefinize gerçekten ulaşırsınız.
-                    </div>
+                    <h2 class="abou-company">{{ $v('app_title', 'Ehsan Dibazar Kendini Savunma Akademisi uygulaması') }}</h2>
+                    <div class="sub-title">{{ $v('app_subtitle', 'Adım adım video eğitimi, her yerde') }}</div>
+                    <div class="about-text">{{ $v('app_text', 'Eğitim uygulaması, kendini savunma sürecini adım adım öğreten yapılandırılmış video kursları içerir; böylece kendi hızınızda öğrenebilirsiniz. Amacımız, dövüş sanatları ve kendini savunmada gerçek kalitede, doğru sırayla en etkili eğitim programlarını size sunmaktır.') }}</div>
                     <div class="about-cta">
-                        <a href="{{ url('/tr/courses') }}" class="show-more">Uygulamayı indirin</a>
+                        <a href="{{ url('/tr/courses') }}" class="show-more">{{ $v('app_button_label', 'Uygulamayı indirin') }}</a>
                     </div>
                 </div>
-                <div class="img-about-box"><span>Uygulama</span></div>
+                <div class="img-about-box" @if($v('app_image')) style="background-image:url('{{ asset('storage/' . $v('app_image')) }}');background-size:cover;background-position:center" @endif>
+                    @unless($v('app_image'))<span>Uygulama</span>@endunless
+                </div>
             </div>
         </div>
     </section>
 
-    {{-- ============ دوره‌های آموزشی و محصولات (پس‌زمینه #363636) ============ --}}
+    {{-- ============ دوره‌های آموزشی و محصولات ============ --}}
     <section class="counter">
         <div class="wrap">
-            <h2 class="title-counter">Kurslar ve Ürünler</h2>
-            <div class="sun-counter">
-                Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama
-                üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.
-            </div>
+            <h2 class="title-counter">{{ $v('courses_title', 'Kurslar ve Ürünler') }}</h2>
+            <div class="sun-counter">{{ $v('courses_subtitle', 'Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.') }}</div>
+            @php($courseDefaults = [['Yüz Yüze', 'Yüz Yüze Koçluk'], ['Uzaktan', 'Uzaktan Eğitim (Uygulama)'], ['BJJ', 'Brezilya Jiu-Jitsu']])
             <div class="learn-grid">
+                @foreach([1, 2, 3] as $i)
                 <a href="{{ url('/tr/courses') }}" class="l-box">
-                    <div class="img-learn"><b>Yüz Yüze</b></div>
-                    <span class="l-title">Yüz Yüze Koçluk</span>
+                    <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
+                        @unless($v("course{$i}_image"))<b>{{ $courseDefaults[$i - 1][0] }}</b>@endunless
+                    </div>
+                    <span class="l-title">{{ $v("course{$i}_label", $courseDefaults[$i - 1][1]) }}</span>
                 </a>
-                <a href="{{ url('/tr/courses') }}" class="l-box">
-                    <div class="img-learn"><b>Uzaktan</b></div>
-                    <span class="l-title">Uzaktan Eğitim (Uygulama)</span>
-                </a>
-                <a href="{{ url('/tr/courses') }}" class="l-box">
-                    <div class="img-learn"><b>BJJ</b></div>
-                    <span class="l-title">Brezilya Jiu-Jitsu</span>
-                </a>
+                @endforeach
             </div>
         </div>
     </section>
 
-    {{-- ============ مطالب آموزشی (پس‌زمینه #e1e1e1، کارت سفید) ============ --}}
+    {{-- ============ مطالب آموزشی (داینامیک از دیتابیس) ============ --}}
     <section class="section-news">
         <div class="wrap">
             <h3 class="title-section">Eğitim Makaleleri</h3>
             <div class="sub-title-section">
                 <a href="{{ url('/tr/blog') }}">Tüm arşivi görüntüle ⟶</a>
             </div>
-            {{-- کارت‌های مقالات — داینامیک از دیتابیس --}}
             <div class="news-grid">
                 @forelse($latestArticles ?? collect() as $article)
                 <a class="news-card" href="{{ url('/tr/blog/' . $article->slug) }}">
@@ -322,71 +316,75 @@
                     <div class="news-more-row"><span class="more-news">Devamı</span></div>
                 </a>
                 @empty
-                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">
-                    Yakında yeni makaleler eklenecek.
-                </p>
+                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">Yakında yeni makaleler eklenecek.</p>
                 @endforelse
             </div>
         </div>
     </section>
 
-    {{-- ============ نتایج اعضا (سفید، عکس دایره‌ای) ============ --}}
+    {{-- ============ نتایج اعضا ============ --}}
     <section class="result-section">
         <div class="wrap">
             <div class="result-grid">
                 <div>
-                    <h2 class="abou-company">Üye Sonuçları</h2>
-                    <div class="sub-title">
-                        Gerçek yetenek kazandıran dövüş sanatları ve kendini savunma eğitimi —
-                        insanlara daha güçlü ve özgüvenli bir yaşam sunar.
-                    </div>
+                    <h2 class="abou-company">{{ $v('members_title', 'Üye Sonuçları') }}</h2>
+                    <div class="sub-title">{{ $v('members_subtitle', 'Gerçek yetenek kazandıran dövüş sanatları ve kendini savunma eğitimi — insanlara daha güçlü ve özgüvenli bir yaşam sunar.') }}</div>
                     <div class="about-cta">
-                        <a href="{{ url('/tr/about') }}" class="show-more">Tüm üye sonuçlarını görüntüle</a>
+                        <a href="{{ url('/tr/about') }}" class="show-more">{{ $v('members_button_label', 'Tüm üye sonuçlarını görüntüle') }}</a>
                     </div>
                 </div>
                 <div>
+                    @php($membersList = !empty($members) ? $members : [['name' => 'Sajjad'], ['name' => 'Davoud'], ['name' => 'Omid'], ['name' => 'Mohammad'], ['name' => 'Amir'], ['name' => 'Sara']])
                     <ul class="user-list">
-                        <li><div class="img-user">S</div>Sajjad</li>
-                        <li><div class="img-user">D</div>Davoud</li>
-                        <li><div class="img-user">O</div>Omid</li>
-                        <li><div class="img-user">M</div>Mohammad</li>
-                        <li><div class="img-user">A</div>Amir</li>
-                        <li><div class="img-user">S</div>Sara</li>
+                        @foreach($membersList as $m)
+                        <li>
+                            <div class="img-user" @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
+                                @if(empty($m['photo'])){{ mb_substr($m['name'] ?? '', 0, 1) }}@endif
+                            </div>{{ $m['name'] ?? '' }}
+                        </li>
+                        @endforeach
                     </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    {{-- ============ اینستاگرام — نوار اول (#ebebeb) ============ --}}
+    {{-- ============ اینستاگرام — نوار اول ============ --}}
     <section class="inst2">
         <div class="wrap">
             <div class="inst-grid">
                 <div class="insta-link">
                     <div class="insta-logo">◎</div>
                     <div class="text-link">
-                        <a href="https://instagram.com" rel="noopener">Instagram’da takip edin</a>
+                        <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">Instagram\'da takip edin</a>
                     </div>
                 </div>
-                <div class="bg-ins"></div>
+                <div class="bg-ins" @if($v('insta1_image')) style="background-image:url('{{ asset('storage/' . $v('insta1_image')) }}');background-size:cover;background-position:center" @endif></div>
             </div>
         </div>
     </section>
 
-    {{-- ============ اینستاگرام — نوار دوم (سفید) ============ --}}
+    {{-- ============ اینستاگرام — نوار دوم ============ --}}
     <section class="inst">
         <div class="wrap">
             <div class="inst-grid">
-                <div class="bg-ins"></div>
+                <div class="bg-ins" @if($v('insta2_image')) style="background-image:url('{{ asset('storage/' . $v('insta2_image')) }}');background-size:cover;background-position:center" @endif></div>
                 <div class="insta-link">
                     <div class="insta-logo">◎</div>
                     <div class="text-link">
-                        <a href="https://instagram.com" rel="noopener">@@ehsandibazar</a>
+                        <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">@@ehsandibazar</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
+
+    {{-- ============ مودال پخش ویدیو ============ --}}
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal__inner">
+            <button class="video-modal__close" aria-label="Close">×</button>
+        </div>
+    </div>
 
 @endsection
 
@@ -407,6 +405,40 @@
         });
         function reset() { clearInterval(timer); timer = setInterval(next, 5000); }
         if (slides.length) { show(0); reset(); }
+    })();
+
+    (function () {
+        var modal = document.getElementById('videoModal');
+        if (!modal) return;
+        var inner = modal.querySelector('.video-modal__inner');
+        var closeBtn = modal.querySelector('.video-modal__close');
+        function close() {
+            modal.classList.remove('open');
+            inner.querySelectorAll('iframe,video').forEach(function (el) { el.remove(); });
+        }
+        document.querySelectorAll('.js-video').forEach(function (card) {
+            card.addEventListener('click', function () {
+                var embed = card.getAttribute('data-embed');
+                var file = card.getAttribute('data-file');
+                if (!embed && !file) return;
+                var el;
+                if (embed) {
+                    el = document.createElement('iframe');
+                    el.src = embed;
+                    el.setAttribute('allow', 'autoplay; fullscreen');
+                    el.setAttribute('allowfullscreen', '');
+                } else {
+                    el = document.createElement('video');
+                    el.src = file;
+                    el.controls = true;
+                    el.autoplay = true;
+                }
+                inner.appendChild(el);
+                modal.classList.add('open');
+            });
+        });
+        closeBtn.addEventListener('click', close);
+        modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
     })();
 </script>
 @endsection

@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\SiteSetting;
 
 class BlogController extends Controller
 {
-    // صفحه اصلی — انگلیسی (با آخرین مقالات)
+    // صفحه اصلی — انگلیسی (با آخرین مقالات + تنظیمات)
     public function home()
     {
         $latestArticles = Article::published()
@@ -15,7 +16,9 @@ class BlogController extends Controller
             ->take(3)
             ->get();
 
-        return view('home', compact('latestArticles'));
+        [$s, $members] = $this->homeSettings('en');
+
+        return view('home', compact('latestArticles', 's', 'members'));
     }
 
     // صفحه اصلی — ترکی
@@ -27,7 +30,28 @@ class BlogController extends Controller
             ->take(3)
             ->get();
 
-        return view('tr.home', compact('latestArticles'));
+        [$s, $members] = $this->homeSettings('tr');
+
+        return view('tr.home', compact('latestArticles', 's', 'members'));
+    }
+
+    // خواندن یک‌جای تنظیمات صفحه اصلی از دیتابیس (یک کوئری)
+    private function homeSettings(string $locale): array
+    {
+        $prefix = "home.$locale.";
+
+        $raw = SiteSetting::where('key', 'like', $prefix . '%')
+            ->pluck('value', 'key');
+
+        $s = [];
+        foreach ($raw as $key => $value) {
+            $s[substr($key, strlen($prefix))] = $value;
+        }
+
+        $members = json_decode($s['members'] ?? '[]', true) ?: [];
+        unset($s['members']);
+
+        return [$s, $members];
     }
 
     // لیست مقالات — انگلیسی
