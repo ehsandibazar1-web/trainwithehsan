@@ -183,18 +183,20 @@
 </head>
 <body>
 
+{{-- منو: از پنل مدیریت (Menu Settings) — در صورت خالی بودن، منوی پیش‌فرض --}}
+@php($menuItems = \App\Models\SiteSetting::getJson('menu.en.items'))
+@php($menuItems = !empty($menuItems) ? $menuItems : [['label' => 'Home', 'url' => '/', 'highlight' => false], ['label' => 'About', 'url' => '/about', 'highlight' => false], ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence', 'highlight' => false], ['label' => 'Courses', 'url' => '/courses', 'highlight' => false], ['label' => 'Blog', 'url' => '/blog', 'highlight' => false], ['label' => 'Contact', 'url' => '/contact', 'highlight' => true]])
+@php($isActive = fn ($u) => ($p = ltrim($u ?? '', '/')) === '' ? request()->is('/') : (request()->is($p) || request()->is($p . '/*')))
+
 <div class="panel-overlay" id="panelOverlay"></div>
 <nav class="panel-menu" id="panelMenu">
     <div class="panel-menu-head">
         <button class="panel-close" id="panelClose" aria-label="Close menu">×</button>
     </div>
     <ul>
-        <li><a href="{{ url('/') }}" @if(request()->is('/')) aria-current="page" @endif>Home</a></li>
-        <li><a href="{{ url('/about') }}" @if(request()->is('about')) aria-current="page" @endif>About</a></li>
-        <li><a href="{{ url('/martial-intelligence') }}" @if(request()->is('martial-intelligence')) aria-current="page" @endif>Martial Intelligence</a></li>
-        <li><a href="{{ url('/courses') }}" @if(request()->is('courses*')) aria-current="page" @endif>Courses</a></li>
-        <li><a href="{{ url('/blog') }}" @if(request()->is('blog*')) aria-current="page" @endif>Blog</a></li>
-        <li><a href="{{ url('/contact') }}" @if(request()->is('contact')) aria-current="page" @endif>Contact</a></li>
+        @foreach($menuItems as $item)
+        <li><a href="{{ url($item['url'] ?? '/') }}" @if($isActive($item['url'] ?? '')) aria-current="page" @endif>{{ $item['label'] ?? '' }}</a></li>
+        @endforeach
         <li><a href="{{ url('/tr') }}" rel="noopener">Türkçe</a></li>
     </ul>
 </nav>
@@ -209,13 +211,15 @@
             </span>
         </a>
         <ul class="nav-links">
-            <li><a href="{{ url('/') }}" @if(request()->is('/')) aria-current="page" @endif>Home</a></li>
-            <li><a href="{{ url('/about') }}" @if(request()->is('about')) aria-current="page" @endif>About</a></li>
-            <li><a href="{{ url('/martial-intelligence') }}" @if(request()->is('martial-intelligence')) aria-current="page" @endif>Martial Intelligence</a></li>
-            <li><a href="{{ url('/courses') }}" @if(request()->is('courses*')) aria-current="page" @endif>Courses</a></li>
-            <li><a href="{{ url('/blog') }}" @if(request()->is('blog*')) aria-current="page" @endif>Blog</a></li>
+            @foreach($menuItems as $item)
+            @continue(!empty($item['highlight']))
+            <li><a href="{{ url($item['url'] ?? '/') }}" @if($isActive($item['url'] ?? '')) aria-current="page" @endif>{{ $item['label'] ?? '' }}</a></li>
+            @endforeach
             <li><a href="{{ url('/tr') }}" rel="noopener" style="font-size:12px;border:1px solid #3a3a3a">TR</a></li>
-            <li><a href="{{ url('/contact') }}" class="nav-cta">Contact</a></li>
+            @foreach($menuItems as $item)
+            @continue(empty($item['highlight']))
+            <li><a href="{{ url($item['url'] ?? '/') }}" class="nav-cta">{{ $item['label'] ?? '' }}</a></li>
+            @endforeach
         </ul>
         <button class="nav-toggle" id="navToggle" aria-label="Open menu">☰</button>
     </div>
