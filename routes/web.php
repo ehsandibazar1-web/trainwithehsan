@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
@@ -21,6 +22,10 @@ Route::get('/blog/{slug}', [BlogController::class, 'show']);
 
 Route::get('/tr/blog', [BlogController::class, 'indexTr']);
 Route::get('/tr/blog/{slug}', [BlogController::class, 'showTr']);
+
+Route::get('/sitemap.xml', [SeoController::class, 'sitemap']);
+Route::get('/feed', [SeoController::class, 'feed']);
+Route::get('/tr/feed', [SeoController::class, 'feedTr']);
 
 Route::get('/system-cache-flush-7k2p9x', function () {
     Artisan::call('view:clear');

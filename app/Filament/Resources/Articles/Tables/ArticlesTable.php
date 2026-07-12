@@ -32,7 +32,11 @@ class ArticlesTable
                 TextColumn::make('status')
                     ->label('Status')
                     ->badge()
-                    ->color(fn (string $state): string => $state === 'published' ? 'success' : 'gray'),
+                    ->color(fn (string $state): string => match ($state) {
+                        'published' => 'success',
+                        'scheduled' => 'warning',
+                        default => 'gray',
+                    }),
 
                 TextColumn::make('published_at')
                     ->label('Published')
@@ -41,6 +45,12 @@ class ArticlesTable
 
                 TextColumn::make('views')
                     ->label('Views')
+                    ->sortable()
+                    ->toggleable(),
+
+                TextColumn::make('updated_at')
+                    ->label('Last edited')
+                    ->dateTime('Y-m-d H:i')
                     ->sortable()
                     ->toggleable(),
             ])
@@ -56,6 +66,7 @@ class ArticlesTable
                     ->label('Status')
                     ->options([
                         'draft' => 'Draft',
+                        'scheduled' => 'Scheduled',
                         'published' => 'Published',
                     ]),
             ])

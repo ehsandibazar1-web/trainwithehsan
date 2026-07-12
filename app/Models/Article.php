@@ -43,7 +43,15 @@ class Article extends Model
 
     public function scopePublished($query)
     {
-        return $query->where('status', 'published');
+        // منتشرشده = وضعیت published، یا زمان‌بندی‌شده‌ای که زمانش رسیده
+        // (تور ایمنی: حتی اگر کرون از کار بیفتد، مقاله سر وقت نمایش داده می‌شود)
+        return $query->where(function ($q) {
+            $q->where('status', 'published')
+                ->orWhere(function ($q2) {
+                    $q2->where('status', 'scheduled')
+                        ->where('published_at', '<=', now());
+                });
+        });
     }
 
     public function scopeLocale($query, string $locale)

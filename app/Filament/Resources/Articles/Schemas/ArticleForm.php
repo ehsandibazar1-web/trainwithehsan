@@ -85,6 +85,7 @@ class ArticleForm
                     ->label('Status')
                     ->options([
                         'draft' => 'Draft',
+                        'scheduled' => 'Scheduled',
                         'published' => 'Published',
                     ])
                     ->default('draft')
@@ -93,7 +94,7 @@ class ArticleForm
                 DateTimePicker::make('published_at')
                     ->label('Publish date')
                     ->nullable()
-                    ->helperText('Leave empty for drafts; set when publishing.'),
+                    ->helperText('For "Scheduled": set a future date/time — the article goes live automatically at that moment.'),
             ]);
     }
 }
