@@ -47,6 +47,7 @@ class HomepageSettings extends Page implements HasForms
 
     // کلیدهای فایل (عکس/ویدیو) — مقدارشان مسیر فایل روی دیسک public است
     private const FILE_KEYS = [
+        'hero1_image', 'hero2_image', 'hero3_image',
         'video1_file', 'video2_file', 'video3_file',
         'app_image',
         'course1_image', 'course2_image', 'course3_image',
@@ -116,14 +117,19 @@ class HomepageSettings extends Page implements HasForms
 
     private static function heroFields(string $l): array
     {
-        return [
-            TextInput::make("$l.hero1_title")->label('Slide 1 — Title'),
-            Textarea::make("$l.hero1_sub")->label('Slide 1 — Subtitle')->rows(2),
-            TextInput::make("$l.hero2_title")->label('Slide 2 — Title'),
-            Textarea::make("$l.hero2_sub")->label('Slide 2 — Subtitle')->rows(2),
-            TextInput::make("$l.hero3_title")->label('Slide 3 — Title'),
-            Textarea::make("$l.hero3_sub")->label('Slide 3 — Subtitle')->rows(2),
-        ];
+        $fields = [];
+        foreach ([1, 2, 3] as $i) {
+            $fields[] = TextInput::make("$l.hero{$i}_title")->label("Slide $i — Title");
+            $fields[] = Textarea::make("$l.hero{$i}_sub")->label("Slide $i — Subtitle")->rows(2);
+            $fields[] = FileUpload::make("$l.hero{$i}_image")
+                ->label("Slide $i — Background image")
+                ->image()
+                ->maxSize(8192)
+                ->disk('public')
+                ->directory('homepage/hero')
+                ->nullable();
+        }
+        return $fields;
     }
 
     private static function videoFields(string $l): array
@@ -139,6 +145,7 @@ class HomepageSettings extends Page implements HasForms
                 ->disk('public')
                 ->directory('homepage/videos')
                 ->acceptedFileTypes(['video/mp4'])
+                ->maxSize(131072)
                 ->nullable();
         }
         return $fields;
@@ -225,11 +232,15 @@ class HomepageSettings extends Page implements HasForms
 
         foreach (['en', 'tr'] as $locale) {
             foreach (array_merge(self::TEXT_KEYS, self::FILE_KEYS) as $key) {
-                SiteSetting::set(
-                    "home.$locale.$key",
-                    $state[$locale][$key] ?? null,
-                    'homepage'
-                );
+                $value = $state[$locale][$key] ?? null;
+
+                // FileUpload گاهی مقدار را به‌صورت آرایه برمی‌گرداند —
+                // اولین مسیر را برمی‌داریم تا در ستون متنی ذخیره‌شدنی باشد
+                if (is_array($value)) {
+                    $value = array_values(array_filter($value))[0] ?? null;
+                }
+
+                SiteSetting::set("home.$locale.$key", $value, 'homepage');
             }
 
             SiteSetting::set(

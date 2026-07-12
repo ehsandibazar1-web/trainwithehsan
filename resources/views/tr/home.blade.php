@@ -202,6 +202,7 @@
     .video-modal__inner iframe,.video-modal__inner video{width:100%;height:100%;border:0}
     .video-modal__close{position:absolute;top:-42px;right:0;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
     .js-video[data-embed=""][data-file=""]{cursor:default}
+    .hero-slide.has-bg::before{display:none}
 </style>
 @endsection
 
@@ -212,7 +213,7 @@
 
     {{-- ============ اسلایدر هیرو ============ --}}
     <div class="hero-slider">
-        <div class="hero-slide active">
+        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:linear-gradient(rgba(14,14,14,.5),rgba(14,14,14,.72)),url('{{ asset('storage/' . $v('hero1_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>{{ $v('hero1_title', 'Kendini Savunma ve Dövüş Sanatları Eğitimi') }}</h1>
@@ -220,7 +221,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide">
+        <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:linear-gradient(rgba(14,14,14,.5),rgba(14,14,14,.72)),url('{{ asset('storage/' . $v('hero2_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>{{ $v('hero2_title', 'Brezilya Jiu-Jitsu: kaldıraç sanatı') }}</h1>
@@ -228,7 +229,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide">
+        <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:linear-gradient(rgba(14,14,14,.5),rgba(14,14,14,.72)),url('{{ asset('storage/' . $v('hero3_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>{{ $v('hero3_title', 'Martial Intelligence') }}</h1>
