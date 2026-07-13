@@ -53,7 +53,7 @@
         img{max-width:100%;display:block}
         a{text-decoration:none;color:inherit}
         a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-        .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+        .wrap{max-width:1400px;margin:0 auto;padding:0 20px}
         h1,h2,h3{line-height:1.4;color:var(--title)}
 
         /* ===== Header — .c-header {background:#1d1d1d} ===== */
