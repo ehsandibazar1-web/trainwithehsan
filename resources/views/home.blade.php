@@ -52,8 +52,12 @@
     }
     /* .main-text-slider {font-size:1.8rem; color:#fff} / .main-text-slider2 {color:#f3f3f3; 1.5rem} */
     .hero-slide-text{position:relative;z-index:1;max-width:600px}
-    .hero-slide-text h1{font-size:clamp(1.5rem,3.4vw,1.8rem);color:#fff;font-weight:600;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)}
-    .hero-slide-text .sub{font-size:clamp(1rem,2.6vw,1.5rem);color:#f3f3f3;margin-top:10px;line-height:1.6;text-shadow:0 2px 8px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.75)}
+    .hero-slide-text h1{font-size:28px;color:#fff;font-weight:600;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)}
+    .hero-slide-text .sub{font-size:18px;color:#f3f3f3;margin-top:10px;line-height:1.6;text-shadow:0 2px 8px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.75)}
+    @@media (max-width:767px){
+        .hero-slide-text h1{font-size:22px}
+        .hero-slide-text .sub{font-size:15px}
+    }
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
     .hero-dots{position:absolute;bottom:24px;left:20px;display:flex;justify-content:flex-start;gap:9px;z-index:2}
     .hero-dot{width:18px;height:18px;border-radius:50%;background:#a3a5a8;border:0;cursor:pointer;padding:0}
@@ -66,11 +70,11 @@
     /* موبایل — دقیقاً مثل سایت اصلی: یکی‌یکی، تمام‌عرض، اسلاید افقی (نه ۳تا فشرده) */
     @@media (max-width:640px){
         .row-video{
-            margin-top:-28px;display:flex;gap:0;overflow-x:auto;
+            margin-top:-28px;display:flex;gap:15px;padding:0 15px;overflow-x:auto;
             scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
         }
         .row-video::-webkit-scrollbar{display:none}
-        .row-video>.video-card{flex:0 0 100%;scroll-snap-align:start}
+        .row-video>.video-card{flex:0 0 85%;scroll-snap-align:start}
         .video-icon{width:52px;height:52px;font-size:18px}
         .text-video{font-size:14px;padding:14px 10px}
     }
@@ -97,12 +101,12 @@
     .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden;min-height:460px}
     @@media (max-width:640px){.about-section{padding:40px 0}}
     .about-text-col{max-width:560px;position:relative;z-index:1}
-    @@media (max-width:640px){.about-text-col{max-width:100%;text-align:center}}
+    @@media (max-width:640px){.about-text-col{max-width:100%}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.4}
     @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
     .sub-title{color:#393e40;font-weight:500;font-size:16px}
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
-    @@media (max-width:640px){.about-text{text-align:center}}
+    /* متن روی موبایل هم justify می‌ماند، طبق درخواست */
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     /* عکس سرریزکننده — روی دسکتاپ سمت راست بخش را می‌پوشاند، روی موبایل زیر متن با فاصله‌ی متوازن می‌آید */
@@ -112,7 +116,7 @@
     @@media (max-width:640px){
         .about-bleed-img{
             position:static;height:auto;width:100%;max-width:340px;
-            margin:32px auto 0;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
+            order:1;margin-top:30px;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
         }
     }
     .img-about-box{
@@ -123,7 +127,7 @@
     @@media (max-width:640px){
         .img-about-box{
             position:static;width:100%;max-width:340px;height:auto;aspect-ratio:469/434;
-            margin:32px auto 0;
+            order:1;margin-top:30px;
         }
     }
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
@@ -147,7 +151,7 @@
     .courses-carousel .car-arrow:hover{color:var(--gold)}
     /* .img-learn (تصویر 362×241) + .l-title {color:#1e1e1e; background:#d9bb75; min-height:50px; 15px} */
     .l-box{display:block;flex:0 0 260px;scroll-snap-align:start}
-    @@media (max-width:600px){.l-box{flex-basis:220px}}
+    @@media (max-width:600px){.l-box{flex-basis:85%}}
     .img-learn{
         position:relative;overflow:hidden;aspect-ratio:362/241;
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
@@ -185,7 +189,7 @@
     .news-grid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
     /* .owl-news .item {background:#fff} */
     .news-card{background:#fff;display:block;flex:0 0 270px;scroll-snap-align:start}
-    @@media (max-width:600px){.news-card{flex-basis:230px}}
+    @@media (max-width:600px){.news-card{flex-basis:85%}}
     /* .img-news {height:170px} */
     .img-news{
         height:170px;overflow:hidden;
