@@ -54,7 +54,7 @@
         img{max-width:100%;display:block}
         a{text-decoration:none;color:inherit}
         a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-        .wrap{max-width:1400px;margin:0 auto;padding:0 20px}
+        .wrap{max-width:1140px;margin:0 auto;padding:0 15px}
         h1,h2,h3{line-height:1.4;color:var(--title)}
 
         /* ===== Header — .c-header {background:#1d1d1d} ===== */
@@ -88,7 +88,7 @@
 
         /* ===== Mobile panel — .panel-menu {background:#171717; width:300px; right} ===== */
         .panel-menu{
-            position:fixed;top:0;right:-320px;width:300px;height:100%;
+            position:fixed;top:0;right:-100%;width:100%;max-width:320px;height:100%;
             background:#171717;z-index:999999;transition:.5s;overflow-y:auto;
         }
         .panel-menu.open{right:0;box-shadow:0 5px 15px 0 rgba(0,0,0,.3)}
@@ -122,6 +122,7 @@
         .carousel-track{
             display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;
             scrollbar-width:none;padding-bottom:4px;
+            -webkit-overflow-scrolling:touch;scroll-padding-left:15px;
         }
         .carousel-track::-webkit-scrollbar{display:none}
         .carousel-track>*{scroll-snap-align:start;flex:0 0 auto}
