@@ -86,6 +86,7 @@
 
     /* ===== درباره/اپلیکیشن — سفید؛ .abou-company {color:#393e40; 2.2rem} ===== */
     .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden}
+    @@media (max-width:900px){.about-section{padding:40px 0}}
     .about-text-col{max-width:560px;position:relative;z-index:1}
     @@media (max-width:900px){.about-text-col{max-width:100%;text-align:center}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.4}
@@ -94,13 +95,14 @@
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
     @@media (max-width:900px){.about-text{text-align:center}}
     .about-cta{margin-top:40px}
+    @@media (max-width:900px){.about-cta{margin-top:24px}}
     .about-bleed-img{
         position:absolute;top:0;right:0;height:100%;width:auto;max-width:46%;object-fit:cover;
     }
     @@media (max-width:900px){
         .about-bleed-img{
-            position:static;height:auto;width:100%;max-width:380px;
-            margin:28px auto 0;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
+            position:static;height:auto;width:100%;max-width:340px;
+            margin:32px auto 0;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
         }
     }
     .img-about-box{
@@ -110,8 +112,8 @@
     }
     @@media (max-width:900px){
         .img-about-box{
-            position:static;width:100%;max-width:380px;height:auto;aspect-ratio:469/434;
-            margin:28px auto 0;
+            position:static;width:100%;max-width:340px;height:auto;aspect-ratio:469/434;
+            margin:32px auto 0;
         }
     }
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
@@ -122,13 +124,17 @@
     .title-counter{font-size:2rem;text-align:center;color:#fff;font-weight:700}
     @@media (max-width:767px){.title-counter{font-size:1.5rem}}
     .sun-counter{text-align:center;color:#ddd;font-size:14px;margin-top:8px;max-width:44rem;margin-left:auto;margin-right:auto}
+    .courses-carousel{position:relative;margin-top:40px}
     .learn-grid{
-        display:flex;gap:20px;margin-top:40px;overflow-x:auto;
+        display:flex;gap:20px;overflow-x:auto;
         scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
         padding-bottom:10px;scrollbar-width:thin;
     }
     .learn-grid::-webkit-scrollbar{height:6px}
     .learn-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
+    /* فلش‌ها روی این بخش تیره‌ست — رنگ‌شان را روشن می‌کنیم */
+    .courses-carousel .car-arrow{color:#ccc}
+    .courses-carousel .car-arrow:hover{color:var(--gold)}
     /* .img-learn (تصویر 362×241) + .l-title {color:#1e1e1e; background:#d9bb75; min-height:50px; 15px} */
     .l-box{display:block;flex:0 0 260px;scroll-snap-align:start}
     @@media (max-width:600px){.l-box{flex-basis:220px}}
@@ -157,8 +163,11 @@
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
     .sub-title-section{text-align:center;margin-top:8px}
     .sub-title-section a{color:#353535;font-weight:500;font-size:15px}
+    .articles-carousel{position:relative;margin-top:32px}
+    .articles-carousel .car-arrow{color:#555}
+    .articles-carousel .car-arrow:hover{color:var(--gold-dark,#c09d4c)}
     .news-grid{
-        display:flex;gap:20px;margin-top:32px;overflow-x:auto;
+        display:flex;gap:20px;overflow-x:auto;
         scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
         padding-bottom:10px;scrollbar-width:thin;
     }
@@ -324,7 +333,9 @@
             <h2 class="title-counter">{{ $v('courses_title', 'Kurslar ve Ürünler') }}</h2>
             <div class="sun-counter">{{ $v('courses_subtitle', 'Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.') }}</div>
             @php($courseDefaults = [['Yüz Yüze', 'Yüz Yüze Koçluk'], ['Uzaktan', 'Uzaktan Eğitim (Uygulama)'], ['BJJ', 'Brezilya Jiu-Jitsu']])
-            <div class="learn-grid">
+            <div class="courses-carousel" data-carousel>
+                <button class="car-arrow car-prev" aria-label="Previous">‹</button>
+                <div class="learn-grid carousel-track">
                 @foreach([1, 2, 3] as $i)
                 <a href="{{ url('/tr/courses') }}" class="l-box">
                     <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
@@ -333,6 +344,8 @@
                     <span class="l-title">{{ $v("course{$i}_label", $courseDefaults[$i - 1][1]) }}</span>
                 </a>
                 @endforeach
+                </div>
+                <button class="car-arrow car-next" aria-label="Next">›</button>
             </div>
         </div>
     </section>
@@ -344,7 +357,9 @@
             <div class="sub-title-section">
                 <a href="{{ url('/tr/blog') }}">Tüm arşivi görüntüle ⟶</a>
             </div>
-            <div class="news-grid">
+            <div class="articles-carousel" data-carousel>
+                <button class="car-arrow car-prev" aria-label="Previous">‹</button>
+                <div class="news-grid carousel-track">
                 @forelse($latestArticles ?? collect() as $article)
                 <a class="news-card" href="{{ url('/tr/blog/' . $article->slug) }}">
                     <div class="img-news" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}');background-size:cover;background-position:center" @endif>
@@ -357,6 +372,8 @@
                 @empty
                 <p style="flex:1 0 100%;text-align:center;color:#888;font-size:13px;padding:20px 0">Yakında yeni makaleler eklenecek.</p>
                 @endforelse
+                </div>
+                <button class="car-arrow car-next" aria-label="Next">›</button>
             </div>
         </div>
     </section>
