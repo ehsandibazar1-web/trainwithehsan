@@ -102,10 +102,10 @@
     @@media (max-width:640px){.about-section{padding:40px 0;min-height:420px}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
     @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%}}
-    .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
-    @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
-    .sub-title{color:#393e40;font-weight:500;font-size:16px}
-    .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
+    .abou-company{color:#393e40;font-weight:800;font-size:calc(1.325rem + .9vw);margin-bottom:10px;line-height:1.3}
+    @@media (min-width:1200px){.abou-company{font-size:2rem}}
+    .sub-title{color:#393e40;font-weight:500;font-size:14px}
+    .about-text{color:#3b3b3b;line-height:1.5;font-size:16px;text-align:justify;margin:12px 0 8px}
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
