@@ -109,13 +109,13 @@
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
-        position:absolute;left:0;bottom:0;
-        width:auto;height:auto;max-width:420px;max-height:420px;
+        position:absolute;left:0;top:0;bottom:0;width:100%;max-width:420px;
+        object-fit:contain;object-position:left center;
     }
     @@media (max-width:1100px){
         .about-bleed-img{
             position:static;width:auto;height:auto;max-width:300px;max-height:300px;
-            margin:24px auto 0;display:block;
+            margin:24px auto 0;display:block;object-fit:unset;object-position:unset;
         }
     }
     .img-about-box{
