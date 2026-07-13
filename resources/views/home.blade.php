@@ -85,7 +85,7 @@
     }
 
     /* ===== درباره/اپلیکیشن — سفید؛ عکس سرریزکننده (bleed) مثل سایت اصلی، نه باکس محدود ===== */
-    .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden}
+    .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden;min-height:460px}
     @@media (max-width:640px){.about-section{padding:40px 0}}
     .about-text-col{max-width:560px;position:relative;z-index:1}
     @@media (max-width:640px){.about-text-col{max-width:100%;text-align:center}}
@@ -98,7 +98,7 @@
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     /* عکس سرریزکننده — روی دسکتاپ سمت راست بخش را می‌پوشاند، روی موبایل زیر متن با فاصله‌ی متوازن می‌آید */
     .about-bleed-img{
-        position:absolute;top:0;bottom:0;right:0;width:auto;max-width:46%;min-height:340px;object-fit:cover;
+        position:absolute;top:0;bottom:0;right:0;width:46%;max-width:469px;object-fit:cover;
     }
     @@media (max-width:640px){
         .about-bleed-img{
@@ -107,7 +107,7 @@
         }
     }
     .img-about-box{
-        position:absolute;top:0;bottom:0;right:0;width:46%;max-width:469px;min-height:340px;
+        position:absolute;top:0;bottom:0;right:0;width:46%;max-width:469px;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
