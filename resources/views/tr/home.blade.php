@@ -109,11 +109,11 @@
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
-        position:absolute;left:0;bottom:0;width:44%;max-width:469px;object-fit:contain;
+        position:absolute;left:0;top:0;bottom:0;width:44%;max-width:469px;object-fit:contain;
     }
     @@media (max-width:640px){.about-bleed-img{width:52%;max-width:280px}}
     .img-about-box{
-        position:absolute;left:0;bottom:0;width:44%;max-width:469px;aspect-ratio:469/434;
+        position:absolute;left:0;top:0;bottom:0;width:44%;max-width:469px;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
