@@ -40,7 +40,7 @@
         background:linear-gradient(115deg,#2e2c28 0%,#1c1b18 55%,#0d0d0b 120%);
     }
     .hero-slide.active{display:flex}
-    /* بافت پس‌زمینه شبیه پوستر تیره */
+    /* بافت پس‌زمینه شبیه پوستر تیره — فقط وقتی عکس واقعی نیست */
     .hero-slide::before{
         content:"DIBAZAR";position:absolute;left:-14px;bottom:-4vw;
         font-size:15vw;font-weight:800;color:rgba(255,255,255,.045);
@@ -48,8 +48,8 @@
     }
     /* .main-text-slider {font-size:1.8rem; color:#fff} / .main-text-slider2 {color:#f3f3f3; 1.5rem} */
     .hero-slide-text{position:relative;z-index:1;max-width:600px}
-    .hero-slide-text h1{font-size:clamp(1.5rem,3.4vw,1.8rem);color:#fff;font-weight:600;line-height:1.5}
-    .hero-slide-text .sub{font-size:clamp(1rem,2.6vw,1.5rem);color:#f3f3f3;margin-top:10px;line-height:1.6}
+    .hero-slide-text h1{font-size:clamp(1.5rem,3.4vw,1.8rem);color:#fff;font-weight:600;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)}
+    .hero-slide-text .sub{font-size:clamp(1rem,2.6vw,1.5rem);color:#f3f3f3;margin-top:10px;line-height:1.6;text-shadow:0 2px 8px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.75)}
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
     .hero-dots{position:absolute;bottom:24px;left:20px;display:flex;justify-content:flex-start;gap:9px;z-index:2}
     .hero-dot{width:14px;height:14px;border-radius:50%;background:#ffffffa8;border:0;cursor:pointer;padding:0}
@@ -65,9 +65,11 @@
         .video-icon{width:34px;height:34px;font-size:13px}
         .text-video{font-size:10.5px;padding:8px 5px;line-height:1.4}
     }
-    /* .owl-send .item {height:232px} + .video-icon + .text-video گرادیان پایین */
-    .video-card{
-        position:relative;height:232px;overflow:hidden;cursor:pointer;
+    .video-section{background:#fff}
+    /* .owl-send .item {height:232px}: عکس بالا با آیکون روش، کپشن جداگانه زیرِ عکس (مثل سایت اصلی) */
+    .video-card{display:block;cursor:pointer;background:#fff}
+    .video-card__img{
+        position:relative;aspect-ratio:389/232;overflow:hidden;
         background:linear-gradient(135deg,#2c2c2c 0%,#3a3222 60%,#8a6d1f 170%);
     }
     .video-icon{
@@ -78,27 +80,41 @@
     }
     .video-card:hover .video-icon{background:var(--gold);border-color:var(--gold);color:#000}
     .text-video{
-        position:absolute;inset:0;display:flex;flex-direction:column-reverse;
-        padding:20px;text-align:center;font-weight:600;color:#fff;font-size:14px;
-        background:linear-gradient(to bottom,rgba(0,0,0,0) 3%,rgba(0,0,0,.36) 48%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.65) 98%);
+        padding:12px 6px;text-align:center;font-weight:600;color:#2b2b2b;font-size:14px;
+        background:#fff;line-height:1.5;
     }
 
-    /* ===== درباره/اپلیکیشن — سفید؛ .abou-company {color:#393e40; 2.2rem} ===== */
-    .about-section{padding:60px 0 40px;position:relative;background:#fff}
-    .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-    @@media (max-width:767px){.about-grid{grid-template-columns:1fr;text-align:center}}
+    /* ===== درباره/اپلیکیشن — سفید؛ عکس سرریزکننده (bleed) مثل سایت اصلی، نه باکس محدود ===== */
+    .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden}
+    .about-text-col{max-width:560px;position:relative;z-index:1}
+    @@media (max-width:900px){.about-text-col{max-width:100%;text-align:center}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.4}
     @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
     .sub-title{color:#393e40;font-weight:500;font-size:16px}
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
-    @@media (max-width:767px){.about-text{text-align:center}}
+    @@media (max-width:900px){.about-text{text-align:center}}
     .about-cta{margin-top:40px}
+    /* عکس سرریزکننده — روی دسکتاپ سمت راست بخش را می‌پوشاند، روی موبایل زیر متن می‌آید */
+    .about-bleed-img{
+        position:absolute;top:0;right:0;height:100%;width:auto;max-width:46%;object-fit:cover;
+    }
+    @@media (max-width:900px){
+        .about-bleed-img{
+            position:static;height:auto;width:100%;max-width:380px;
+            margin:28px auto 0;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
+        }
+    }
     .img-about-box{
-        aspect-ratio:469/434;max-width:469px;justify-self:end;width:100%;
+        position:absolute;top:0;right:0;height:100%;width:46%;max-width:469px;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
-    @@media (max-width:767px){.img-about-box{justify-self:center;margin-top:20px}}
+    @@media (max-width:900px){
+        .img-about-box{
+            position:static;width:100%;max-width:380px;height:auto;aspect-ratio:469/434;
+            margin:28px auto 0;
+        }
+    }
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
 
     /* ===== دوره‌ها — .counter {background:#363636; min-height:508px; color:#fff} ===== */
@@ -206,6 +222,7 @@
         background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);
         display:flex;align-items:center;justify-content:center;font-size:52px;color:#fff;
     }
+    .insta-small-img{width:149px;height:134px;object-fit:cover;border-radius:10px;margin:0 auto;display:block}
     /* .text-link a {background:#252525; color:#d9bb75; padding:5px 31px} hover معکوس */
     .text-link{margin-top:16px}
     .text-link a{
@@ -232,7 +249,7 @@
 
     {{-- ============ اسلایدر هیرو ============ --}}
     <div class="hero-slider">
-        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:linear-gradient(rgba(14,14,14,.5),rgba(14,14,14,.72)),url('{{ asset('storage/' . $v('hero1_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:url('{{ asset('storage/' . $v('hero1_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>{{ $v('hero1_title', 'Self-Defense & Martial Arts Training') }}</h1>
@@ -240,7 +257,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:linear-gradient(rgba(14,14,14,.5),rgba(14,14,14,.72)),url('{{ asset('storage/' . $v('hero2_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:url('{{ asset('storage/' . $v('hero2_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>{{ $v('hero2_title', 'Brazilian Jiu-Jitsu: the art of leverage') }}</h1>
@@ -248,7 +265,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:linear-gradient(rgba(14,14,14,.5),rgba(14,14,14,.72)),url('{{ asset('storage/' . $v('hero3_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:url('{{ asset('storage/' . $v('hero3_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1>{{ $v('hero3_title', 'Martial Intelligence') }}</h1>
@@ -271,8 +288,11 @@
                 @foreach([1, 2, 3] as $i)
                 @php($vEmbed = $v("video{$i}_embed"))
                 @php($vFile = $v("video{$i}_file"))
+                @php($vThumb = $v("video{$i}_thumb"))
                 <div class="video-card js-video" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
-                    <span class="video-icon">▶</span>
+                    <div class="video-card__img" @if($vThumb) style="background:url('{{ asset('storage/' . $vThumb) }}') center/cover no-repeat" @endif>
+                        <span class="video-icon">▶</span>
+                    </div>
                     <div class="text-video">{{ $v("video{$i}_caption", $videoDefaults[$i - 1]) }}</div>
                 </div>
                 @endforeach
@@ -283,19 +303,19 @@
     {{-- ============ درباره / اپلیکیشن ============ --}}
     <section class="about-section">
         <div class="wrap">
-            <div class="about-grid">
-                <div>
-                    <h2 class="abou-company">{{ $v('app_title', 'The Ehsan Dibazar Self-Defense Academy app') }}</h2>
-                    <div class="sub-title">{{ $v('app_subtitle', 'Step-by-step video training, anywhere') }}</div>
-                    <div class="about-text">{{ $v('app_text', 'The training app contains structured video courses that teach the process of self-defense step by step, so you can learn at your own pace. Our focus is on giving you the most effective training programs in martial arts and self-defense — with real quality, in the right order, so you actually reach your goal.') }}</div>
-                    <div class="about-cta">
-                        <a href="{{ url('/courses') }}" class="show-more">{{ $v('app_button_label', 'Download the app') }}</a>
-                    </div>
-                </div>
-                <div class="img-about-box" @if($v('app_image')) style="background-image:url('{{ asset('storage/' . $v('app_image')) }}');background-size:cover;background-position:center" @endif>
-                    @unless($v('app_image'))<span>App</span>@endunless
+            <div class="about-text-col">
+                <h2 class="abou-company">{{ $v('app_title', 'The Ehsan Dibazar Self-Defense Academy app') }}</h2>
+                <div class="sub-title">{{ $v('app_subtitle', 'Step-by-step video training, anywhere') }}</div>
+                <div class="about-text">{{ $v('app_text', 'The training app contains structured video courses that teach the process of self-defense step by step, so you can learn at your own pace. Our focus is on giving you the most effective training programs in martial arts and self-defense — with real quality, in the right order, so you actually reach your goal.') }}</div>
+                <div class="about-cta">
+                    <a href="{{ url('/courses') }}" class="show-more">{{ $v('app_button_label', 'Download the app') }}</a>
                 </div>
             </div>
+            @if($v('app_image'))
+                <img src="{{ asset('storage/' . $v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img">
+            @else
+                <div class="img-about-box"><span>App</span></div>
+            @endif
         </div>
     </section>
 
@@ -374,7 +394,13 @@
         <div class="wrap">
             <div class="inst-grid">
                 <div class="insta-link">
-                    <div class="insta-logo">◎</div>
+                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
+                        @if($v('insta1_small_image'))
+                            <img src="{{ asset('storage/' . $v('insta1_small_image')) }}" alt="Instagram" class="insta-small-img">
+                        @else
+                            <div class="insta-logo">◎</div>
+                        @endif
+                    </a>
                     <div class="text-link">
                         <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">Follow us on Instagram</a>
                     </div>
@@ -398,7 +424,13 @@
                     <div class="bg-ins"></div>
                 @endif
                 <div class="insta-link">
-                    <div class="insta-logo">◎</div>
+                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
+                        @if($v('insta2_small_image'))
+                            <img src="{{ asset('storage/' . $v('insta2_small_image')) }}" alt="Instagram" class="insta-small-img">
+                        @else
+                            <div class="insta-logo">◎</div>
+                        @endif
+                    </a>
                     <div class="text-link">
                         <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">@@ehsandibazar</a>
                     </div>

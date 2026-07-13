@@ -49,9 +49,11 @@ class HomepageSettings extends Page implements HasForms
     private const FILE_KEYS = [
         'hero1_image', 'hero2_image', 'hero3_image',
         'video1_file', 'video2_file', 'video3_file',
+        'video1_thumb', 'video2_thumb', 'video3_thumb',
         'app_image',
         'course1_image', 'course2_image', 'course3_image',
         'insta1_image', 'insta2_image',
+        'insta1_small_image', 'insta2_small_image',
     ];
 
     public function mount(): void
@@ -137,6 +139,12 @@ class HomepageSettings extends Page implements HasForms
         $fields = [];
         foreach ([1, 2, 3] as $i) {
             $fields[] = TextInput::make("$l.video{$i}_caption")->label("Video $i — Caption");
+            $fields[] = FileUpload::make("$l.video{$i}_thumb")
+                ->label("Video $i — Thumbnail photo")
+                ->image()
+                ->disk('public')
+                ->directory('homepage/videos')
+                ->nullable();
             $fields[] = TextInput::make("$l.video{$i}_embed")
                 ->label("Video $i — Embed URL (YouTube/Aparat)")
                 ->helperText('Paste an embed link here, OR upload a file below — not both.');
@@ -210,15 +218,28 @@ class HomepageSettings extends Page implements HasForms
     private static function instaFields(string $l): array
     {
         return [
-            TextInput::make("$l.insta_url")->label('Instagram URL'),
+            TextInput::make("$l.insta_url")->label('Instagram URL')
+                ->helperText('Plain profile link only, e.g. https://instagram.com/ehsandibazar — not the share link with ?igsh=...'),
             FileUpload::make("$l.insta1_image")
-                ->label('Band 1 image')
+                ->label('Band 1 — large photo')
+                ->image()
+                ->disk('public')
+                ->directory('homepage')
+                ->nullable(),
+            FileUpload::make("$l.insta1_small_image")
+                ->label('Band 1 — small square photo (next to the link)')
                 ->image()
                 ->disk('public')
                 ->directory('homepage')
                 ->nullable(),
             FileUpload::make("$l.insta2_image")
-                ->label('Band 2 image')
+                ->label('Band 2 — large photo')
+                ->image()
+                ->disk('public')
+                ->directory('homepage')
+                ->nullable(),
+            FileUpload::make("$l.insta2_small_image")
+                ->label('Band 2 — small square photo (next to the link)')
                 ->image()
                 ->disk('public')
                 ->directory('homepage')
