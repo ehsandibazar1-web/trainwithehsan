@@ -101,8 +101,8 @@
     /* یکپارچه در همه‌ی سایزها: عکس همیشه چسبیده به پایین-چپ بخش، متن سمت راستش با تورفتگی */
     .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden;min-height:460px}
     @@media (max-width:640px){.about-section{padding:40px 0;min-height:420px}}
-    .about-text-col{max-width:560px;position:relative;z-index:1;margin-left:38%}
-    @@media (max-width:640px){.about-text-col{margin-left:44%}}
+    .about-text-col{max-width:560px;position:relative;z-index:1;margin-left:48%}
+    @@media (max-width:640px){.about-text-col{margin-left:56%}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.4}
     @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
     .sub-title{color:#393e40;font-weight:500;font-size:16px}
@@ -111,15 +111,15 @@
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     /* عکس — همیشه (گوشی/تبلت/دسکتاپ) چسبیده به پایین-چپ بخش؛ contain یعنی کامل دیده می‌شود، بدون برش پا/بدن */
     .about-bleed-img{
-        position:absolute;left:0;bottom:0;width:34%;max-width:400px;object-fit:contain;
+        position:absolute;left:0;bottom:0;width:44%;max-width:469px;object-fit:contain;
     }
-    @@media (max-width:640px){.about-bleed-img{width:40%;max-width:220px}}
+    @@media (max-width:640px){.about-bleed-img{width:52%;max-width:280px}}
     .img-about-box{
-        position:absolute;left:0;bottom:0;width:34%;max-width:400px;aspect-ratio:469/434;
+        position:absolute;left:0;bottom:0;width:44%;max-width:469px;aspect-ratio:469/434;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
-    @@media (max-width:640px){.img-about-box{width:40%;max-width:220px}}
+    @@media (max-width:640px){.img-about-box{width:52%;max-width:280px}}
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
 
     /* ===== دوره‌ها — .counter {background:#363636; min-height:508px; color:#fff} ===== */
@@ -194,7 +194,7 @@
     /* .more-news {80×33; gold} hover: bg #000 / gold  — راست‌چین در LTR */
     .news-more-row{text-align:right}
     .more-news{
-        display:inline-block;width:110px;height:33px;text-align:center;line-height:33px;
+        display:inline-block;width:80px;height:33px;text-align:center;line-height:33px;
         background-color:var(--gold);color:#000;font-size:13px;font-weight:500;
         margin:0 10px 15px 0;transition:.2s linear;
     }
@@ -208,7 +208,7 @@
     .user-list{list-style:none;display:flex;flex-wrap:wrap;padding:0}
     .user-list li{width:32%;text-align:center;color:#222020;font-weight:500;margin-top:10px;font-size:13px}
     .img-user{
-        width:142px;height:142px;border-radius:100%;margin:0 auto 8px;max-width:100%;
+        width:150px;height:150px;border-radius:100%;margin:0 auto 8px;max-width:100%;
         background:linear-gradient(135deg,#e8e2d2,var(--gold));
         display:flex;align-items:center;justify-content:center;
         font-weight:700;font-size:30px;color:rgba(0,0,0,.25);
