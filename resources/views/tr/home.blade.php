@@ -109,8 +109,8 @@
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
-        position:absolute;left:0;top:0;bottom:0;width:44%;max-width:469px;
-        height:100%;object-fit:cover;object-position:left bottom;
+        position:absolute;left:0;bottom:0;width:44%;max-width:469px;
+        aspect-ratio:469/434;object-fit:contain;
     }
     @@media (max-width:640px){.about-bleed-img{width:52%;max-width:280px}}
     .img-about-box{
