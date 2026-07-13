@@ -56,6 +56,7 @@ class ComposerStaticInit36793882908b6cbdd344b5a4840231db
         'ce9671a430e4846b44e1c68c7611f9f5' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery.php',
         'a1cfe24d14977df6878b9bf804af2d1c' => __DIR__ . '/..' . '/nunomaduro/collision/src/Adapters/Phpunit/Autoload.php',
         'ec07570ca5a812141189b1fa81503674' => __DIR__ . '/..' . '/phpunit/phpunit/src/Framework/Assert/Functions.php',
+        '72b1e3f4a2af9b30b3f137b3ec2057fc' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/helpers.php',
     );
 
     public static $prefixLengthsPsr4 = array (
@@ -114,6 +115,7 @@ class ComposerStaticInit36793882908b6cbdd344b5a4840231db
             'Spatie\\ShikiPhp\\' => 16,
             'Spatie\\LaravelPackageTools\\' => 27,
             'Spatie\\Invade\\' => 14,
+            'Spatie\\Activitylog\\' => 19,
         ),
         'R' =>
         array (
@@ -401,6 +403,10 @@ class ComposerStaticInit36793882908b6cbdd344b5a4840231db
         'Spatie\\Invade\\' =>
         array (
             0 => __DIR__ . '/..' . '/spatie/invade/src',
+        ),
+        'Spatie\\Activitylog\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/spatie/laravel-activitylog/src',
         ),
         'RyanChandler\\BladeCaptureDirective\\Database\\Factories\\' =>
         array (
@@ -736,9 +742,28 @@ class ComposerStaticInit36793882908b6cbdd344b5a4840231db
         'AnourValar\\EloquentSerialize\\Grammars\\QueryBuilderGrammar' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Grammars/QueryBuilderGrammar.php',
         'AnourValar\\EloquentSerialize\\Package' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Package.php',
         'AnourValar\\EloquentSerialize\\Service' => __DIR__ . '/..' . '/anourvalar/eloquent-serialize/src/Service.php',
+        'App\\Console\\Commands\\PublishDueArticles' => __DIR__ . '/../..' . '/app/Console/Commands/PublishDueArticles.php',
+        'App\\Filament\\Pages\\ActivityLogPage' => __DIR__ . '/../..' . '/app/Filament/Pages/ActivityLogPage.php',
+        'App\\Filament\\Pages\\EditorialCalendar' => __DIR__ . '/../..' . '/app/Filament/Pages/EditorialCalendar.php',
+        'App\\Filament\\Pages\\HomepageSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/HomepageSettings.php',
+        'App\\Filament\\Pages\\MenuSettings' => __DIR__ . '/../..' . '/app/Filament/Pages/MenuSettings.php',
+        'App\\Filament\\Resources\\Articles\\ArticleResource' => __DIR__ . '/../..' . '/app/Filament/Resources/Articles/ArticleResource.php',
+        'App\\Filament\\Resources\\Articles\\Pages\\CreateArticle' => __DIR__ . '/../..' . '/app/Filament/Resources/Articles/Pages/CreateArticle.php',
+        'App\\Filament\\Resources\\Articles\\Pages\\EditArticle' => __DIR__ . '/../..' . '/app/Filament/Resources/Articles/Pages/EditArticle.php',
+        'App\\Filament\\Resources\\Articles\\Pages\\ListArticles' => __DIR__ . '/../..' . '/app/Filament/Resources/Articles/Pages/ListArticles.php',
+        'App\\Filament\\Resources\\Articles\\Schemas\\ArticleForm' => __DIR__ . '/../..' . '/app/Filament/Resources/Articles/Schemas/ArticleForm.php',
+        'App\\Filament\\Resources\\Articles\\Tables\\ArticlesTable' => __DIR__ . '/../..' . '/app/Filament/Resources/Articles/Tables/ArticlesTable.php',
+        'App\\Filament\\Widgets\\ArticleStatsOverview' => __DIR__ . '/../..' . '/app/Filament/Widgets/ArticleStatsOverview.php',
+        'App\\Http\\Controllers\\BlogController' => __DIR__ . '/../..' . '/app/Http/Controllers/BlogController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
+        'App\\Http\\Controllers\\PreviewController' => __DIR__ . '/../..' . '/app/Http/Controllers/PreviewController.php',
+        'App\\Http\\Controllers\\SeoController' => __DIR__ . '/../..' . '/app/Http/Controllers/SeoController.php',
+        'App\\Models\\Article' => __DIR__ . '/../..' . '/app/Models/Article.php',
+        'App\\Models\\Media' => __DIR__ . '/../..' . '/app/Models/Media.php',
+        'App\\Models\\SiteSetting' => __DIR__ . '/../..' . '/app/Models/SiteSetting.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
+        'App\\Providers\\Filament\\AdminPanelProvider' => __DIR__ . '/../..' . '/app/Providers/Filament/AdminPanelProvider.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'BladeUI\\Heroicons\\BladeHeroiconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-heroicons/src/BladeHeroiconsServiceProvider.php',
         'BladeUI\\Icons\\BladeIconsServiceProvider' => __DIR__ . '/..' . '/blade-ui-kit/blade-icons/src/BladeIconsServiceProvider.php',
@@ -8012,6 +8037,27 @@ class ComposerStaticInit36793882908b6cbdd344b5a4840231db
         'SebastianBergmann\\Type\\VoidType' => __DIR__ . '/..' . '/sebastian/type/src/type/VoidType.php',
         'SebastianBergmann\\Version' => __DIR__ . '/..' . '/sebastian/version/src/Version.php',
         'SortDirection' => __DIR__ . '/..' . '/symfony/polyfill-php86/Resources/stubs/SortDirection.php',
+        'Spatie\\Activitylog\\Actions\\CleanActivityLogAction' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Actions/CleanActivityLogAction.php',
+        'Spatie\\Activitylog\\Actions\\LogActivityAction' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Actions/LogActivityAction.php',
+        'Spatie\\Activitylog\\ActivitylogServiceProvider' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/ActivitylogServiceProvider.php',
+        'Spatie\\Activitylog\\Commands\\CleanActivitylogCommand' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Commands/CleanActivitylogCommand.php',
+        'Spatie\\Activitylog\\Contracts\\Activity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Contracts/Activity.php',
+        'Spatie\\Activitylog\\Enums\\ActivityEvent' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Enums/ActivityEvent.php',
+        'Spatie\\Activitylog\\Exceptions\\CouldNotLogActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Exceptions/CouldNotLogActivity.php',
+        'Spatie\\Activitylog\\Exceptions\\InvalidConfiguration' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Exceptions/InvalidConfiguration.php',
+        'Spatie\\Activitylog\\Facades\\Activity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Facades/Activity.php',
+        'Spatie\\Activitylog\\Models\\Activity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Models/Activity.php',
+        'Spatie\\Activitylog\\Models\\Concerns\\CausesActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Models/Concerns/CausesActivity.php',
+        'Spatie\\Activitylog\\Models\\Concerns\\HasActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Models/Concerns/HasActivity.php',
+        'Spatie\\Activitylog\\Models\\Concerns\\LogsActivity' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Models/Concerns/LogsActivity.php',
+        'Spatie\\Activitylog\\Support\\ActivityBuffer' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/ActivityBuffer.php',
+        'Spatie\\Activitylog\\Support\\ActivityLogStatus' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/ActivityLogStatus.php',
+        'Spatie\\Activitylog\\Support\\ActivityLogger' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/ActivityLogger.php',
+        'Spatie\\Activitylog\\Support\\CauserResolver' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/CauserResolver.php',
+        'Spatie\\Activitylog\\Support\\ChangeDetector' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/ChangeDetector.php',
+        'Spatie\\Activitylog\\Support\\Config' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/Config.php',
+        'Spatie\\Activitylog\\Support\\LogOptions' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/LogOptions.php',
+        'Spatie\\Activitylog\\Support\\PendingActivityLog' => __DIR__ . '/..' . '/spatie/laravel-activitylog/src/Support/PendingActivityLog.php',
         'Spatie\\Invade\\Invader' => __DIR__ . '/..' . '/spatie/invade/src/Invader.php',
         'Spatie\\Invade\\StaticInvader' => __DIR__ . '/..' . '/spatie/invade/src/StaticInvader.php',
         'Spatie\\LaravelPackageTools\\Commands\\Concerns\\AskToRunMigrations' => __DIR__ . '/..' . '/spatie/laravel-package-tools/src/Commands/Concerns/AskToRunMigrations.php',
