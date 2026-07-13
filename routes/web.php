@@ -41,6 +41,6 @@ Route::get('/system-cache-flush-7k2p9x', function () {
     return '<pre>Cache cleared successfully.</pre>';
 });
 Route::get('/system-migrate-9x4kq2', function () {
-    \Illuminate\Support\Facades\DB::statement('DROP TABLE IF EXISTS activity_log');
-    return '<pre>Old activity_log table dropped.</pre>';
+    Artisan::call('migrate', ['--force' => true]);
+    return '<pre>' . Artisan::output() . '</pre>';
 });
