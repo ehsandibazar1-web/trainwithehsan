@@ -101,7 +101,7 @@
     .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden;min-height:470px}
     @@media (max-width:640px){.about-section{padding:40px 0;min-height:420px}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
-    @@media (max-width:900px){.about-text-col{margin-left:0;max-width:100%}}
+    @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
     .sub-title{color:#393e40;font-weight:500;font-size:16px}
@@ -112,7 +112,7 @@
         position:absolute;left:0;bottom:0;width:469px;max-width:100%;
         aspect-ratio:469/434;object-fit:contain;
     }
-    @@media (max-width:900px){
+    @@media (max-width:767px){
         .about-bleed-img{
             position:static;width:100%;max-width:340px;
             margin:24px auto 0;display:block;
@@ -123,7 +123,7 @@
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
-    @@media (max-width:900px){
+    @@media (max-width:767px){
         .img-about-box{
             position:static;width:100%;max-width:340px;
             margin:24px auto 0;
