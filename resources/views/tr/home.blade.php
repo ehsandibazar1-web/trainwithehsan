@@ -36,7 +36,7 @@
     /* ===== اسلایدر — .slider {background:#252525} + متن روی تصویر ===== */
     .hero-slider{position:relative;background:#252525;overflow:hidden}
     .hero-slide{
-        display:none;min-height:56vh;align-items:center;position:relative;
+        display:none;min-height:64vh;align-items:center;position:relative;
         background:linear-gradient(115deg,#2e2c28 0%,#1c1b18 55%,#0d0d0b 120%);
     }
     .hero-slide.active{display:flex}
@@ -52,7 +52,7 @@
     .hero-slide-text .sub{font-size:clamp(1rem,2.6vw,1.5rem);color:#f3f3f3;margin-top:10px;line-height:1.6;text-shadow:0 2px 8px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.75)}
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
     .hero-dots{position:absolute;bottom:24px;left:20px;display:flex;justify-content:flex-start;gap:9px;z-index:2}
-    .hero-dot{width:14px;height:14px;border-radius:50%;background:#ffffffa8;border:0;cursor:pointer;padding:0}
+    .hero-dot{width:18px;height:18px;border-radius:50%;background:#a3a5a8;border:0;cursor:pointer;padding:0}
     .hero-dot.active{background:var(--gold)}
 
     /* ===== ردیف ویدیو — .row-video {margin-top:-94px} overlap روی اسلایدر ===== */
@@ -86,31 +86,31 @@
 
     /* ===== درباره/اپلیکیشن — سفید؛ .abou-company {color:#393e40; 2.2rem} ===== */
     .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden}
-    @@media (max-width:900px){.about-section{padding:40px 0}}
+    @@media (max-width:640px){.about-section{padding:40px 0}}
     .about-text-col{max-width:560px;position:relative;z-index:1}
-    @@media (max-width:900px){.about-text-col{max-width:100%;text-align:center}}
+    @@media (max-width:640px){.about-text-col{max-width:100%;text-align:center}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.4}
     @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
     .sub-title{color:#393e40;font-weight:500;font-size:16px}
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
-    @@media (max-width:900px){.about-text{text-align:center}}
+    @@media (max-width:640px){.about-text{text-align:center}}
     .about-cta{margin-top:40px}
-    @@media (max-width:900px){.about-cta{margin-top:24px}}
+    @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
-        position:absolute;top:0;right:0;height:100%;width:auto;max-width:46%;object-fit:cover;
+        position:absolute;top:0;bottom:0;right:0;width:auto;max-width:46%;min-height:340px;object-fit:cover;
     }
-    @@media (max-width:900px){
+    @@media (max-width:640px){
         .about-bleed-img{
             position:static;height:auto;width:100%;max-width:340px;
             margin:32px auto 0;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
         }
     }
     .img-about-box{
-        position:absolute;top:0;right:0;height:100%;width:46%;max-width:469px;
+        position:absolute;top:0;bottom:0;right:0;width:46%;max-width:469px;min-height:340px;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
-    @@media (max-width:900px){
+    @@media (max-width:640px){
         .img-about-box{
             position:static;width:100%;max-width:340px;height:auto;aspect-ratio:469/434;
             margin:32px auto 0;
