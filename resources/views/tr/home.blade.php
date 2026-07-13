@@ -109,23 +109,23 @@
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
-        position:absolute;left:0;bottom:0;width:469px;max-width:100%;
-        aspect-ratio:469/434;object-fit:contain;
+        position:absolute;left:0;bottom:0;
+        width:auto;height:auto;max-width:420px;max-height:420px;
     }
     @@media (max-width:1100px){
         .about-bleed-img{
-            position:static;width:100%;max-width:340px;
+            position:static;width:auto;height:auto;max-width:300px;max-height:300px;
             margin:24px auto 0;display:block;
         }
     }
     .img-about-box{
-        position:absolute;left:0;bottom:0;width:469px;max-width:100%;aspect-ratio:469/434;
+        position:absolute;left:0;bottom:0;width:340px;max-width:100%;height:314px;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
     @@media (max-width:1100px){
         .img-about-box{
-            position:static;width:100%;max-width:340px;
+            position:static;width:280px;max-width:100%;height:260px;
             margin:24px auto 0;
         }
     }
