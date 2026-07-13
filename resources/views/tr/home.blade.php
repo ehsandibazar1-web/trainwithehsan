@@ -97,38 +97,27 @@
         background:#fff;line-height:1.5;
     }
 
-    /* ===== درباره/اپلیکیشن — سفید؛ .abou-company {color:#393e40; 2.2rem} ===== */
+    /* یکپارچه در همه‌ی سایزها: عکس همیشه چسبیده به پایین-چپ بخش، متن سمت راستش با تورفتگی */
     .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden;min-height:460px}
-    @@media (max-width:640px){.about-section{padding:40px 0}}
-    .about-text-col{max-width:560px;position:relative;z-index:1}
-    @@media (max-width:640px){.about-text-col{max-width:100%}}
+    @@media (max-width:640px){.about-section{padding:40px 0;min-height:420px}}
+    .about-text-col{max-width:560px;position:relative;z-index:1;margin-left:38%}
+    @@media (max-width:640px){.about-text-col{margin-left:44%}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.4}
     @@media (max-width:767px){.abou-company{font-size:20px;line-height:2}}
     .sub-title{color:#393e40;font-weight:500;font-size:16px}
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
-    /* متن روی موبایل هم justify می‌ماند، طبق درخواست */
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     .about-bleed-img{
-        position:absolute;top:0;bottom:0;right:0;width:46%;max-width:469px;object-fit:cover;
+        position:absolute;left:0;bottom:0;width:34%;max-width:400px;object-fit:contain;
     }
-    @@media (max-width:640px){
-        .about-bleed-img{
-            position:static;height:auto;width:100%;max-width:340px;
-            order:1;margin-top:30px;display:block;border-radius:8px;aspect-ratio:469/434;object-fit:cover;
-        }
-    }
+    @@media (max-width:640px){.about-bleed-img{width:40%;max-width:220px}}
     .img-about-box{
-        position:absolute;top:0;bottom:0;right:0;width:46%;max-width:469px;
+        position:absolute;left:0;bottom:0;width:34%;max-width:400px;aspect-ratio:469/434;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
-    @@media (max-width:640px){
-        .img-about-box{
-            position:static;width:100%;max-width:340px;height:auto;aspect-ratio:469/434;
-            order:1;margin-top:30px;
-        }
-    }
+    @@media (max-width:640px){.img-about-box{width:40%;max-width:220px}}
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
 
     /* ===== دوره‌ها — .counter {background:#363636; min-height:508px; color:#fff} ===== */
