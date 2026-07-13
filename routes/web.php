@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
@@ -22,6 +23,10 @@ Route::get('/blog/{slug}', [BlogController::class, 'show']);
 
 Route::get('/tr/blog', [BlogController::class, 'indexTr']);
 Route::get('/tr/blog/{slug}', [BlogController::class, 'showTr']);
+
+Route::get('/preview/article/{article}', [PreviewController::class, 'show'])
+    ->name('articles.preview')
+    ->middleware('signed');
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap']);
 Route::get('/feed', [SeoController::class, 'feed']);

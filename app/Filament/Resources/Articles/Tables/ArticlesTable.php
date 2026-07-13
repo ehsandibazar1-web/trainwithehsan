@@ -2,6 +2,8 @@
 
 namespace App\Filament\Resources\Articles\Tables;
 
+use App\Models\Article;
+use Filament\Actions\Action;
 use Filament\Actions\BulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
@@ -19,6 +21,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\URL;
 
 class ArticlesTable
 {
@@ -81,6 +85,9 @@ class ArticlesTable
                     ]),
             ])
             ->recordActions([
+                self::previewAction(),
+                self::duplicateAction(),
+                self::cloneTranslationAction(),
                 EditAction::make(),
                 DeleteAction::make(),
             ])
@@ -92,6 +99,90 @@ class ArticlesTable
                 ]),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    // ============ پیش‌نمایش — حتی برای Draft/Scheduled با لینک امضاشده ============
+    private static function previewAction(): Action
+    {
+        return Action::make('preview')
+            ->label('Preview')
+            ->icon('heroicon-o-eye')
+            ->color('gray')
+            ->url(fn (Article $record) => URL::temporarySignedRoute(
+                'articles.preview',
+                now()->addMinutes(30),
+                ['article' => $record->id],
+            ))
+            ->openUrlInNewTab();
+    }
+
+    // ============ دوبرابر کردن مقاله (همون زبان) ============
+    private static function duplicateAction(): Action
+    {
+        return Action::make('duplicate')
+            ->label('Duplicate')
+            ->icon('heroicon-o-document-duplicate')
+            ->color('gray')
+            ->requiresConfirmation()
+            ->action(function (Article $record): void {
+                $copy = $record->replicate(['views']);
+                $copy->title = $record->title.' (Copy)';
+                $copy->slug = Str::slug($copy->title).'-'.Str::random(4);
+                $copy->status = 'draft';
+                $copy->published_at = null;
+                $copy->translation_of = null;
+                $copy->views = 0;
+                $copy->save();
+
+                Notification::make()
+                    ->success()
+                    ->title('Article duplicated as a new draft')
+                    ->send();
+            });
+    }
+
+    // ============ کلون به زبان دیگر — متن عیناً کپی می‌شود، باید دستی ترجمه شود ============
+    private static function cloneTranslationAction(): Action
+    {
+        return Action::make('cloneTranslation')
+            ->label(fn (Article $record) => 'Clone to '.($record->locale === 'en' ? 'Türkçe' : 'English'))
+            ->icon('heroicon-o-language')
+            ->color('gray')
+            ->requiresConfirmation()
+            ->modalDescription('The content will be copied as-is (not translated). A new draft will be created in the other language, linked to this article — edit it and translate the text yourself.')
+            ->action(function (Article $record): void {
+                $newLocale = $record->locale === 'en' ? 'tr' : 'en';
+
+                $alreadyLinked = Article::where('locale', $newLocale)
+                    ->where(function ($q) use ($record) {
+                        $q->where('translation_of', $record->id)
+                            ->orWhere('id', $record->translation_of);
+                    })
+                    ->exists();
+
+                if ($alreadyLinked) {
+                    Notification::make()
+                        ->warning()
+                        ->title('A linked translation already exists for this article')
+                        ->send();
+
+                    return;
+                }
+
+                $copy = $record->replicate(['views']);
+                $copy->locale = $newLocale;
+                $copy->slug = $record->slug.'-'.$newLocale;
+                $copy->status = 'draft';
+                $copy->published_at = null;
+                $copy->translation_of = $record->id;
+                $copy->views = 0;
+                $copy->save();
+
+                Notification::make()
+                    ->success()
+                    ->title('Cloned as a '.strtoupper($newLocale).' draft — remember to translate the text')
+                    ->send();
+            });
     }
 
     // ============ زمان‌بندی گروهی ============

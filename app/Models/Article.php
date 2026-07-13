@@ -4,9 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\LogOptions;
+use Spatie\Activitylog\Traits\LogsActivity;
 
 class Article extends Model
 {
+    use LogsActivity;
+
     protected $fillable = [
         'locale', 'translation_of', 'title', 'slug', 'category', 'excerpt', 'body',
         'image_path', 'author_name', 'reading_time', 'views',
@@ -39,6 +43,27 @@ class Article extends Model
     public static function makeSlug(string $title): string
     {
         return Str::slug($title);
+    }
+
+    // تنظیمات لاگ فعالیت — فقط تغییرات واقعی (dirty) و فیلدهای مهم ثبت می‌شود
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->logOnly(['title', 'locale', 'status', 'published_at', 'category'])
+            ->logOnlyDirty()
+            ->useLogName('article')
+            ->setDescriptionForEvent(function (string $eventName) {
+                if ($eventName === 'updated' && $this->wasChanged('status') && $this->status === 'published') {
+                    return 'Article published';
+                }
+
+                return match ($eventName) {
+                    'created' => 'Article created',
+                    'updated' => 'Article updated',
+                    'deleted' => 'Article deleted',
+                    default => $eventName,
+                };
+            });
     }
 
     public function scopePublished($query)
