@@ -141,16 +141,18 @@
         /* ===== Newsletter — فرم طلایی بالای فوتر ===== */
         .newsletter{background:var(--gold);padding:34px 0;color:#000}
         .newsletter-row{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap}
+        .newsletter-row>div:first-child{min-width:0;flex:1 1 260px}
         .newsletter h3{color:#000;font-size:19px;font-weight:700}
         .newsletter p{font-size:13px}
-        .newsletter-form{display:flex;max-width:420px;width:100%}
+        .newsletter-form{display:flex;max-width:420px;width:100%;min-width:0;flex:1 1 260px}
         .newsletter-form input{
-            flex:1;border:0;padding:13px 16px;font-size:14px;font-family:inherit;
+            flex:1;min-width:0;border:0;padding:13px 16px;font-size:14px;font-family:inherit;
             border-radius:25px 0 0 25px;outline:0;
         }
         .newsletter-form button{
             border:0;background:#000;color:var(--gold);padding:13px 26px;font-weight:600;
             border-radius:0 25px 25px 0;cursor:pointer;font-family:inherit;font-size:14px;
+            flex-shrink:0;white-space:nowrap;
         }
 
         /* ===== Footer — .footer {background:#0a0809; color:#fff} ===== */
