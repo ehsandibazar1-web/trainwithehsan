@@ -51,7 +51,7 @@
     .hero-slide-text h1{font-size:clamp(1.5rem,3.4vw,1.8rem);color:#fff;font-weight:600;line-height:1.5}
     .hero-slide-text .sub{font-size:clamp(1rem,2.6vw,1.5rem);color:#f3f3f3;margin-top:10px;line-height:1.6}
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
-    .hero-dots{position:absolute;bottom:24px;left:0;right:0;display:flex;justify-content:center;gap:9px;z-index:2}
+    .hero-dots{position:absolute;bottom:24px;left:20px;display:flex;justify-content:flex-start;gap:9px;z-index:2}
     .hero-dot{width:14px;height:14px;border-radius:50%;background:#ffffffa8;border:0;cursor:pointer;padding:0}
     .hero-dot.active{background:var(--gold)}
 
@@ -59,7 +59,12 @@
     .video-section{padding-bottom:40px}
     .row-video{position:relative;z-index:1;margin-top:-94px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     @@media (max-width:991px){.row-video{margin-top:-53px}}
-    @@media (max-width:767px){.row-video{margin-top:-28px;grid-template-columns:1fr}}
+    @@media (max-width:767px){.row-video{margin-top:-28px;gap:8px}}
+    @@media (max-width:480px){
+        .row-video{gap:6px}
+        .video-icon{width:34px;height:34px;font-size:13px}
+        .text-video{font-size:10.5px;padding:8px 5px;line-height:1.4}
+    }
     /* .owl-send .item {height:232px} + .video-icon + .text-video گرادیان پایین */
     .video-card{
         position:relative;height:232px;overflow:hidden;cursor:pointer;
@@ -102,10 +107,16 @@
     .title-counter{font-size:2rem;text-align:center;color:#fff;font-weight:700}
     @@media (max-width:767px){.title-counter{font-size:1.5rem}}
     .sun-counter{text-align:center;color:#ddd;font-size:14px;margin-top:8px;max-width:44rem;margin-left:auto;margin-right:auto}
-    .learn-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:40px}
-    @@media (max-width:820px){.learn-grid{grid-template-columns:1fr}}
+    .learn-grid{
+        display:flex;gap:20px;margin-top:40px;overflow-x:auto;
+        scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+        padding-bottom:10px;scrollbar-width:thin;
+    }
+    .learn-grid::-webkit-scrollbar{height:6px}
+    .learn-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:3px}
     /* .img-learn (تصویر 362×241) + .l-title {color:#1e1e1e; background:#d9bb75; min-height:50px; 15px} */
-    .l-box{display:block}
+    .l-box{display:block;flex:0 0 260px;scroll-snap-align:start}
+    @@media (max-width:600px){.l-box{flex-basis:220px}}
     .img-learn{
         position:relative;overflow:hidden;aspect-ratio:362/241;
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
@@ -131,10 +142,16 @@
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
     .sub-title-section{text-align:center;margin-top:8px}
     .sub-title-section a{color:#353535;font-weight:500;font-size:15px}
-    .news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:32px}
-    @@media (max-width:820px){.news-grid{grid-template-columns:1fr}}
+    .news-grid{
+        display:flex;gap:20px;margin-top:32px;overflow-x:auto;
+        scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
+        padding-bottom:10px;scrollbar-width:thin;
+    }
+    .news-grid::-webkit-scrollbar{height:6px}
+    .news-grid::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
     /* .owl-news .item {background:#fff} */
-    .news-card{background:#fff;display:block}
+    .news-card{background:#fff;display:block;flex:0 0 270px;scroll-snap-align:start}
+    @@media (max-width:600px){.news-card{flex-basis:230px}}
     /* .img-news {height:170px} */
     .img-news{
         height:170px;overflow:hidden;
@@ -181,6 +198,8 @@
         border-radius:6px;
     }
     .inst .bg-ins{aspect-ratio:646/424;max-width:646px}
+    .bg-ins-img{width:100%;max-width:502px;height:auto;border-radius:6px;display:block;margin:0 auto}
+    .inst .bg-ins-img{max-width:646px}
     .insta-link{text-align:center}
     .insta-logo{
         width:120px;height:120px;border-radius:28px;margin:0 auto;
@@ -317,7 +336,7 @@
                     <div class="news-more-row"><span class="more-news">Read more</span></div>
                 </a>
                 @empty
-                <p style="grid-column:1/-1;text-align:center;color:#888;font-size:13px;padding:20px 0">New articles are coming soon.</p>
+                <p style="flex:1 0 100%;text-align:center;color:#888;font-size:13px;padding:20px 0">New articles are coming soon.</p>
                 @endforelse
             </div>
         </div>
@@ -360,7 +379,11 @@
                         <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">Follow us on Instagram</a>
                     </div>
                 </div>
-                <div class="bg-ins" @if($v('insta1_image')) style="background-image:url('{{ asset('storage/' . $v('insta1_image')) }}');background-size:cover;background-position:center" @endif></div>
+                @if($v('insta1_image'))
+                    <img src="{{ asset('storage/' . $v('insta1_image')) }}" alt="Instagram" class="bg-ins-img">
+                @else
+                    <div class="bg-ins"></div>
+                @endif
             </div>
         </div>
     </section>
@@ -369,7 +392,11 @@
     <section class="inst">
         <div class="wrap">
             <div class="inst-grid">
-                <div class="bg-ins" @if($v('insta2_image')) style="background-image:url('{{ asset('storage/' . $v('insta2_image')) }}');background-size:cover;background-position:center" @endif></div>
+                @if($v('insta2_image'))
+                    <img src="{{ asset('storage/' . $v('insta2_image')) }}" alt="Instagram" class="bg-ins-img">
+                @else
+                    <div class="bg-ins"></div>
+                @endif
                 <div class="insta-link">
                     <div class="insta-logo">◎</div>
                     <div class="text-link">
