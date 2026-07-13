@@ -35,10 +35,14 @@
 <style>
     /* ===== اسلایدر — .slider {background:#252525} + متن روی تصویر ===== */
     .hero-slider{position:relative;background:#252525;overflow:hidden}
+    /* نسبت واقعی عکس سایت اصلی: 1349x529 — به‌جای vh، از aspect-ratio واقعی استفاده می‌کنیم
+       تا روی موبایل هم دقیقاً همون تناسب (نه خیلی بلند، پهن و طبیعی) حفظ بشه */
     .hero-slide{
-        display:none;min-height:64vh;align-items:center;position:relative;
+        display:none;align-items:center;position:relative;
+        aspect-ratio:1349/529;min-height:220px;
         background:linear-gradient(115deg,#2e2c28 0%,#1c1b18 55%,#0d0d0b 120%);
     }
+    @@media (max-width:640px){.hero-slide{min-height:180px}}
     .hero-slide.active{display:flex}
     /* بافت پس‌زمینه شبیه پوستر تیره — فقط وقتی عکس واقعی نیست */
     .hero-slide::before{
@@ -59,11 +63,16 @@
     .video-section{padding-bottom:40px}
     .row-video{position:relative;z-index:1;margin-top:-94px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     @@media (max-width:991px){.row-video{margin-top:-53px}}
-    @@media (max-width:767px){.row-video{margin-top:-28px;gap:8px}}
-    @@media (max-width:480px){
-        .row-video{gap:6px}
-        .video-icon{width:34px;height:34px;font-size:13px}
-        .text-video{font-size:10.5px;padding:8px 5px;line-height:1.4}
+    /* موبایل — دقیقاً مثل سایت اصلی: یکی‌یکی، تمام‌عرض، اسلاید افقی (نه ۳تا فشرده) */
+    @@media (max-width:640px){
+        .row-video{
+            margin-top:-28px;display:flex;gap:0;overflow-x:auto;
+            scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
+        }
+        .row-video::-webkit-scrollbar{display:none}
+        .row-video>.video-card{flex:0 0 100%;scroll-snap-align:start}
+        .video-icon{width:52px;height:52px;font-size:18px}
+        .text-video{font-size:14px;padding:14px 10px}
     }
     .video-section{background:#fff}
     /* .owl-send .item {height:232px}: عکس بالا با آیکون روش، کپشن جداگانه زیرِ عکس (مثل سایت اصلی) */
