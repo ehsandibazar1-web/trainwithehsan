@@ -234,11 +234,7 @@
     .bg-ins-img{width:100%;max-width:502px;height:auto;border-radius:6px;display:block;margin:0 auto}
     .inst .bg-ins-img{max-width:646px}
     .insta-link{text-align:center}
-    .insta-logo{
-        width:120px;height:120px;border-radius:28px;margin:0 auto;
-        background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af,#515bd4);
-        display:flex;align-items:center;justify-content:center;font-size:52px;color:#fff;
-    }
+    .insta-logo-img{width:120px;height:auto;margin:0 auto;display:block}
     .insta-small-img{width:149px;height:134px;object-fit:cover;border-radius:10px;margin:0 auto;display:block}
     /* .text-link a {background:#252525; color:#d9bb75; padding:5px 31px} hover معکوس */
     .text-link{margin-top:16px}
@@ -325,7 +321,7 @@
                 <div class="sub-title">{{ $v('app_subtitle', 'Step-by-step video training, anywhere') }}</div>
                 <div class="about-text">{{ $v('app_text', 'The training app contains structured video courses that teach the process of self-defense step by step, so you can learn at your own pace. Our focus is on giving you the most effective training programs in martial arts and self-defense — with real quality, in the right order, so you actually reach your goal.') }}</div>
                 <div class="about-cta">
-                    <a href="{{ url('/courses') }}" class="show-more">{{ $v('app_button_label', 'Download the app') }}</a>
+                    <a href="{{ url('/about') }}" class="show-more">{{ $v('app_button_label', 'Download the app') }}</a>
                 </div>
             </div>
             @if($v('app_image'))
@@ -420,11 +416,7 @@
             <div class="inst-grid">
                 <div class="insta-link">
                     <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
-                        @if($v('insta1_small_image'))
-                            <img src="{{ asset('storage/' . $v('insta1_small_image')) }}" alt="Instagram" class="insta-small-img">
-                        @else
-                            <div class="insta-logo">◎</div>
-                        @endif
+                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-logo-img">
                     </a>
                     <div class="text-link">
                         <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">Follow us on Instagram</a>
@@ -450,11 +442,7 @@
                 @endif
                 <div class="insta-link">
                     <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
-                        @if($v('insta2_small_image'))
-                            <img src="{{ asset('storage/' . $v('insta2_small_image')) }}" alt="Instagram" class="insta-small-img">
-                        @else
-                            <div class="insta-logo">◎</div>
-                        @endif
+                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-logo-img">
                     </a>
                     <div class="text-link">
                         <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">@@ehsandibazar</a>
