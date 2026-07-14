@@ -80,9 +80,10 @@
     }
     .video-section{background:#fff}
     /* .owl-send .item {height:232px}: عکس بالا با آیکون روش، کپشن جداگانه زیرِ عکس (مثل سایت اصلی) */
-    .video-card{display:block;cursor:pointer;background:#fff}
+    /* طبق CSS واقعی سایت اصلی: کل کارت یه جعبه‌ی ۲۳۲px با متن overlay-شده روش (نه جدا زیرش) */
+    .video-card{display:block;cursor:pointer;position:relative;height:232px;overflow:hidden}
     .video-card__img{
-        position:relative;height:232px;overflow:hidden;
+        position:absolute;inset:0;
         background:linear-gradient(135deg,#2c2c2c 0%,#3a3222 60%,#8a6d1f 170%);
         background-size:cover!important;background-position:center!important;
     }
@@ -94,8 +95,10 @@
     }
     .video-card:hover .video-icon{background:var(--gold);border-color:var(--gold);color:#000}
     .text-video{
-        padding:12px 6px;text-align:center;font-weight:600;color:#2b2b2b;font-size:14px;
-        background:#fff;line-height:1.5;
+        position:absolute;inset:0% 0% 0px;width:100%;color:#fff;
+        background:linear-gradient(rgba(0,0,0,0) 3%,rgba(0,0,0,.36) 48%,rgba(0,0,0,.65) 85%,rgba(0,0,0,.65) 98%);
+        display:flex!important;flex-direction:column-reverse;
+        padding:20px;text-align:center;font-weight:600;font-size:14px;z-index:1;
     }
 
     /* یکپارچه در همه‌ی سایزها: عکس همیشه چسبیده به پایین-چپ بخش، متن سمت راستش با تورفتگی */
