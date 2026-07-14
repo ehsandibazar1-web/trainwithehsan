@@ -149,7 +149,10 @@
         }
 
         /* ===== Footer — .footer {background:#0a0809; color:#fff} ===== */
-        .site-footer{background:var(--footer);padding:40px 0 24px;color:#fff}
+        .site-footer{
+            background:linear-gradient(rgba(10,8,9,.8),rgba(10,8,9,.8)),url('{{ asset('storage/homepage/bg-footer.webp') }}') center/cover no-repeat;
+            padding:40px 0 24px;color:#fff;
+        }
         .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:30px}
         @@media (max-width:720px){.footer-grid{grid-template-columns:1fr;text-align:center}}
         .footer-badge{
