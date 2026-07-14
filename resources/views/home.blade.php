@@ -82,8 +82,9 @@
     /* .owl-send .item {height:232px}: عکس بالا با آیکون روش، کپشن جداگانه زیرِ عکس (مثل سایت اصلی) */
     .video-card{display:block;cursor:pointer;background:#fff}
     .video-card__img{
-        position:relative;aspect-ratio:389/232;overflow:hidden;
+        position:relative;height:232px;overflow:hidden;
         background:linear-gradient(135deg,#2c2c2c 0%,#3a3222 60%,#8a6d1f 170%);
+        background-size:cover!important;background-position:center!important;
     }
     .video-icon{
         position:absolute;inset:0;margin:auto;width:47px;height:46px;
@@ -99,7 +100,7 @@
 
     /* ===== درباره/اپلیکیشن — سفید؛ عکس سرریزکننده (bleed) مثل سایت اصلی، نه باکس محدود ===== */
     /* یکپارچه در همه‌ی سایزها: عکس همیشه چسبیده به پایین-چپ بخش، متن سمت راستش با تورفتگی */
-    .about-section{padding:60px 0;position:relative;background:#fff;overflow:hidden;min-height:433px}
+    .about-section{padding:80px 0 60px;position:relative;background:#fff;overflow:hidden;min-height:433px}
     @@media (max-width:767px){.about-section{padding-top:32px}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
     @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:360px}}
@@ -111,7 +112,8 @@
     @@media (max-width:640px){.about-cta{margin-top:24px}}
     /* عکس — همیشه (گوشی/تبلت/دسکتاپ) چسبیده به پایین-چپ بخش؛ contain یعنی کامل دیده می‌شود، بدون برش پا/بدن */
     .about-bleed-img{
-        position:absolute;left:0;top:0;width:469px;max-width:100%;height:auto;
+        position:absolute;left:0;top:0;bottom:0;width:469px;max-width:100%;
+        object-fit:contain;
     }
     @@media (max-width:767px){.about-bleed-img{margin-top:20px}}
     .img-about-box{

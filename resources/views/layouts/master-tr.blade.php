@@ -58,7 +58,7 @@
 
         /* ===== Header — .c-header {background:#1d1d1d} ===== */
         .site-header{background:var(--header);position:sticky;top:0;z-index:100}
-        .nav-bar{display:flex;align-items:center;justify-content:space-between;height:72px}
+        .nav-bar{display:flex;align-items:center;justify-content:space-between;height:84px}
         .brand-badge{display:flex;align-items:center;gap:12px}
         .badge-icon{
             width:42px;height:42px;border-radius:50%;border:2px solid var(--gold);
