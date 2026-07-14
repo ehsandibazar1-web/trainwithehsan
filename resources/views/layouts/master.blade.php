@@ -77,6 +77,7 @@
         @@media (max-width:900px){
             .nav-links{display:none}
             .nav-toggle{display:block}
+            .nav-bar{justify-content:flex-end;gap:14px}
         }
 
         /* ===== Mobile panel — .panel-menu {background:#171717; width:300px; right} ===== */
