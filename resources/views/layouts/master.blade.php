@@ -154,24 +154,23 @@
             background:url('{{ asset('storage/homepage/bg-footer.webp') }}') center/cover no-repeat;
             padding:40px 0 24px;color:#fff;
         }
-        .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:30px}
-        @@media (max-width:720px){.footer-grid{grid-template-columns:1fr;text-align:center}}
-        .footer-logo-img{height:60px;width:auto;display:block;margin-bottom:16px}
-        @@media (max-width:720px){.footer-logo-img{margin:0 auto 16px}}
+        .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
+        @@media (max-width:720px){.footer-grid{grid-template-columns:1fr 1fr;gap:24px}}
+        @@media (max-width:480px){.footer-grid{grid-template-columns:1fr}}
+        .footer-brand{text-align:center;margin-bottom:24px}
+        .footer-logo-img{height:130px;width:auto;margin:0 auto;display:block}
         /* .title-footer span {font-size:15px; color:#fff; font-weight:500} */
         .site-footer h4{font-weight:600;font-size:15px;color:#fff;margin-bottom:12px}
         .site-footer ul{list-style:none}
         /* .lnk-footers li a {color:#ebebeb; font-size:12px; padding + گلوله طلایی} */
-        .site-footer li{line-height:2.5;position:relative;padding-left:12px}
-        .site-footer li::before{content:"";position:absolute;top:14px;left:0;width:4px;height:4px;background-color:var(--gold)}
-        @@media (max-width:720px){.site-footer li{padding-left:0}.site-footer li::before{display:none}}
+        .site-footer li{line-height:2.5}
+        .site-footer li::before{content:"";display:inline-block;width:4px;height:4px;border-radius:50%;background-color:var(--gold);margin-right:6px;vertical-align:middle}
         .site-footer li a{color:#ebebeb;font-size:12px}
         .site-footer li a:hover{color:var(--gold);transition:.5s linear}
-        .footer-about{color:#9a9a9a;font-size:12px;max-width:26rem;line-height:2}
         /* .copy {font-size:12px; color:#fff} + .copy-right .color {color:#d9bb75} */
         .footer-note{
             border-top:1px solid #222;padding-top:16px;font-size:12px;color:#fff;
-            display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+            text-align:center;
         }
         .footer-note .color{color:var(--gold);font-weight:600}
     </style>
@@ -239,18 +238,23 @@
     <div class="wrap">
         <div class="footer-grid">
             <div>
-                <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Defensive Tactics" class="footer-logo-img">
-                <h4>Ehsan Dibazar — Defensive Tactics</h4>
-                <p class="footer-about">
-                    Self-defense and Brazilian Jiu-Jitsu training in Istanbul, built on the
-                    Martial Intelligence method: decision-making under pressure, not just technique.
-                </p>
-            </div>
-            <div>
                 <h4>Privacy Policy</h4>
                 <ul>
                     <li><a href="{{ url('/terms-and-conditions') }}">Terms and Conditions</a></li>
                     <li><a href="{{ url('/privacy-policy') }}">Privacy Policy</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Courses</h4>
+                <ul>
+                    <li><a href="{{ url('/courses') }}">Courses</a></li>
+                    <li><a href="{{ url('/martial-intelligence') }}">Martial Intelligence</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Blog</h4>
+                <ul>
+                    <li><a href="{{ url('/blog') }}">Blog</a></li>
                 </ul>
             </div>
             <div>
@@ -261,9 +265,11 @@
                 </ul>
             </div>
         </div>
+        <div class="footer-brand">
+            <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Defensive Tactics" class="footer-logo-img">
+        </div>
         <div class="footer-note">
             <span>© {{ date('Y') }} <span class="color">Ehsan Dibazar</span>. All rights reserved.</span>
-            <span>Istanbul, Türkiye</span>
         </div>
     </div>
 </footer>
