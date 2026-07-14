@@ -149,6 +149,12 @@
     /* .img-learn (تصویر 362×241) + .l-title {color:#1e1e1e; background:#d9bb75; min-height:50px; 15px} */
     .l-box{display:block;flex:0 0 260px;scroll-snap-align:start}
     @@media (max-width:600px){.l-box{flex-basis:85%}}
+    /* دسکتاپ: سه کارت کل عرض را پر می‌کنند (مثل سایت اصلی)، نه کارت‌های کوچک چپ‌چین */
+    @@media (min-width:768px){
+        .learn-grid{overflow-x:visible;justify-content:center}
+        .l-box{flex:0 0 calc((100% - 40px) / 3)}
+        .courses-carousel .car-arrow{display:none}
+    }
     .img-learn{
         position:relative;overflow:hidden;aspect-ratio:362/241;
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
