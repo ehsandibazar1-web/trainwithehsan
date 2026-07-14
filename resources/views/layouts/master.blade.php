@@ -151,7 +151,7 @@
 
         /* ===== Footer — .footer {background:#0a0809; color:#fff} ===== */
         .site-footer{
-            background:url('{{ asset('storage/homepage/bg-footer.webp') }}') center/cover no-repeat;
+            background:url('{{ asset('storage/homepage/bg-footer.jpg') }}') center/cover no-repeat;
             padding:40px 0 24px;color:#fff;
         }
         .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
