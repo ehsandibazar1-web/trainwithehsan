@@ -150,17 +150,13 @@
 
         /* ===== Footer — .footer {background:#0a0809; color:#fff} ===== */
         .site-footer{
-            background:linear-gradient(rgba(10,8,9,.8),rgba(10,8,9,.8)),url('{{ asset('storage/homepage/bg-footer.webp') }}') center/cover no-repeat;
+            background:url('{{ asset('storage/homepage/bg-footer.webp') }}') center/cover no-repeat;
             padding:40px 0 24px;color:#fff;
         }
         .footer-grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:40px;margin-bottom:30px}
         @@media (max-width:720px){.footer-grid{grid-template-columns:1fr;text-align:center}}
-        .footer-badge{
-            width:60px;height:60px;border-radius:50%;border:2px solid var(--gold);
-            display:flex;align-items:center;justify-content:center;font-weight:800;
-            color:var(--gold);margin-bottom:16px;
-        }
-        @@media (max-width:720px){.footer-badge{margin:0 auto 16px}}
+        .footer-logo-img{height:60px;width:auto;display:block;margin-bottom:16px}
+        @@media (max-width:720px){.footer-logo-img{margin:0 auto 16px}}
         /* .title-footer span {font-size:15px; color:#fff; font-weight:500} */
         .site-footer h4{font-weight:600;font-size:15px;color:#fff;margin-bottom:12px}
         .site-footer ul{list-style:none}
@@ -242,27 +238,25 @@
     <div class="wrap">
         <div class="footer-grid">
             <div>
-                <div class="footer-badge">ED</div>
+                <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Savunma Teknikleri" class="footer-logo-img">
                 <h4>Ehsan Dibazar — Savunma Teknikleri</h4>
                 <p class="footer-about">
-                    İstanbul\'da Martial Intelligence metoduna dayalı kendini savunma ve
+                    İstanbul'da Martial Intelligence metoduna dayalı kendini savunma ve
                     Brezilya Jiu-Jitsu eğitimi: sadece teknik değil, baskı altında doğru karar verme.
                 </p>
             </div>
             <div>
-                <h4>Eğitim</h4>
+                <h4>Gizlilik Politikası</h4>
                 <ul>
-                    <li><a href="{{ url('/tr/courses') }}">Kurslar</a></li>
-                    <li><a href="{{ url('/tr/martial-intelligence') }}">Martial Intelligence</a></li>
-                    <li><a href="{{ url('/tr/blog') }}">Blog</a></li>
+                    <li><a href="{{ url('/tr/terms-and-conditions') }}">Şartlar ve Koşullar</a></li>
+                    <li><a href="{{ url('/tr/privacy-policy') }}">Gizlilik Politikası</a></li>
                 </ul>
             </div>
             <div>
                 <h4>İletişim</h4>
                 <ul>
-                    <li><a href="{{ url('/tr/about') }}">Ehsan Hakkında</a></li>
-                    <li><a href="{{ url('/tr/contact') }}">İletişime Geç</a></li>
-                    <li><a href="{{ url('/') }}" rel="noopener">English — trainwithehsan.com</a></li>
+                    <li><a href="{{ url('/tr/contact') }}">İletişim</a></li>
+                    <li><a href="{{ url('/tr/about') }}">Hakkımda</a></li>
                 </ul>
             </div>
         </div>
