@@ -149,9 +149,9 @@
             flex-shrink:0;white-space:nowrap;
         }
 
-        /* ===== Footer — .footer {background:#0a0809; color:#fff} ===== */
+        /* ===== Footer — عیناً مطابق site.min.css سایت اصلی: .footer{background:url(bg-footer.png) #0a0809} ===== */
         .site-footer{
-            background:url('{{ asset('storage/homepage/bg-footer.jpg') }}') center/cover no-repeat;
+            background:url('{{ asset('storage/homepage/bg-footer.jpg') }}') var(--footer);
             padding:40px 0 24px;color:#fff;
         }
         .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
