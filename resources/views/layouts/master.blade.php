@@ -60,10 +60,10 @@
         /* ===== Header — .c-header {background:#1d1d1d} ===== */
         .site-header{background:var(--header);position:sticky;top:0;z-index:100}
         .nav-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
-        .brand-badge{display:flex;align-items:center;gap:12px}
-        .brand-logo-img{height:44px;width:auto;display:block}
+        .brand-badge{display:flex;align-items:center;gap:12px;order:2}
+        .brand-logo-img{height:60px;width:auto;display:block}
         /* .cssmenu>ul>li>a {color:#fff; font-size:15px; font-weight:500} + hover gold */
-        .nav-links{display:flex;gap:2px;list-style:none;align-items:center}
+        .nav-links{display:flex;gap:2px;list-style:none;align-items:center;order:1}
         .nav-links>li>a{
             display:block;color:#fff;font-size:14px;font-weight:500;
             padding:9px 13px;border-radius:9px;transition:.25s;
@@ -72,7 +72,7 @@
         .nav-cta{background:var(--gold);color:#000!important;font-weight:600}
         .nav-toggle{
             display:none;background:none;border:0;color:#fff;
-            width:44px;height:44px;font-size:24px;cursor:pointer;
+            width:44px;height:44px;font-size:24px;cursor:pointer;order:3;
         }
         @@media (max-width:900px){
             .nav-links{display:none}
