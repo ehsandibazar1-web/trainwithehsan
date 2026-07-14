@@ -327,12 +327,12 @@
                     <a href="{{ url('/about') }}" class="show-more">{{ $v('app_button_label', 'Download the app') }}</a>
                 </div>
             </div>
-            @if($v('app_image'))
-                <img src="{{ asset('storage/' . $v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img">
-            @else
-                <div class="img-about-box"><span>App</span></div>
-            @endif
         </div>
+        @if($v('app_image'))
+            <img src="{{ asset('storage/' . $v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img">
+        @else
+            <div class="img-about-box"><span>App</span></div>
+        @endif
     </section>
 
     {{-- ============ دوره‌های آموزشی و محصولات ============ --}}
