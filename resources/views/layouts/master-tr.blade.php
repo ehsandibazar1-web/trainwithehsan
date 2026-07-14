@@ -60,14 +60,7 @@
         .site-header{background:var(--header);position:sticky;top:0;z-index:100}
         .nav-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
         .brand-badge{display:flex;align-items:center;gap:12px}
-        .badge-icon{
-            width:42px;height:42px;border-radius:50%;border:2px solid var(--gold);
-            display:flex;align-items:center;justify-content:center;
-            font-weight:800;font-size:13px;color:var(--gold);flex-shrink:0;
-        }
-        .brand-text{display:flex;flex-direction:column;line-height:1.25}
-        .brand-text b{font-weight:800;font-size:15px;color:#fff;letter-spacing:.03em;text-transform:uppercase}
-        .brand-text small{font-size:9.5px;color:#9a9a9a;letter-spacing:.14em;text-transform:uppercase}
+        .brand-logo-img{height:44px;width:auto;display:block}
         /* .cssmenu>ul>li>a {color:#fff; font-size:15px; font-weight:500} + hover gold */
         .nav-links{display:flex;gap:2px;list-style:none;align-items:center}
         .nav-links>li>a{
@@ -206,11 +199,7 @@
 <header class="site-header">
     <div class="wrap nav-bar">
         <a href="{{ url('/tr') }}" class="brand-badge">
-            <span class="badge-icon">ED</span>
-            <span class="brand-text">
-                <b>Ehsan Dibazar</b>
-                <small>Savunma Teknikleri</small>
-            </span>
+            <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Savunma Teknikleri" class="brand-logo-img">
         </a>
         <ul class="nav-links">
             @foreach($menuItems as $item)
