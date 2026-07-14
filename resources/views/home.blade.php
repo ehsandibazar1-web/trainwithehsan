@@ -106,25 +106,28 @@
     .about-section{padding:80px 0 60px;position:relative;background:#fff;overflow:hidden;min-height:433px}
     @@media (max-width:767px){.about-section{padding-top:32px}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
-    @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:360px}}
+    @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:1.8rem;text-align:center}}
     .sub-title{color:#393e40;font-weight:500;font-size:14px}
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
     .about-cta{margin-top:40px}
     @@media (max-width:640px){.about-cta{margin-top:24px}}
-    /* عکس — همیشه (گوشی/تبلت/دسکتاپ) چسبیده به پایین-چپ بخش؛ contain یعنی کامل دیده می‌شود، بدون برش پا/بدن */
+    /* عکس — عیناً مطابق template.css سایت اصلی: موبایل static (زیر متن)، دسکتاپ absolute چسبیده به بالا-چپ (نه پایین) */
     .about-bleed-img{
-        position:absolute;left:0;top:0;bottom:0;width:469px;max-width:100%;
-        object-fit:contain;
+        width:469px;max-width:100%;height:auto;margin-top:20px;
     }
-    @@media (max-width:767px){.about-bleed-img{margin-top:20px}}
+    @@media (min-width:768px){
+        .about-bleed-img{position:absolute;left:0;top:0;margin-top:0}
+    }
     .img-about-box{
-        position:absolute;left:0;top:0;width:469px;max-width:100%;aspect-ratio:469/434;
+        width:469px;max-width:100%;aspect-ratio:469/434;margin-top:20px;
         background:linear-gradient(135deg,#f0ede4 0%,#e2d3a8 70%,var(--gold) 160%);
         display:flex;align-items:flex-end;padding:20px;
     }
-    @@media (max-width:767px){.img-about-box{margin-top:20px}}
+    @@media (min-width:768px){
+        .img-about-box{position:absolute;left:0;top:0;margin-top:0}
+    }
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
 
     /* ===== دوره‌ها — .counter {background:#363636; min-height:508px; color:#fff} ===== */
