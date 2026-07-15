@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SeoController;
 use Illuminate\Support\Facades\Artisan;
@@ -41,3 +42,12 @@ Route::get('/system-migrate-9x4kq2', function () {
 
     return '<pre>'.Artisan::output().'</pre>';
 });
+
+// صفحات مستقل (Privacy, Terms, FAQ, ...) — این دو مسیر باید همیشه آخرِ فایل بمانند تا
+// مسیرهای بالاتر (که زودتر ثبت می‌شوند) اول match شوند. lookahead هم به‌عنوان لایه‌ی دوم
+// ایمنی، اسلاگ‌های رزروشده (از جمله /admin که Filament جدا ثبت می‌کند) را رد می‌کند.
+Route::get('/tr/{slug}', [PageController::class, 'showTr'])
+    ->where('slug', '(?!blog$|about$|feed$)[A-Za-z0-9-]+');
+
+Route::get('/{slug}', [PageController::class, 'show'])
+    ->where('slug', '(?!admin$|blog$|about$|tr$|feed$|preview$|storage$|livewire$|system-)[A-Za-z0-9-]+');
