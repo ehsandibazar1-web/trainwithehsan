@@ -66,7 +66,8 @@
     .hero-dot.active{background:var(--gold)}
 
     /* ===== ردیف ویدیو — .row-video {margin-top:-94px} overlap روی اسلایدر ===== */
-    .video-section{padding-bottom:40px}
+    /* بدون فاصلهٔ پایین: بخش «درباره» بلافاصله زیر کارت‌های ویدیو شروع می‌شود (مثل سایت مرجع) */
+    .video-section{padding-bottom:0}
     .row-video{position:relative;z-index:1;margin-top:-94px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     @@media (max-width:991px){.row-video{margin-top:-53px}}
     /* موبایل — دقیقاً مثل سایت اصلی: یکی‌یکی، تمام‌عرض، اسلاید افقی (نه ۳تا فشرده) */
@@ -104,7 +105,7 @@
     }
 
     /* دسکتاپ: عکس تمام‌ارتفاعِ بخش، چسبیده به بالا/چپ/پایین؛ موبایل: استاتیک زیر متن، چسبیده به پایین */
-    .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:433px}
+    .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:500px}
     @@media (max-width:767px){.about-section{padding-top:32px;padding-bottom:0}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
     @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
@@ -114,15 +115,17 @@
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
     .about-cta{margin-top:16px}
     @@media (max-width:640px){.about-cta{margin-top:16px}}
-    /* عکس — دسکتاپ: چسبیده به بالا، چپ و پایینِ بخش (تمام‌ارتفاع، مثل سایت مرجع)؛
-       سقف عرض به viewport گره خورده تا در هیچ عرضی به ستون متن (شروع از 515px) نرسد */
+    /* عکس — دسکتاپ: چسبیده به بالا/چپ/پایینِ بخش (تمام‌ارتفاع)؛ عرض دقیقاً تا ۲۰px قبلِ
+       ستون متن کشیده می‌شود. ستون متن داخل .wrapِ وسط‌چین است و از (نیمِ فضای اضافهٔ کنارِ
+       wrap) + 500px شروع می‌شود؛ همین فرمول را برای لبهٔ راستِ عکس تکرار می‌کنیم تا در هر
+       عرضی فاصله ثابت (~20px) بماند و هرگز روی متن نیفتد. */
     .about-bleed-img{
         width:469px;max-width:100%;height:auto;margin-top:20px;display:block;
     }
     @@media (min-width:768px){
         .about-bleed-img{
-            position:absolute;left:0;top:0;bottom:0;margin-top:0;
-            height:100%;width:auto;max-width:min(480px, calc(50% - 20px));
+            position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;
+            width:calc(max((100vw - 1140px) / 2, 0px) + 495px);
             object-fit:cover;object-position:left top;
         }
     }
@@ -275,6 +278,19 @@
     @php($members = $members ?? [])
     {{-- مقدار فقط-فاصله عمداً «پر» حساب می‌شود — راه مدیر سایت برای مخفی‌کردن متن پیش‌فرض بدون کد --}}
     @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
+    {{-- لینک ویدیو را به فرم embed تبدیل می‌کند: watch?v= / youtu.be / shorts و vimeo قابلِ
+         iframe نیستند؛ مدیر معمولاً همان لینکِ عادی را کپی می‌کند، پس اینجا نرمال‌سازی می‌شود --}}
+    @php($embed = function ($u) {
+        $u = trim((string) $u);
+        if ($u === '') return '';
+        if (preg_match('~(?:youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})~i', $u, $m)) {
+            return 'https://www.youtube.com/embed/' . $m[1];
+        }
+        if (preg_match('~vimeo\.com/(?:video/)?(\d+)~i', $u, $m)) {
+            return 'https://player.vimeo.com/video/' . $m[1];
+        }
+        return $u;
+    })
 
     {{-- ============ اسلایدر هیرو ============ --}}
     {{-- فقط اسلاید اول h1 دارد (تنها H1 قابل‌مشاهده صفحه) — بقیه h2 هستند تا چند H1 در DOM نداشته باشیم --}}
@@ -316,7 +332,7 @@
             @php($videoDefaults = ['Neden dövüş sanatları ve kendini savunma eğitimi almalısınız', 'Eğitim nasıl işliyor', 'Kendini savunma ve dövüş sporu nedir'])
             <div class="row-video">
                 @foreach([1, 2, 3] as $i)
-                @php($vEmbed = $v("video{$i}_embed"))
+                @php($vEmbed = $embed($v("video{$i}_embed")))
                 @php($vFile = $v("video{$i}_file"))
                 @php($vThumb = $v("video{$i}_thumb"))
                 <div class="video-card js-video" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
