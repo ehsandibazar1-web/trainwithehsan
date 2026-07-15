@@ -116,14 +116,14 @@
     .about-cta{margin-top:16px}
     @@media (max-width:640px){.about-cta{margin-top:16px}}
     /* عکس — دسکتاپ: چسبیده به بالا، چپ و پایینِ بخش (تمام‌ارتفاع، مثل سایت مرجع)؛
-       width:auto نسبت تصویر را نگه می‌دارد و max-width از رفتن زیر ستون متن جلوگیری می‌کند */
+       سقف عرض به viewport گره خورده تا در هیچ عرضی به ستون متن (شروع از 515px) نرسد */
     .about-bleed-img{
         width:469px;max-width:100%;height:auto;margin-top:20px;display:block;
     }
     @@media (min-width:768px){
         .about-bleed-img{
             position:absolute;left:0;top:0;bottom:0;margin-top:0;
-            height:100%;width:auto;max-width:480px;
+            height:100%;width:auto;max-width:min(480px, calc(50% - 20px));
             object-fit:cover;object-position:left top;
         }
     }
@@ -274,9 +274,8 @@
 @section('content')
     @php($s = $s ?? [])
     @php($members = $members ?? [])
-    {{-- CMS values are trimmed before the emptiness check so a whitespace-only value (e.g. a single space)
-         falls back to the default too, not just a truly empty string. --}}
-    @php($v = fn($k, $d = '') => trim((string) ($s[$k] ?? '')) !== '' ? $s[$k] : $d)
+    {{-- مقدار فقط-فاصله عمداً «پر» حساب می‌شود — راه مدیر سایت برای مخفی‌کردن متن پیش‌فرض بدون کد --}}
+    @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
 
     {{-- ============ اسلایدر هیرو ============ --}}
     {{-- فقط اسلاید اول h1 دارد (تنها H1 قابل‌مشاهده صفحه) — بقیه h2 هستند تا چند H1 در DOM نداشته باشیم --}}
