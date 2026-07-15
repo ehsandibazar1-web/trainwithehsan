@@ -116,7 +116,20 @@ The site's content (self-defense/BJJ instruction, articles) is exactly the kind 
 - Do not gate any article content behind interaction (accordions that hide body text from the DOM, "read more" that lazy-loads via JS after scroll) — keep full article body present in the initial HTML response, since that's what both search and AI crawlers read.
 - A `robots.txt` exists in `public/` — verify it does not block `/blog/*` or asset paths needed to render article images before assuming AI/search crawlers can fully read the site.
 
-## 10. Core Web Vitals Rules
+## 10. Analytics & Tracking
+
+**Current state: no analytics or tracking integration exists anywhere in this codebase.** This was verified by searching the entire `resources/` tree and all Blade views for Google Analytics (`gtag`, `googletagmanager`), Microsoft Clarity, Meta/Facebook Pixel (`fbq`), Hotjar, and any generic "analytics" reference — there are zero matches outside of vendored Filament admin-panel JS (chart widgets, Livewire's `echo.js`), which are unrelated library internals, not tracking scripts. Concretely:
+- **Google Analytics 4**: not implemented.
+- **Microsoft Clarity**: not implemented.
+- **Meta Pixel**: not implemented.
+- No other analytics/tracking service (Hotjar, Plausible, Fathom, etc.) is present either.
+
+Rules going forward:
+- If asked to add an analytics integration, document it here (which service, where the snippet lives — prefer the `@yield`-based head section in `master.blade.php`/`master-tr.blade.php` so it's consistent across locales — and whether it loads on every page or is conditional) in the same change that adds it.
+- **Never remove or modify existing tracking without explicit approval** — once an integration is added, treat its snippet/config as protected in the same way as the two "must never be changed" categories elsewhere in this file; don't touch it as a drive-by cleanup.
+- Since this is a Turkey/Istanbul-facing business site, any tracking added later should be added with consent/privacy regulations (KVKK, and GDPR for EU visitors) in mind — this is a placeholder note for whoever implements it, not a currently-solved concern.
+
+## 11. Core Web Vitals Rules
 
 - The public site has **no client-side JS framework** and minimal `app.js` — this is a genuine LCP/INP advantage; do not regress it by adding a heavy JS dependency for a purely visual effect.
 - Fonts: `master.blade.php` loads Google Fonts "Poppins" via a render-blocking `<link>` (with `preconnect` hints already in place) — this is a current LCP/CLS risk (external font request blocks text paint, and swap can cause layout shift). Do not make this worse by adding more external font weights than the four already loaded (400/500/600/700/800 currently — trim if a redesign doesn't need all of them); consider self-hosting the font file as a future improvement (see Future Development Guidelines) rather than adding another Google Fonts request.
@@ -124,7 +137,15 @@ The site's content (self-defense/BJJ instruction, articles) is exactly the kind 
 - Images (hero, about-section, footer background, article featured images) are referenced directly via `<img>`/CSS `background-image` with real files under `public/` — there is currently no responsive `srcset`, no explicit `width`/`height` attributes enforced as a rule, and no lazy-loading attribute convention. Any new image markup should set explicit `width`/`height` (or `aspect-ratio` in CSS) to prevent CLS, and use `loading="lazy"` for below-the-fold images — the hero/first-viewport images must NOT be lazy-loaded (that would hurt LCP).
 - The hand-rolled CSS in `master.blade.php` is inlined in a single `<style>` block per page load rather than a separate cached CSS file — acceptable at current site size, but if the CSS block grows much larger, moving it to a Vite-built, cacheable stylesheet becomes worth revisiting (flag it, don't do it preemptively).
 
-## 11. Coding Standards
+## 12. Accessibility (a11y) Rules
+
+- **Preserve keyboard navigation.** All interactive elements (nav links, carousel controls, form inputs, footer links) must remain reachable and operable via keyboard; do not add click-only interactions (e.g. hover-only dropdowns, div-based buttons with no keyboard handler) when redesigning a section.
+- **Keep focus-visible styles.** `master.blade.php` already defines `a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}` — preserve this (or an equivalent visible focus indicator) on any new interactive element; never set `outline:none` without providing a replacement focus style.
+- **Respect `prefers-reduced-motion`.** `master.blade.php` already includes an `@media (prefers-reduced-motion: reduce)` block that disables `scroll-behavior: smooth` and turns off animations/transitions — any new animation, carousel transition, or scroll effect must be added inside (or otherwise respect) this same media query, not bypass it.
+- **Maintain semantic HTML and ARIA where appropriate.** Continue using real headings (`h1`/`h2`/`h3`), real lists, and real `<button>`/`<a>` elements rather than generic `<div>`s with click handlers; add ARIA attributes (`aria-label`, `aria-expanded`, etc.) only where the semantic HTML element itself can't convey the state (e.g. a mobile menu toggle).
+- **Never reduce accessibility while making visual changes.** Pixel-matching `ehsandibazar.com` (see Brand Identity) must not come at the cost of keyboard access, focus visibility, reduced-motion support, or semantic structure — if the reference site itself lacks these, this project should still keep them rather than copying that regression.
+
+## 13. Coding Standards
 
 - PHP: PSR-12 via Pint's default Laravel preset. Run `./vendor/bin/pint` before every commit that touches `.php` files.
 - No new abstractions (services, repositories, DTOs, form requests) unless a concrete second use case exists — this codebase's controllers are deliberately thin and direct; match that altitude.
@@ -133,7 +154,7 @@ The site's content (self-defense/BJJ instruction, articles) is exactly the kind 
 - Every new public route/controller method must have an explicit EN and TR counterpart added in the same change (see Multilingual Architecture) — a PR/commit that adds only one locale is incomplete by this project's standard.
 - Do not add dependencies (Composer or npm) for something a few lines of first-party code can do — this project has stayed intentionally dependency-light (5 runtime Composer packages, no JS framework). Any new dependency should be justified against that baseline.
 
-## 12. Development Principles
+## 14. Development Principles
 
 - **Never make assumptions.** If the current behavior, data shape, or intent of a piece of code is unclear, read the code (and this file) until it is clear, or ask — do not guess and proceed.
 - **Always inspect the existing implementation before changing code.** Read the relevant controller/model/view/Filament class in full before editing it; this codebase has non-obvious intentional behavior (e.g. the `scopePublished()` scheduler safety net, the schemaless `SiteSetting` store) that is easy to break by pattern-matching from a different codebase's conventions.
@@ -142,7 +163,7 @@ The site's content (self-defense/BJJ instruction, articles) is exactly the kind 
 - **Explain architectural trade-offs before implementing them.** When a change has more than one reasonable approach (e.g. where to cache, whether to add a dependency, how to structure a new bilingual feature), lay out the options and trade-offs for the user before writing code, rather than silently picking one.
 - **Preserve backward compatibility whenever possible.** Don't change route URLs, database column meanings, Filament field keys/`SiteSetting` key names, or public method signatures in ways that would silently break existing content, bookmarked URLs, or in-progress admin edits, unless the change is explicitly about that.
 
-## 13. Security Rules
+## 15. Security Rules
 
 **Known unresolved issue — treat as top priority if you have any bandwidth to spend on non-feature work:**
 
@@ -160,7 +181,7 @@ Other standing rules:
 - `BCRYPT_ROUNDS=12` is the configured hashing cost for the admin `User` password — do not lower it.
 - Filament `/admin` is the only authenticated surface in the app; there is no public user registration, no public account system, and none should be added without a specific product reason — this is a single-admin CMS, not a multi-tenant app.
 
-## 14. Git Workflow **(Convention to adopt)**
+## 16. Git Workflow **(Convention to adopt)**
 
 There is no formally documented branching convention in this repo yet (history so far is a linear sequence of commits on `main`, plus review/session branches like `claude/project-review-nwy3kt`). Adopt the following going forward:
 - `main` is always deployable — do not leave it in a broken state.
@@ -168,25 +189,33 @@ There is no formally documented branching convention in this repo yet (history s
 - Commit messages should describe the observable change and, where relevant, why (matching the existing history's style — see recent commits like "About image: bottom-left anchor on desktop, flush to section bottom on mobile (no gap below)": specific, states before/after behavior).
 - Run `./vendor/bin/pint` and `php artisan test` before opening a PR/merging (see Testing Strategy — this will be nearly meaningless until real tests exist, but keep the habit ready for when they do).
 
-## 15. Staging Workflow **(Convention to adopt)**
+## 17. Staging Workflow **(Convention to adopt)**
 
 No staging environment currently exists in any config found in this repo (no `.env.staging`, no staging-specific deploy config, no second Filament panel/environment guard). Recommended baseline once a staging environment is provisioned:
 - A staging deploy should use its own `.env` with a separate SQLite file (or separate DB) and its own `APP_URL`, so sitemap/canonical/OG URLs generated via `url()`/`url()->current()` are correct for that environment automatically (the codebase already builds all URLs from `APP_URL`/request context, not hardcoded domains — preserve that; never hardcode `trainwithehsan.com` into PHP or Blade).
 - `APP_DEBUG=true` is acceptable on staging only, never on the environment the public/search engines can reach.
 - Verify the `articles:publish-due` scheduler cron is wired on staging too if content scheduling needs to be tested end-to-end there.
 
-## 16. Deployment Workflow **(Convention to adopt)**
+## 18. Deployment Workflow **(Convention to adopt)**
 
 No CI/CD pipeline or deploy script exists in this repo today (no `.github/workflows`, no Forge/Envoyer/Vapor config, no `Procfile`/`Dockerfile`). `composer.json`'s `scripts.setup` (`composer install` → copy `.env` → `key:generate` → `migrate --force` → `npm install` → `npm run build`) is the closest thing to a documented setup procedure and should be treated as the canonical "first deploy" sequence. For every deploy after the first:
 1. Pull the new code.
-2. `composer install --no-dev --optimize-autoloader` (production).
-3. `npm run build` (rebuild Vite assets — Blade references built assets via the Vite directive, so stale assets will 404/serve old CSS/JS if this is skipped).
-4. `php artisan migrate --force` **run manually via the deploy process/SSH — never via a public route** (see Security Rules; this replaces the two routes that must eventually be removed).
-5. `php artisan config:cache && php artisan route:cache && php artisan view:cache` for production performance.
-6. Confirm the scheduler cron (`* * * * * php artisan schedule:run`) is present on the server so `articles:publish-due` actually fires every 5 minutes — this is invisible if missing (articles just silently never auto-publish).
+2. **Take a fresh backup of `database/database.sqlite` first** — see SQLite Backup Strategy below; never run a migration on prod without a same-day backup in hand.
+3. `composer install --no-dev --optimize-autoloader` (production).
+4. `npm run build` (rebuild Vite assets — Blade references built assets via the Vite directive, so stale assets will 404/serve old CSS/JS if this is skipped).
+5. `php artisan migrate --force` **run manually via the deploy process/SSH — never via a public route** (see Security Rules; this replaces the two routes that must eventually be removed).
+6. `php artisan config:cache && php artisan route:cache && php artisan view:cache` for production performance.
+7. Confirm the scheduler cron (`* * * * * php artisan schedule:run`) is present on the server so `articles:publish-due` actually fires every 5 minutes — this is invisible if missing (articles just silently never auto-publish).
 Introducing a real CI/CD pipeline (even a minimal GitHub Actions workflow running Pint + `php artisan test` on push) is a recommended near-term improvement — see Future Development Guidelines.
 
-## 17. Article Publishing Workflow
+## 19. SQLite Backup Strategy
+
+The production database is a **single SQLite file** (`database/database.sqlite`), not a server-based DB — this changes what "backup" means here and makes it easy to overlook:
+- **Where backups should come from**: file-level copies of `database/database.sqlite`, taken at the filesystem/hosting level (a cron job that copies the file to offsite/object storage — e.g. S3, a separate backup host, or the hosting provider's snapshot feature), not a `mysqldump`-style logical export. There is no backup script, scheduled command, or offsite-copy mechanism in this repository today — this must be configured at the server/hosting layer, outside this codebase, and is not yet done as far as this repo's contents show.
+- **Regular backups are required, not optional, before deployments or migrations.** SQLite has no built-in point-in-time recovery or replication — if a migration corrupts data or a deploy goes wrong, the *only* way back is a prior copy of the file. Treat "take a backup" as a mandatory step before any `php artisan migrate` on production (see Deployment Workflow step 2), and additionally on a regular schedule (e.g. daily) independent of deploys, so an incident between deploys is still recoverable.
+- **This is an operational requirement, not a nice-to-have.** Whoever owns the production server must have a working, tested restore path for this file before this project should be considered production-safe. If you're asked to help with deployment/infrastructure work, confirm this exists before assuming it does.
+
+## 20. Article Publishing Workflow
 
 This is real, implemented behavior — document it precisely:
 - An article's `status` is one of `draft`, `scheduled`, `published` (`ArticleForm`).
@@ -196,7 +225,7 @@ This is real, implemented behavior — document it precisely:
 - When editing this pipeline, preserve both halves (the scope's time-based fallback, and the command's active flip + cache clear) — removing either changes observable behavior (removing the scope fallback means a stalled scheduler hides due content indefinitely; removing the command's cache clear means published content is delayed until the next natural cache expiry).
 - Every article change is recorded via `spatie/laravel-activitylog` (title/locale/status/published_at/category, dirty-only) and visible in the Filament `ActivityLogPage` — don't bypass Eloquent (e.g. raw DB updates) for article status changes, or this audit trail silently breaks.
 
-## 18. Image Optimization Rules
+## 21. Image Optimization Rules
 
 No image optimization pipeline exists today — this is a gap, not a hidden feature. Currently:
 - Featured images (`Article::image_path`) and inline body images are uploaded as-is via Filament `FileUpload` to the `public` disk with no resizing, no format conversion, no compression step (no `intervention/image`, no `spatie/laravel-medialibrary` conversions, nothing in `composer.json` performs this).
@@ -208,14 +237,14 @@ Rules for any new image-handling work:
 - Any new image field in Filament should follow `ArticleForm`'s existing `FileUpload::make(...)->image()->disk('public')->directory(...)` pattern for consistency, even before optimization is added — don't invent a second upload mechanism.
 - Prefer serving modern formats (WebP/AVIF) with a JPEG/PNG fallback once an optimization step exists; until then, keep uploaded images to sane pre-optimized sizes manually (this is a manual/process discipline today, not enforced by code).
 
-## 19. Performance Rules
+## 22. Performance Rules
 
 - Database: SQLite with session/cache/queue all on the same database connection (`database` driver for all three). This is fine at current traffic; if concurrent write load grows (many simultaneous sessions + queued jobs + cache writes), moving cache/session to Redis and/or the DB to MySQL/Postgres is the first lever to pull — do not attempt in-place SQLite tuning workarounds instead.
 - No caching layer sits in front of `SiteSetting` reads or the homepage/blog article queries today — each page load queries fresh. At current content volume this is not a measured problem; if you add caching here, invalidate it from the same places that already clear cache today (`PublishDueArticles`, the Filament save hooks) rather than introducing a second, parallel cache-invalidation path.
 - The two maintenance routes (`system-cache-flush-*`, `system-migrate-*`) are also, incidentally, a performance/availability risk since anyone can trigger a full cache clear at will — another reason they must be fixed (see Security Rules).
 - Keep `composer install --no-dev --optimize-autoloader` and `artisan config:cache`/`route:cache`/`view:cache` as standard for any production deploy (see Deployment Workflow) — these are the main have-you-done-this-yet performance checks for a Laravel app of this shape.
 
-## 20. Testing Strategy
+## 23. Testing Strategy
 
 **Current state: there is effectively no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold, not written for this project. None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the 6 public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or any Filament resource/page.
 
@@ -228,7 +257,7 @@ Priority order for adding real tests (highest-value first):
 
 Run tests with `php artisan test` (or `composer test`, which clears config cache first). Use `laravel/pint` for style, not a separate linter. Do not adopt Pest unless the user asks — the project is on plain PHPUnit today (`phpunit/phpunit` ^12.5) with no Pest dependency installed.
 
-## 21. Important Project Decisions
+## 24. Important Project Decisions
 
 These are decisions already made — do not silently reverse them:
 - **Pixel-parity with `ehsandibazar.com` is a deliberate, ongoing goal**, not an accident of a rushed build — a large fraction of commit history is dedicated to matching exact CSS values, image positioning, and layout from that reference site (see Brand Identity). When touching public-site visuals, check whether the current behavior was arrived at through this matching process before "fixing" it — it may be intentionally unusual to match the reference.
@@ -236,9 +265,10 @@ These are decisions already made — do not silently reverse them:
 - **Bilingual content is two separate database rows**, not column-per-locale — see Multilingual Architecture. This has been the model since the `articles` table migration and should not be changed without a full data migration plan.
 - **`SiteSetting` is a deliberately schemaless key/value CMS**, not a design placeholder awaiting "real" tables — this lets Ehsan edit homepage content from Filament without requiring a migration for every new content block.
 - **No JS framework on the public site** — this is a stated architectural simplicity/performance choice (see Core Web Vitals), not a missing feature.
+- **No analytics/tracking is installed today** — this is a verified current fact, not an oversight to silently "fix"; see Analytics & Tracking before adding any.
 - **The two temporary maintenance routes are a known, unresolved defect** — they exist because of a real deploy pain point (running migrations on a host without SSH-based deploy access, per the git history's activity_log migration saga), not because anyone considers them acceptable long-term. Don't remove them without offering a replacement deploy mechanism (see Deployment Workflow) — but do flag/fix them as the top priority the next time you have a maintenance window.
 
-## 22. Things That Must Never Be Changed
+## 25. Things That Must Never Be Changed
 
 - Do not change the `articles` table's two-row-per-translation model (`locale` + `translation_of`) without an explicit request and a data migration plan — every controller, scope, and Filament form assumes this shape.
 - Do not remove the `scopePublished()` time-based fallback for `scheduled` articles — it is a deliberate resilience mechanism against scheduler downtime, not redundant logic.
@@ -248,19 +278,31 @@ These are decisions already made — do not silently reverse them:
 - Do not re-enable hreflang tags as an incidental change (see Important Project Decisions).
 - Do not introduce a JS framework, a component library, or a CSS framework migration (e.g. swapping the hand-rolled CSS for a full Tailwind rewrite) as a side effect of an unrelated task — these are significant architectural changes that need to be explicitly requested (see Brand Identity: never redesign UI without explicit approval).
 - Do not make the two maintenance routes (`/system-cache-flush-*`, `/system-migrate-*`) "more convenient" (e.g. by adding more Artisan commands to them) — they should be removed/secured, never expanded.
+- Do not remove or modify any analytics/tracking snippet without explicit approval, once one exists (see Analytics & Tracking).
+- Do not reduce keyboard access, focus visibility, reduced-motion support, or semantic HTML/ARIA while making a visual change (see Accessibility Rules).
 
-## 23. Future Development Guidelines
+## 26. Future Development Guidelines
 
 Ordered roughly by impact:
 1. **Fix the two unauthenticated maintenance routes** — highest priority, real production security exposure (see Security Rules).
-2. **Stand up minimal CI** — a GitHub Actions workflow running `pint --test` and `php artisan test` on every push/PR costs little and catches regressions the current zero-test setup cannot.
-3. **Write the priority-1-through-5 tests listed in Testing Strategy**, starting with `Article::scopePublished()`.
-4. **Add JSON-LD structured data** to blog posts (Article schema) and home/about (LocalBusiness/Person) — highest-leverage remaining SEO/AI-search item, and the `@yield('json-ld')` slot already exists waiting for it.
-5. **Add per-page `og:image`** using the article's featured image.
-6. **Consider a real image optimization step** (Intervention Image or similar) in the Filament `FileUpload` pipeline before image volume grows.
-7. **Revisit the EN/TR duplication** once the Turkish site is considered complete and stable — evaluate whether a shared-view + locale-parameter approach is worth the refactor cost at that point (not before; premature to do while TR content/design is still catching up to EN, per the hreflang decision above). This is exactly the kind of large refactor the Development Principles above say to avoid without measurable benefit and explicit sign-off.
-8. **Update `README.md`** to describe this project specifically (currently the unmodified Laravel skeleton README) and remove the unused `resources/views/welcome.blade.php`.
-9. **Resolve the font inconsistency** (Vite prefetches "Instrument Sans" via Bunny Fonts; the site actually renders "Poppins" from Google Fonts) — either wire up the configured font or remove the unused prefetch, and consider self-hosting the chosen font for Core Web Vitals.
-10. Set `APP_NAME` in `.env.example` (and real env) to something other than the default `Laravel`.
+2. **Confirm/establish a real SQLite backup mechanism on the production server** — see SQLite Backup Strategy; this is currently unverified/likely missing and is a data-loss risk.
+3. **Stand up minimal CI** — a GitHub Actions workflow running `pint --test` and `php artisan test` on every push/PR costs little and catches regressions the current zero-test setup cannot.
+4. **Write the priority-1-through-5 tests listed in Testing Strategy**, starting with `Article::scopePublished()`.
+5. **Add JSON-LD structured data** to blog posts (Article schema) and home/about (LocalBusiness/Person) — highest-leverage remaining SEO/AI-search item, and the `@yield('json-ld')` slot already exists waiting for it.
+6. **Add per-page `og:image`** using the article's featured image.
+7. **Consider a real image optimization step** (Intervention Image or similar) in the Filament `FileUpload` pipeline before image volume grows.
+8. **Revisit the EN/TR duplication** once the Turkish site is considered complete and stable — evaluate whether a shared-view + locale-parameter approach is worth the refactor cost at that point (not before; premature to do while TR content/design is still catching up to EN, per the hreflang decision above). This is exactly the kind of large refactor the Development Principles above say to avoid without measurable benefit and explicit sign-off.
+9. **Update `README.md`** to describe this project specifically (currently the unmodified Laravel skeleton README) and remove the unused `resources/views/welcome.blade.php`.
+10. **Resolve the font inconsistency** (Vite prefetches "Instrument Sans" via Bunny Fonts; the site actually renders "Poppins" from Google Fonts) — either wire up the configured font or remove the unused prefetch, and consider self-hosting the chosen font for Core Web Vitals.
+11. Set `APP_NAME` in `.env.example` (and real env) to something other than the default `Laravel`.
+12. **Decide on and implement an analytics stack** (GA4, Clarity, Meta Pixel, or otherwise) once the business is ready to track visitor behavior — currently deliberately undocumented because nothing is installed (see Analytics & Tracking).
 
-When in doubt about whether a change fits this project's grain, re-read sections 2, 12, 21, and 22 above before proceeding.
+When in doubt about whether a change fits this project's grain, re-read sections 2, 14, 24, and 25 above before proceeding.
+
+## 27. Keeping CLAUDE.md Updated
+
+This file is the **single source of truth** for future Claude Code sessions working on this repository — it exists so a new session can be productive immediately without re-exploring the entire codebase from scratch.
+
+- Whenever a change affects architecture, conventions, deployment, SEO, the CMS/Filament setup, workflows (git/staging/deployment/publishing), or any of the "Important Project Decisions"/"Things That Must Never Be Changed" — **update the relevant section of this file in the same commit as the code change**, whenever appropriate to do so.
+- If this file and the actual codebase ever disagree, that is a bug in this file — fix the documentation, don't let it quietly drift out of date.
+- Prefer editing the existing section that already covers a topic over bolting on a new one; keep the numbering contiguous when sections are added or removed, and update any cross-references (e.g. "see Section N") that shift as a result.
