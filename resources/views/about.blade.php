@@ -7,9 +7,11 @@
 @php($timeline = $timeline ?? [])
 @php($v = fn($k, $d = '') => (($about[$k] ?? null) !== null && ($about[$k] ?? '') !== '') ? $about[$k] : $d)
 
-@section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai, Self-Defense Instructor & Founder of Martial Intelligence'))
-@section('meta_description', $v('seo_description', 'Ehsan Dibazar — Muay Thai and self-defense instructor with 12 years of teaching experience, holder of an international Muay Thai certificate from Bangkok, and founder of the Martial Intelligence concept.'))
+@section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
+@section('meta_description', $v('seo_description', 'Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with 12+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology.'))
 @section('canonical', url('/about'))
+@section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
+@section('og_description', $v('seo_description', 'Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with 12+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology.'))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 
 @section('json-ld')
@@ -21,9 +23,9 @@
   "name": "Ehsan Dibazar",
   "url": "https://trainwithehsan.com/about",
   "jobTitle": "Martial Arts & Self-Defense Instructor",
-  "description": "Ehsan Dibazar, martial arts and self-defense instructor, MSc in Sport Science, and developer of the Martial Intelligence concept, with 12 years of teaching experience.",
-  "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University, Istanbul"},
-  "knowsAbout": ["Muay Thai", "Self-Defense", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
+  "description": "Ehsan Dibazar, martial arts and self-defense instructor with an MSc in Sport Science and 12 years of teaching experience.",
+  "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
+  "knowsAbout": ["Muay Thai", "Self-Defense", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science"],
   "sameAs": [
     "https://www.instagram.com/ehsandibazarcoaching/",
     "https://telegram.me/ehsandibazar",
