@@ -44,6 +44,13 @@
 
     @yield('json-ld')
 
+    {{-- تنظیمات فوتر از CMS (یک کوئری) — پیش از <style> چون تصویر پس‌زمینه داخل CSS استفاده می‌شود.
+         مقدار فقط-فاصله عمداً «پر» حساب می‌شود (همان قرارداد مخفی‌کردن متنِ پیش‌فرض) --}}
+    @php($footerRaw = \App\Models\SiteSetting::where('key', 'like', 'footer.en.%')->pluck('value', 'key'))
+    @php($fv = fn($k, $d = '') => (($footerRaw["footer.en.$k"] ?? null) !== null && ($footerRaw["footer.en.$k"] ?? '') !== '') ? $footerRaw["footer.en.$k"] : $d)
+    @php($footerColumns = json_decode($footerRaw['footer.en.columns'] ?? '[]', true) ?: [])
+    @php($footerSocials = json_decode($footerRaw['footer.en.socials'] ?? '[]', true) ?: [])
+
     <style>
         /* ===== مقادیر عیناً از site.min.css سایت فارسی ===== */
         :root{
@@ -167,7 +174,7 @@
 
         /* ===== Footer — عیناً مطابق site.min.css سایت اصلی: .footer{background:url(bg-footer.png) #0a0809} ===== */
         .site-footer{
-            background:url('{{ asset('storage/homepage/bg-footer.jpg') }}') var(--footer);
+            background:url('{{ asset('storage/' . $fv('bg_image', 'homepage/bg-footer.jpg')) }}') var(--footer);
             padding:40px 0 24px;color:#fff;
         }
         .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
@@ -189,6 +196,14 @@
             text-align:center;
         }
         .footer-note .color{color:var(--gold);font-weight:600}
+        /* بلوک‌های اختیاری فوتر (توضیح/شبکه‌های اجتماعی/اطلاعات تماس) — تا وقتی در پنل پر نشوند اصلاً رندر نمی‌شوند */
+        .footer-desc{color:#ebebeb;font-size:12px;line-height:2;max-width:480px;margin:12px auto 0;text-align:center}
+        .footer-socials{margin-top:12px;text-align:center}
+        .footer-socials li{display:inline-block;margin:0 8px}
+        .footer-contact{margin-top:10px;font-size:12px;color:#ebebeb;line-height:2;text-align:center}
+        .footer-contact a{color:#ebebeb}
+        .footer-contact a:hover{color:var(--gold);transition:.5s linear}
+        .footer-contact span{margin:0 8px}
     </style>
     @yield('page-css')
 </head>
@@ -240,52 +255,73 @@
 <div class="newsletter">
     <div class="wrap newsletter-row">
         <div>
-            <h3>Get the latest articles</h3>
-            <p>Subscribe to receive new articles and training tips by email.</p>
+            <h3>{{ $fv('newsletter_title', 'Get the latest articles') }}</h3>
+            <p>{{ $fv('newsletter_description', 'Subscribe to receive new articles and training tips by email.') }}</p>
         </div>
         <form class="newsletter-form" action="{{ url('/contact') }}" method="get">
-            <input type="email" name="email" placeholder="Enter your email" required>
-            <button type="submit">Subscribe</button>
+            <input type="email" name="email" placeholder="{{ $fv('newsletter_placeholder', 'Enter your email') }}" required>
+            <button type="submit">{{ $fv('newsletter_button', 'Subscribe') }}</button>
         </form>
     </div>
 </div>
 
 <footer class="site-footer">
     <div class="wrap">
+        @php($footerColumnsList = !empty($footerColumns) ? $footerColumns : [
+            ['title' => 'Privacy Policy', 'links' => [
+                ['label' => 'Terms and Conditions', 'url' => '/terms-and-conditions'],
+                ['label' => 'Privacy Policy', 'url' => '/privacy-policy'],
+            ]],
+            ['title' => 'Courses', 'links' => [
+                ['label' => 'Courses', 'url' => '/courses'],
+                ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence'],
+            ]],
+            ['title' => 'Blog', 'links' => [
+                ['label' => 'Blog', 'url' => '/blog'],
+            ]],
+            ['title' => 'Contact Us', 'links' => [
+                ['label' => 'Contact Us', 'url' => '/contact'],
+                ['label' => 'About Us', 'url' => '/about'],
+            ]],
+        ])
         <div class="footer-grid">
+            @foreach($footerColumnsList as $col)
             <div>
-                <h4>Privacy Policy</h4>
+                <h4>{{ $col['title'] ?? '' }}</h4>
                 <ul>
-                    <li><a href="{{ url('/terms-and-conditions') }}">Terms and Conditions</a></li>
-                    <li><a href="{{ url('/privacy-policy') }}">Privacy Policy</a></li>
+                    @foreach($col['links'] ?? [] as $lnk)
+                    <li><a href="{{ str_starts_with($lnk['url'] ?? '', 'http') ? $lnk['url'] : url($lnk['url'] ?? '/') }}">{{ $lnk['label'] ?? '' }}</a></li>
+                    @endforeach
                 </ul>
             </div>
-            <div>
-                <h4>Courses</h4>
-                <ul>
-                    <li><a href="{{ url('/courses') }}">Courses</a></li>
-                    <li><a href="{{ url('/martial-intelligence') }}">Martial Intelligence</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>Blog</h4>
-                <ul>
-                    <li><a href="{{ url('/blog') }}">Blog</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>Contact Us</h4>
-                <ul>
-                    <li><a href="{{ url('/contact') }}">Contact Us</a></li>
-                    <li><a href="{{ url('/about') }}">About Us</a></li>
-                </ul>
-            </div>
+            @endforeach
         </div>
         <div class="footer-brand">
-            <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Defensive Tactics" class="footer-logo-img">
+            <img src="{{ asset('storage/' . $fv('logo', 'homepage/logo.header.png')) }}" alt="Ehsan Dibazar - Defensive Tactics" class="footer-logo-img">
+            @if($fv('description'))
+            <p class="footer-desc">{{ $fv('description') }}</p>
+            @endif
+            @if(!empty($footerSocials))
+            <ul class="footer-socials">
+                @foreach($footerSocials as $soc)
+                <li><a href="{{ $soc['url'] ?? '#' }}" target="_blank" rel="noopener">{{ $soc['label'] ?? '' }}</a></li>
+                @endforeach
+            </ul>
+            @endif
+            @if($fv('contact_email') || $fv('contact_phone') || $fv('contact_address'))
+            <div class="footer-contact">
+                @if($fv('contact_email'))<span><a href="mailto:{{ $fv('contact_email') }}">{{ $fv('contact_email') }}</a></span>@endif
+                @if($fv('contact_phone'))<span><a href="tel:{{ preg_replace('/\s+/', '', $fv('contact_phone')) }}">{{ $fv('contact_phone') }}</a></span>@endif
+                @if($fv('contact_address'))<span>{{ $fv('contact_address') }}</span>@endif
+            </div>
+            @endif
         </div>
         <div class="footer-note">
+            @if($fv('copyright'))
+            <span>© {{ date('Y') }} {{ $fv('copyright') }}</span>
+            @else
             <span>© {{ date('Y') }} <span class="color">Ehsan Dibazar</span>. All rights reserved.</span>
+            @endif
         </div>
     </div>
 </footer>

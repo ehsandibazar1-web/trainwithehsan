@@ -43,6 +43,13 @@
 
     @yield('json-ld')
 
+    {{-- تنظیمات فوتر از CMS (یک کوئری) — پیش از <style> چون تصویر پس‌زمینه داخل CSS استفاده می‌شود.
+         مقدار فقط-فاصله عمداً «پر» حساب می‌شود (همان قرارداد مخفی‌کردن متنِ پیش‌فرض) --}}
+    @php($footerRaw = \App\Models\SiteSetting::where('key', 'like', 'footer.tr.%')->pluck('value', 'key'))
+    @php($fv = fn($k, $d = '') => (($footerRaw["footer.tr.$k"] ?? null) !== null && ($footerRaw["footer.tr.$k"] ?? '') !== '') ? $footerRaw["footer.tr.$k"] : $d)
+    @php($footerColumns = json_decode($footerRaw['footer.tr.columns'] ?? '[]', true) ?: [])
+    @php($footerSocials = json_decode($footerRaw['footer.tr.socials'] ?? '[]', true) ?: [])
+
     <style>
         /* ===== مقادیر عیناً از site.min.css سایت فارسی ===== */
         :root{
@@ -166,7 +173,7 @@
 
         /* ===== Footer — عیناً مطابق site.min.css سایت اصلی: .footer{background:url(bg-footer.png) #0a0809} ===== */
         .site-footer{
-            background:url('{{ asset('storage/homepage/bg-footer.jpg') }}') var(--footer);
+            background:url('{{ asset('storage/' . $fv('bg_image', 'homepage/bg-footer.jpg')) }}') var(--footer);
             padding:40px 0 24px;color:#fff;
         }
         .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
@@ -188,6 +195,14 @@
             text-align:center;
         }
         .footer-note .color{color:var(--gold);font-weight:600}
+        /* بلوک‌های اختیاری فوتر (توضیح/شبکه‌های اجتماعی/اطلاعات تماس) — تا وقتی در پنل پر نشوند اصلاً رندر نمی‌شوند */
+        .footer-desc{color:#ebebeb;font-size:12px;line-height:2;max-width:480px;margin:12px auto 0;text-align:center}
+        .footer-socials{margin-top:12px;text-align:center}
+        .footer-socials li{display:inline-block;margin:0 8px}
+        .footer-contact{margin-top:10px;font-size:12px;color:#ebebeb;line-height:2;text-align:center}
+        .footer-contact a{color:#ebebeb}
+        .footer-contact a:hover{color:var(--gold);transition:.5s linear}
+        .footer-contact span{margin:0 8px}
     </style>
     @yield('page-css')
 </head>
@@ -239,52 +254,73 @@
 <div class="newsletter">
     <div class="wrap newsletter-row">
         <div>
-            <h3>Son makaleleri alın</h3>
-            <p>Yeni makaleleri ve antrenman ipuçlarını e-posta ile almak için abone olun.</p>
+            <h3>{{ $fv('newsletter_title', 'Son makaleleri alın') }}</h3>
+            <p>{{ $fv('newsletter_description', 'Yeni makaleleri ve antrenman ipuçlarını e-posta ile almak için abone olun.') }}</p>
         </div>
         <form class="newsletter-form" action="{{ url('/tr/contact') }}" method="get">
-            <input type="email" name="email" placeholder="E-posta adresiniz" required>
-            <button type="submit">Abone Ol</button>
+            <input type="email" name="email" placeholder="{{ $fv('newsletter_placeholder', 'E-posta adresiniz') }}" required>
+            <button type="submit">{{ $fv('newsletter_button', 'Abone Ol') }}</button>
         </form>
     </div>
 </div>
 
 <footer class="site-footer">
     <div class="wrap">
+        @php($footerColumnsList = !empty($footerColumns) ? $footerColumns : [
+            ['title' => 'Gizlilik Politikası', 'links' => [
+                ['label' => 'Şartlar ve Koşullar', 'url' => '/tr/terms-and-conditions'],
+                ['label' => 'Gizlilik Politikası', 'url' => '/tr/privacy-policy'],
+            ]],
+            ['title' => 'Kurslar', 'links' => [
+                ['label' => 'Kurslar', 'url' => '/tr/courses'],
+                ['label' => 'Martial Intelligence', 'url' => '/tr/martial-intelligence'],
+            ]],
+            ['title' => 'Blog', 'links' => [
+                ['label' => 'Blog', 'url' => '/tr/blog'],
+            ]],
+            ['title' => 'İletişim', 'links' => [
+                ['label' => 'İletişim', 'url' => '/tr/contact'],
+                ['label' => 'Hakkımda', 'url' => '/tr/about'],
+            ]],
+        ])
         <div class="footer-grid">
+            @foreach($footerColumnsList as $col)
             <div>
-                <h4>Gizlilik Politikası</h4>
+                <h4>{{ $col['title'] ?? '' }}</h4>
                 <ul>
-                    <li><a href="{{ url('/tr/terms-and-conditions') }}">Şartlar ve Koşullar</a></li>
-                    <li><a href="{{ url('/tr/privacy-policy') }}">Gizlilik Politikası</a></li>
+                    @foreach($col['links'] ?? [] as $lnk)
+                    <li><a href="{{ str_starts_with($lnk['url'] ?? '', 'http') ? $lnk['url'] : url($lnk['url'] ?? '/') }}">{{ $lnk['label'] ?? '' }}</a></li>
+                    @endforeach
                 </ul>
             </div>
-            <div>
-                <h4>Kurslar</h4>
-                <ul>
-                    <li><a href="{{ url('/tr/courses') }}">Kurslar</a></li>
-                    <li><a href="{{ url('/tr/martial-intelligence') }}">Martial Intelligence</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>Blog</h4>
-                <ul>
-                    <li><a href="{{ url('/tr/blog') }}">Blog</a></li>
-                </ul>
-            </div>
-            <div>
-                <h4>İletişim</h4>
-                <ul>
-                    <li><a href="{{ url('/tr/contact') }}">İletişim</a></li>
-                    <li><a href="{{ url('/tr/about') }}">Hakkımda</a></li>
-                </ul>
-            </div>
+            @endforeach
         </div>
         <div class="footer-brand">
-            <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Savunma Teknikleri" class="footer-logo-img">
+            <img src="{{ asset('storage/' . $fv('logo', 'homepage/logo.header.png')) }}" alt="Ehsan Dibazar - Savunma Teknikleri" class="footer-logo-img">
+            @if($fv('description'))
+            <p class="footer-desc">{{ $fv('description') }}</p>
+            @endif
+            @if(!empty($footerSocials))
+            <ul class="footer-socials">
+                @foreach($footerSocials as $soc)
+                <li><a href="{{ $soc['url'] ?? '#' }}" target="_blank" rel="noopener">{{ $soc['label'] ?? '' }}</a></li>
+                @endforeach
+            </ul>
+            @endif
+            @if($fv('contact_email') || $fv('contact_phone') || $fv('contact_address'))
+            <div class="footer-contact">
+                @if($fv('contact_email'))<span><a href="mailto:{{ $fv('contact_email') }}">{{ $fv('contact_email') }}</a></span>@endif
+                @if($fv('contact_phone'))<span><a href="tel:{{ preg_replace('/\s+/', '', $fv('contact_phone')) }}">{{ $fv('contact_phone') }}</a></span>@endif
+                @if($fv('contact_address'))<span>{{ $fv('contact_address') }}</span>@endif
+            </div>
+            @endif
         </div>
         <div class="footer-note">
+            @if($fv('copyright'))
+            <span>© {{ date('Y') }} {{ $fv('copyright') }}</span>
+            @else
             <span>© {{ date('Y') }} <span class="color">Ehsan Dibazar</span>. Tüm hakları saklıdır.</span>
+            @endif
         </div>
     </div>
 </footer>
