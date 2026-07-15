@@ -13,6 +13,9 @@
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
 @section('og_description', $v('seo_description', 'Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with 12+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology.'))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
+@section('og_image_width', (string) $v('seo_og_image_width', ''))
+@section('og_image_height', (string) $v('seo_og_image_height', ''))
+@section('og_image_type', $v('seo_og_image_mime', ''))
 
 @section('json-ld')
 <script type="application/ld+json">
@@ -26,10 +29,31 @@
   "description": "Ehsan Dibazar, martial arts and self-defense instructor with an MSc in Sport Science and 12 years of teaching experience.",
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
   "knowsAbout": ["Muay Thai", "Self-Defense", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science"],
+  @if($v('hero_image') && $v('hero_image_width') && $v('hero_image_height'))
+  "image": {
+    "@@type": "ImageObject",
+    "contentUrl": @json(asset('storage/' . $v('hero_image'))),
+    "url": @json(asset('storage/' . $v('hero_image'))),
+    "width": {{ (int) $v('hero_image_width') }},
+    "height": {{ (int) $v('hero_image_height') }},
+    "caption": @json($v('hero_name', 'Ehsan Dibazar')),
+    "creator": {"@@id": "https://trainwithehsan.com/about#person"}
+  },
+  @endif
   "sameAs": [
     "https://www.instagram.com/ehsandibazarcoaching/",
     "https://telegram.me/ehsandibazar",
     "https://youtube.com/channel/UCDT9EOHriR9sHvq0PBdmlog"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@@type": "ListItem", "position": 1, "name": "Home", "item": @json(url('/'))},
+    {"@@type": "ListItem", "position": 2, "name": "About", "item": @json(url('/about'))}
   ]
 }
 </script>

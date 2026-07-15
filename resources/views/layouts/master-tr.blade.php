@@ -22,6 +22,18 @@
     @php($ogImage = trim($__env->yieldContent('og_image')))
     @if($ogImage)
     <meta property="og:image" content="{{ $ogImage }}">
+    @php($ogImageWidth = trim($__env->yieldContent('og_image_width')))
+    @php($ogImageHeight = trim($__env->yieldContent('og_image_height')))
+    @php($ogImageType = trim($__env->yieldContent('og_image_type')))
+    @if($ogImageWidth)
+    <meta property="og:image:width" content="{{ $ogImageWidth }}">
+    @endif
+    @if($ogImageHeight)
+    <meta property="og:image:height" content="{{ $ogImageHeight }}">
+    @endif
+    @if($ogImageType)
+    <meta property="og:image:type" content="{{ $ogImageType }}">
+    @endif
     @endif
     <meta name="theme-color" content="#d9bb75">
 
