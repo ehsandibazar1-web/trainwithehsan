@@ -40,6 +40,7 @@ app/
     Pages/HomepageSettings.php               Homepage content-block editor (per locale)
     Pages/AboutPageSettings.php              About page content-block editor (hero, stats, certificates, gallery, timeline, CTA, SEO — per locale)
     Pages/MenuSettings.php                   Header nav menu editor (per locale)
+    Pages/FooterSettings.php                 Footer editor (newsletter bar, bg/logo, link columns, socials, contact, copyright — per locale)
     Pages/ActivityLogPage.php                Read-only activity log viewer
     Widgets/ArticleStatsOverview.php         Dashboard stats widget
   Http/Controllers/
@@ -64,7 +65,7 @@ resources/
     tr/home.blade.php, tr/about.blade.php, tr/blog.blade.php, tr/blog-post.blade.php, tr/page.blade.php   Turkish duplicates
     layouts/master.blade.php, layouts/master-tr.blade.php                    Shared page shell per locale (head/meta/CSS/header/footer)
     welcome.blade.php                        Default Laravel scaffold view — UNUSED, not routed to. Safe to delete; do not build on it.
-    filament/pages/                           Custom Filament page Blade views (homepage-settings, about-page-settings, menu-settings, editorial-calendar, activity-log)
+    filament/pages/                           Custom Filament page Blade views (homepage-settings, about-page-settings, menu-settings, footer-settings, editorial-calendar, activity-log)
   css/app.css, js/app.js                      Vite entry points (Tailwind + minimal JS)
 routes/
   web.php                                     All public + admin-adjacent routes (see Security Rules — contains two routes that must be fixed)
@@ -89,8 +90,9 @@ Key duplication to be aware of: **every public-facing view and its Turkish count
 ## 6. Filament Conventions
 
 - Filament v4 resources live under `app/Filament/Resources/{Name}/` with `Schemas/{Name}Form.php` for the form definition and `Tables/{Name}sTable.php` for the table definition, plus a `Pages/` subfolder for List/Create/Edit pages — follow `ArticleResource`'s layout exactly for any new resource.
-- Custom (non-CRUD) admin screens are Filament **Pages**, not Resources — `EditorialCalendar`, `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, `ActivityLogPage` are all `Pages` with a paired Blade view under `resources/views/filament/pages/`. Use this pattern for any new admin screen that isn't a straightforward CRUD resource.
-- `HomepageSettings`, `AboutPageSettings`, and `MenuSettings` manually decode/encode JSON and normalize Filament's `FileUpload` return shape (e.g. `array_values(array_filter($value))[0] ?? null`) in `mount()`/`save()`. This is brittle by nature (tied to Filament's current return shape) — if a Filament upgrade changes `FileUpload`'s value shape, check these files first.
+- Custom (non-CRUD) admin screens are Filament **Pages**, not Resources — `EditorialCalendar`, `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, `FooterSettings`, `ActivityLogPage` are all `Pages` with a paired Blade view under `resources/views/filament/pages/`. Use this pattern for any new admin screen that isn't a straightforward CRUD resource.
+- `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, and `FooterSettings` manually decode/encode JSON and normalize Filament's `FileUpload` return shape (e.g. `array_values(array_filter($value))[0] ?? null`) in `mount()`/`save()`. This is brittle by nature (tied to Filament's current return shape) — if a Filament upgrade changes `FileUpload`'s value shape, check these files first.
+- Layout-level CMS data (header menu `menu.{locale}.items`, footer `footer.{locale}.*`) is loaded **inline in the master layouts** via `@php` + `SiteSetting` (the footer block sits before the `<style>` tag because the background image is used inside the CSS) — not via controllers or view composers. Follow that in-layout pattern for any future layout-level content.
 - Repeater items that need manual ordering (e.g. `AboutPageSettings`'s `certificates`/`gallery`/`timeline`) get an explicit numeric `sort_order` field alongside Filament's built-in `->reorderable()` drag handle, and the consuming controller sorts by it (`BlogController::sortBySortOrder()`) before passing data to the view. Reuse this pattern — plain numeric field + a small `usort` in the controller — rather than relying on array order alone, since admins may want to reorder without dragging.
 - Fallback/default content for a CMS-managed page lives in the **Blade view**, not the Filament Page class — `mount()` loads raw `SiteSetting` values (null if unset) exactly like `HomepageSettings`, and the public template supplies the current design's copy as the second argument to a `$v($key, $default)` helper closure (see `home.blade.php`/`about.blade.php`). This means a freshly-added content block renders identically to today until an admin actually edits it in `/admin` — do not pre-fill defaults in the Filament form itself.
 - Every admin-facing label must stay in **plain English understandable by a non-developer business owner** (Ehsan). Do not expose internal field names, JSON structures, or developer jargon in any Filament label/helper text — follow the existing tone in `ArticleForm` (e.g. "Publish date" with helper text "For 'Scheduled': set a future date/time — the article goes live automatically at that moment.").
