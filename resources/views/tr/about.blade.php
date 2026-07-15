@@ -1,8 +1,16 @@
 @extends('layouts.master-tr')
 
-@section('title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni')
-@section('meta_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası sahibi.')
+@php($about = $about ?? [])
+@php($stats = $stats ?? [])
+@php($certificates = $certificates ?? [])
+@php($gallery = $gallery ?? [])
+@php($timeline = $timeline ?? [])
+@php($v = fn($k, $d = '') => (($about[$k] ?? null) !== null && ($about[$k] ?? '') !== '') ? $about[$k] : $d)
+
+@section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
+@section('meta_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası sahibi.'))
 @section('canonical', url('/tr/about'))
+@section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 
 @section('json-ld')
 <script type="application/ld+json">
@@ -37,20 +45,21 @@ body{background:var(--dark)!important}
 
 /* ===== هیرو ===== */
 .about-v5 .hero{min-height:50vh;padding:40px 20px 100px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;position:relative}
-@@media(min-width:992px){.about-v5 .hero{padding-top:120px}}
+@media(min-width:992px){.about-v5 .hero{padding-top:120px}}
 .about-v5 .glow{position:absolute;width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;background:radial-gradient(circle,rgba(217,187,117,.35),transparent 70%);filter:blur(10px);top:8%;left:50%;transform:translateX(-50%);animation:pulse 6s ease-in-out infinite}
-@@keyframes pulse{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.15)}}
+@keyframes pulse{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.15)}}
 .about-v5 .hero-photo-wrap{width:140px;height:140px;perspective:600px;margin-bottom:28px;position:relative;z-index:2}
 .about-v5 .hero-photo{width:100%;height:100%;border-radius:50%;object-fit:cover;border:3px solid var(--gold);transition:transform .15s ease-out;box-shadow:0 20px 50px rgba(0,0,0,.5)}
 .about-v5 .hero h1{font-size:34px;font-weight:800;position:relative;z-index:2;opacity:0;animation:fadeUp .7s ease forwards .15s}
 .about-v5 .hero .sub{color:var(--gold);font-weight:600;margin:10px 0 18px;font-size:15.5px;position:relative;z-index:2;opacity:0;animation:fadeUp .7s ease forwards .3s}
 .about-v5 .hero .txt{max-width:600px;line-height:2;color:#cfcfcf;font-size:14.5px;position:relative;z-index:2;opacity:0;animation:fadeUp .7s ease forwards .45s}
+.about-v5 .hero-cta{position:relative;z-index:2;opacity:0;animation:fadeUp .7s ease forwards .5s}
 .about-v5 .stat-row{display:flex;gap:14px;justify-content:center;margin-top:34px;flex-wrap:wrap;position:relative;z-index:2}
 .about-v5 .glass{background:rgba(255,255,255,.06);backdrop-filter:blur(12px);border:1px solid rgba(217,187,117,.35);border-radius:16px;padding:16px 22px;text-align:center;min-width:130px;opacity:0;animation:fadeUp .6s ease forwards}
 .about-v5 .glass:nth-child(1){animation-delay:.6s}
 .about-v5 .glass:nth-child(2){animation-delay:.75s}
 .about-v5 .glass:nth-child(3){animation-delay:.9s}
-@@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .about-v5 .glass b{display:block;color:var(--gold);font-size:22px}
 .about-v5 .glass span{font-size:12px;color:#ccc}
 
@@ -69,25 +78,26 @@ body{background:var(--dark)!important}
 .about-v5 .gallery h2{text-align:center;font-size:24px;font-weight:800;margin-bottom:40px}
 .about-v5 .gallery h2::after{content:"";display:block;width:60px;height:3px;background:var(--gold);margin:14px auto 0}
 .about-v5 .masonry{column-count:1;column-gap:14px}
-@@media(min-width:640px){.about-v5 .masonry{column-count:2}}
+@media(min-width:640px){.about-v5 .masonry{column-count:2}}
 .about-v5 .cred{break-inside:avoid;margin-bottom:14px;position:relative;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;aspect-ratio:4/3;background:linear-gradient(135deg,#2a2416,#8a6d1f)}
 .about-v5 .cred:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(217,187,117,.25)}
 .about-v5 .cred .cap{position:absolute;bottom:0;right:0;left:0;background:linear-gradient(0deg,rgba(0,0,0,.9),transparent 80%);color:#fff;padding:20px 10px 8px;font-size:12px;font-weight:600}
 
 /* ===== CTA مگنتیک ===== */
-.about-v5 .cta{background:linear-gradient(135deg,#1a1a1a,#000);text-align:center}
+.about-v5 .cta{background:linear-gradient(135deg,#1a1a1a,#000);text-align:center;background-size:cover;background-position:center}
 .about-v5 .cta h3{font-size:20px;font-weight:800;margin-bottom:20px;color:#fff}
+.about-v5 .cta p{color:#ccc;font-size:14px;line-height:1.8;max-width:480px;margin:0 auto 20px}
 .about-v5 .magnetic-wrap{display:flex;justify-content:center}
 .about-v5 .magnetic{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#111;padding:14px 34px;border-radius:32px;font-weight:800;text-decoration:none;font-size:15px;transition:transform .15s ease-out}
 
-@@media (prefers-reduced-motion: reduce){
+@media (prefers-reduced-motion: reduce){
     .about-v5 .glow{animation:none}
     .about-v5 .hero-photo{transition:none}
     .about-v5 .tl-item{transition:none;opacity:1;transform:none}
     .about-v5 .cred{transition:none}
     .about-v5 .cred:hover{transform:none}
     .about-v5 .magnetic{transition:none}
-    .about-v5 .hero h1,.about-v5 .hero .sub,.about-v5 .hero .txt,.about-v5 .glass{animation:none;opacity:1}
+    .about-v5 .hero h1,.about-v5 .hero .sub,.about-v5 .hero .txt,.about-v5 .hero-cta,.about-v5 .glass{animation:none;opacity:1}
 }
 </style>
 @endsection
@@ -100,105 +110,105 @@ body{background:var(--dark)!important}
     <header class="hero">
         <div class="glow"></div>
         <div class="hero-photo-wrap">
-            <img id="heroPhoto" class="hero-photo" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%232a2416'/%3E%3C/svg%3E" alt="Ehsan Dibazar" fetchpriority="high" decoding="async">
+            <img id="heroPhoto" class="hero-photo" src="{{ $v('hero_image') ? asset('storage/' . $v('hero_image')) : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%232a2416'/%3E%3C/svg%3E" }}" alt="{{ $v('hero_name', 'Ehsan Dibazar') }}" fetchpriority="high" decoding="async">
         </div>
-        <h1>Ehsan Dibazar</h1>
-        <div class="sub">Dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisansı</div>
+        <h1>{{ $v('hero_name', 'Ehsan Dibazar') }}</h1>
+        <div class="sub">{{ $v('hero_title', 'Dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisansı') }}</div>
         <div class="txt">
-            Dövüş sanatları öğretmek ve insanların kendini savunma becerisini geliştirmek benim
-            için her zaman en anlamlı işlerden biri oldu. İnsanların daha güçlü olmasına yardımcı
-            olmak hayatıma anlam katıyor. En büyük önceliğim, özellikle başlangıç seviyesindekiler
-            için dövüş sanatları ve kendini savunma eğitiminin kalitesini yükseltmek — böylece
-            daha fazla keyif ve süreklilikle devam edip hayatlarında gerçek ve faydalı sonuçlar
-            elde edebilsinler. Doğru şekilde çalışıldığında dövüş sanatlarının insanların
-            hayatını gerçekten iyileştirdiğine inanıyorum.
+            {{ $v('hero_bio', 'Dövüş sanatları öğretmek ve insanların kendini savunma becerisini geliştirmek benim için her zaman en anlamlı işlerden biri oldu. İnsanların daha güçlü olmasına yardımcı olmak hayatıma anlam katıyor. En büyük önceliğim, özellikle başlangıç seviyesindekiler için dövüş sanatları ve kendini savunma eğitiminin kalitesini yükseltmek — böylece daha fazla keyif ve süreklilikle devam edip hayatlarında gerçek ve faydalı sonuçlar elde edebilsinler. Doğru şekilde çalışıldığında dövüş sanatlarının insanların hayatını gerçekten iyileştirdiğine inanıyorum.') }}
         </div>
+        @if($v('hero_cta_text') && $v('hero_cta_url'))
+        <div class="hero-cta">
+            <a class="magnetic" href="{{ $v('hero_cta_url') }}">{{ $v('hero_cta_text') }}</a>
+        </div>
+        @endif
+        @php($statsList = !empty($stats) ? $stats : [
+            ['value' => '12+', 'label' => 'Yıllık eğitim deneyimi'],
+            ['value' => 'Binlerce', 'label' => 'yüz yüze ve online öğrenci'],
+            ['value' => 'Çeşitli', 'label' => 'uluslararası sertifikalar'],
+        ])
         <div class="stat-row">
-            <div class="glass"><b>12+</b><span>Yıllık eğitim deneyimi</span></div>
-            <div class="glass"><b>Binlerce</b><span>yüz yüze ve online öğrenci</span></div>
-            <div class="glass"><b>Çeşitli</b><span>uluslararası sertifikalar</span></div>
+            @foreach($statsList as $stat)
+            <div class="glass"><b>{{ $stat['value'] ?? '' }}</b><span>{{ $stat['label'] ?? '' }}</span></div>
+            @endforeach
         </div>
     </header>
 
     {{-- ============ مدارک و افتخارات ============ --}}
-    <section class="gallery" aria-label="Sertifikalar ve başarılar">
+    <section class="gallery" aria-label="{{ $v('certs_heading', 'Sertifikalar ve Başarılar') }}">
         <div class="container">
-            <h2>Sertifikalar ve Başarılar</h2>
-            {{-- placeholder گرادیانی — بعداً با عکس واقعی مدارک جایگزین می‌شود --}}
+            <h2>{{ $v('certs_heading', 'Sertifikalar ve Başarılar') }}</h2>
+            @php($certList = !empty($certificates) ? $certificates : [
+                ['title' => 'Brezilya Jiu-Jitsu kendini savunma sertifikası, ABD'],
+                ['title' => 'Muay Thai teknik sertifikası, Tayland Milli Eğitim Bakanlığı'],
+                ['title' => 'Koruma diploması, Türk Askeri Akademisi'],
+                ['title' => 'Temel Koruma Diploması'],
+                ['title' => "Türkiye'de koruma sertifikasını aldıktan sonra"],
+                ['title' => 'Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland'],
+                ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya"],
+                ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya"],
+                ['title' => 'Muay Thai teknik sınav belgesi, Bangkok Muay Thai Üniversitesi'],
+                ['title' => 'Muay Thai eğitim sertifikası, İstanbul'],
+                ['title' => "Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması"],
+                ['title' => 'Muay Boran online seminerine katılım, ABD'],
+            ])
             <div class="masonry" id="masonry">
-                <figure class="cred" data-cap="Brezilya Jiu-Jitsu kendini savunma sertifikası, ABD" tabindex="0" role="button"><figcaption class="cap">Brezilya Jiu-Jitsu kendini savunma sertifikası, ABD</figcaption></figure>
-                <figure class="cred" data-cap="Muay Thai teknik sertifikası, Tayland Milli Eğitim Bakanlığı" tabindex="0" role="button"><figcaption class="cap">Muay Thai teknik sertifikası, Tayland Milli Eğitim Bakanlığı</figcaption></figure>
-                <figure class="cred" data-cap="Koruma diploması, Türk Askeri Akademisi" tabindex="0" role="button"><figcaption class="cap">Koruma diploması, Türk Askeri Akademisi</figcaption></figure>
-                <figure class="cred" data-cap="Temel Koruma Diploması" tabindex="0" role="button"><figcaption class="cap">Temel Koruma Diploması</figcaption></figure>
-                <figure class="cred" data-cap="Türkiye'de koruma sertifikasını aldıktan sonra" tabindex="0" role="button"><figcaption class="cap">Türkiye'de koruma sertifikasını aldıktan sonra</figcaption></figure>
-                <figure class="cred" data-cap="Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland" tabindex="0" role="button"><figcaption class="cap">Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland</figcaption></figure>
-                <figure class="cred" data-cap="Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya" tabindex="0" role="button"><figcaption class="cap">Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya</figcaption></figure>
-                <figure class="cred" data-cap="Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya" tabindex="0" role="button"><figcaption class="cap">Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya</figcaption></figure>
-                <figure class="cred" data-cap="Muay Thai teknik sınav belgesi, Bangkok Muay Thai Üniversitesi" tabindex="0" role="button"><figcaption class="cap">Muay Thai teknik sınav belgesi, Bangkok Muay Thai Üniversitesi</figcaption></figure>
-                <figure class="cred" data-cap="Muay Thai eğitim sertifikası, İstanbul" tabindex="0" role="button"><figcaption class="cap">Muay Thai eğitim sertifikası, İstanbul</figcaption></figure>
-                <figure class="cred" data-cap="Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması" tabindex="0" role="button"><figcaption class="cap">Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması</figcaption></figure>
-                <figure class="cred" data-cap="Muay Boran online seminerine katılım, ABD" tabindex="0" role="button"><figcaption class="cap">Muay Boran online seminerine katılım, ABD</figcaption></figure>
+                @foreach($certList as $cert)
+                @php($capText = implode(' — ', array_filter([$cert['title'] ?? null, $cert['subtitle'] ?? null, $cert['description'] ?? null])))
+                <figure class="cred" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) style="background:url('{{ asset('storage/' . $cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
+                @endforeach
             </div>
         </div>
     </section>
 
+    {{-- ============ گالری تصاویر (اختیاری — فقط وقتی حداقل یک عکس تنظیم شده باشد) ============ --}}
+    @if(!empty($gallery))
+    <section class="gallery" aria-label="{{ $v('gallery_heading', 'Galeri') }}">
+        <div class="container">
+            <h2>{{ $v('gallery_heading', 'Galeri') }}</h2>
+            <div class="masonry">
+                @foreach($gallery as $img)
+                @continue(empty($img['image']))
+                <figure class="cred" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" style="background:url('{{ asset('storage/' . $img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
     {{-- ============ تایم‌لاین ============ --}}
     <section class="tl-wrap">
         <div class="container">
-            <h2>Yolculuğum</h2>
+            <h2>{{ $v('timeline_heading', 'Yolculuğum') }}</h2>
+            @php($timelineList = !empty($timeline) ? $timeline : [
+                ['year' => '2013', 'title' => 'Koruma ve Kendini Savunma Sertifikası', 'description' => 'Aylarca süren eğitim ve çabanın ardından, dönemin İstanbul yetkililerinden koruma ve kendini savunma sertifikası aldım — dövüş sanatları ve kendini savunma öğretme tutkumu daha da alevlendiren bir yolculuğun başlangıcı. En iyi dövüş sanatları koçları eşliğinde kendi eğitimime devam ederken, bu alana ilgi duyan diğer kişilere de eğitim vermeye başladım.'],
+                ['year' => '2016', 'title' => 'Dövüş Sanatları Salonu Açtım', 'description' => 'Kendi özel dövüş sanatları salonumu açtım ve bununla birlikte bir turizm ve doğa gezileri ofisi kurdum. Her iki alandaki kesintisiz çalışmam — özellikle birçok öğrenciye eğitim vermem — sonunda beni büyük bir başarıya taşıdı.'],
+                ['year' => '2019', 'title' => 'Muay Thai Teknik Sertifikası, Bangkok', 'description' => "Koç ve salon sahibi olarak yoğun çalışmaların ardından, Bangkok Muay Thai Üniversitesi'nden Muay Thai teknik sertifikamı aldım. Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, kendi salonumda verdiğim eğitimin kalitesini önemli ölçüde yükseltti. Aynı zamanda Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk eğitimi aldım."],
+                ['year' => '2022', 'title' => 'Brezilya Jiu-Jitsu Kendini Savunma Teknik Sertifikası, Kaliforniya', 'description' => 'Amerika Birleşik Devletleri\'ndeki en saygın kendini savunma kurumlarından birinden çok değerli bir teknik sertifika aldım ve öğrencilerimi de bu yolda yanımda getirebildim. Bu işe olan sevgim, derslerimde zamanın nasıl geçtiğini hiç fark etmememi sağladı.'],
+                ['year' => '2024', 'title' => 'Spor Fizyolojisi Yüksek Lisansı', 'description' => "Modern spor bilimini dövüş sanatlarıyla birleştirme hedefiyle, İstanbul Fenerbahçe Üniversitesi'nde Spor Fizyolojisi alanında yüksek lisans eğitimine başladım ve sportif antrenmanlarda fizyolojik göstergelerin değerlendirilmesine odaklandım."],
+            ])
             <div class="tl" id="tlList">
+                @foreach($timelineList as $item)
                 <div class="tl-item">
-                    <div class="tl-year">2013</div>
-                    <div class="tl-label">Koruma ve Kendini Savunma Sertifikası</div>
-                    <div class="tl-desc">Aylarca süren eğitim ve çabanın ardından, dönemin İstanbul
-                        yetkililerinden koruma ve kendini savunma sertifikası aldım — dövüş
-                        sanatları ve kendini savunma öğretme tutkumu daha da alevlendiren bir
-                        yolculuğun başlangıcı. En iyi dövüş sanatları koçları eşliğinde kendi
-                        eğitimime devam ederken, bu alana ilgi duyan diğer kişilere de eğitim
-                        vermeye başladım.</div>
+                    <div class="tl-year">{{ $item['year'] ?? '' }}</div>
+                    <div class="tl-label">{{ $item['title'] ?? '' }}</div>
+                    <div class="tl-desc">{{ $item['description'] ?? '' }}</div>
                 </div>
-                <div class="tl-item">
-                    <div class="tl-year">2016</div>
-                    <div class="tl-label">Dövüş Sanatları Salonu Açtım</div>
-                    <div class="tl-desc">Kendi özel dövüş sanatları salonumu açtım ve bununla birlikte
-                        bir turizm ve doğa gezileri ofisi kurdum. Her iki alandaki kesintisiz
-                        çalışmam — özellikle birçok öğrenciye eğitim vermem — sonunda beni büyük
-                        bir başarıya taşıdı.</div>
-                </div>
-                <div class="tl-item">
-                    <div class="tl-year">2019</div>
-                    <div class="tl-label">Muay Thai Teknik Sertifikası, Bangkok</div>
-                    <div class="tl-desc">Koç ve salon sahibi olarak yoğun çalışmaların ardından,
-                        Bangkok Muay Thai Üniversitesi'nden Muay Thai teknik sertifikamı aldım.
-                        Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, kendi
-                        salonumda verdiğim eğitimin kalitesini önemli ölçüde yükseltti. Aynı zamanda
-                        Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk
-                        eğitimi aldım.</div>
-                </div>
-                <div class="tl-item">
-                    <div class="tl-year">2022</div>
-                    <div class="tl-label">Brezilya Jiu-Jitsu Kendini Savunma Teknik Sertifikası, Kaliforniya</div>
-                    <div class="tl-desc">Amerika Birleşik Devletleri'ndeki en saygın kendini savunma
-                        kurumlarından birinden çok değerli bir teknik sertifika aldım ve
-                        öğrencilerimi de bu yolda yanımda getirebildim. Bu işe olan sevgim,
-                        derslerimde zamanın nasıl geçtiğini hiç fark etmememi sağladı.</div>
-                </div>
-                <div class="tl-item">
-                    <div class="tl-year">2024</div>
-                    <div class="tl-label">Spor Fizyolojisi Yüksek Lisansı</div>
-                    <div class="tl-desc">Modern spor bilimini dövüş sanatlarıyla birleştirme
-                        hedefiyle, İstanbul Fenerbahçe Üniversitesi'nde Spor Fizyolojisi alanında
-                        yüksek lisans eğitimine başladım ve sportif antrenmanlarda fizyolojik
-                        göstergelerin değerlendirilmesine odaklandım.</div>
-                </div>
+                @endforeach
             </div>
         </div>
     </section>
 
     {{-- ============ CTA مگنتیک ============ --}}
-    <section class="cta">
+    <section class="cta" @if($v('cta_bg_image')) style="background-image:linear-gradient(135deg,rgba(26,26,26,.85),rgba(0,0,0,.85)),url('{{ asset('storage/' . $v('cta_bg_image')) }}')" @endif>
+        @if($v('cta_title'))
+        <h3>{{ $v('cta_title') }}</h3>
+        @endif
+        @if($v('cta_description'))
+        <p>{{ $v('cta_description') }}</p>
+        @endif
         <div class="magnetic-wrap">
-            <a class="magnetic" id="magneticBtn" href="https://www.instagram.com/ehsandibazarcoaching" target="_blank" rel="noopener">Instagram’da takip edin</a>
+            <a class="magnetic" id="magneticBtn" href="{{ $v('cta_button_url', 'https://www.instagram.com/ehsandibazarcoaching') }}" target="_blank" rel="noopener">{{ $v('cta_button_text', "Instagram’da takip edin") }}</a>
         </div>
     </section>
 
@@ -231,14 +241,14 @@ body{background:var(--dark)!important}
         tlItems.forEach(function (i) { i.classList.add('show'); });
     }
 
-    // ===== مودال مدارک (فعلاً فقط کپشن، چون عکس واقعی هنوز نداریم) =====
+    // ===== مودال مدارک/گالری =====
     var modal = document.getElementById('modal');
     var modalCap = document.getElementById('modalCap');
     var lastFocused = null;
     document.querySelectorAll('.cred').forEach(function (c) {
         c.addEventListener('click', function () {
             lastFocused = document.activeElement;
-            modalCap.textContent = c.dataset.cap;
+            modalCap.textContent = c.dataset.cap || '';
             modal.classList.add('open');
             modal.style.display = 'flex';
             document.getElementById('modalClose').focus();

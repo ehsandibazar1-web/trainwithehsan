@@ -20,6 +20,10 @@
     <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
     <meta property="og:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
+    @php($ogImage = trim($__env->yieldContent('og_image')))
+    @if($ogImage)
+    <meta property="og:image" content="{{ $ogImage }}">
+    @endif
     <meta name="theme-color" content="#d9bb75">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
