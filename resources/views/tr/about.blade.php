@@ -8,8 +8,10 @@
 @php($v = fn($k, $d = '') => (($about[$k] ?? null) !== null && ($about[$k] ?? '') !== '') ? $about[$k] : $d)
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
-@section('meta_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası sahibi.'))
+@section('meta_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi.'))
 @section('canonical', url('/tr/about'))
+@section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
+@section('og_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi.'))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 
 @section('json-ld')
@@ -22,7 +24,7 @@
   "url": "https://trainwithehsan.com/tr/about",
   "jobTitle": "Martial Arts & Self-Defense Instructor",
   "description": "Ehsan Dibazar, dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisans derecesine sahip, 12 yıllık eğitim deneyimiyle.",
-  "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University, Istanbul"},
+  "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
   "knowsAbout": ["Muay Thai", "Kendini Savunma", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri"],
   "sameAs": [
     "https://www.instagram.com/ehsandibazarcoaching/",
