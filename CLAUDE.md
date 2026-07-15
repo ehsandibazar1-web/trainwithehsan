@@ -35,6 +35,7 @@ app/
   Console/Commands/PublishDueArticles.php   Scheduled auto-publish job
   Filament/
     Resources/Articles/                     ArticleResource + Schemas/ArticleForm.php, Tables/ArticlesTable.php, Pages/
+    Resources/Pages/                        PageResource (standalone site pages: privacy, terms, FAQ, ...) — same layout as Articles
     Pages/EditorialCalendar.php              Drag-and-drop article scheduling calendar
     Pages/HomepageSettings.php               Homepage content-block editor (per locale)
     Pages/AboutPageSettings.php              About page content-block editor (hero, stats, certificates, gallery, timeline, CTA, SEO — per locale)
@@ -43,22 +44,24 @@ app/
     Widgets/ArticleStatsOverview.php         Dashboard stats widget
   Http/Controllers/
     BlogController.php                       Home, about, blog index, blog show — EN and TR variants
+    PageController.php                       Standalone pages (privacy, terms, FAQ, ...) — EN and TR show routes
     SeoController.php                        sitemap.xml, /feed, /tr/feed
     PreviewController.php                    Signed-URL preview of unpublished/scheduled articles
   Models/
     Article.php                              Bilingual article model, translation self-relation, published/locale scopes
+    Page.php                                 Standalone-page model — same bilingual two-row shape as Article, fully separate from blog
     SiteSetting.php                          Generic key/value store — the ad hoc CMS backend for homepage/about-page/menu content
     Media.php                                 Metadata record for uploaded media (name/path/url/mime/size)
     User.php                                  Default Laravel auth user (admin login)
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles, media, site_settings, activity_log (project-specific, dated 2026-07-xx)
+  migrations/                                users, cache, jobs (Laravel defaults) + articles, media, site_settings, activity_log, pages (project-specific, dated 2026-07-xx)
   factories/, seeders/
 resources/
   views/
-    home.blade.php, about.blade.php, blog.blade.php, blog-post.blade.php     English public pages
-    tr/home.blade.php, tr/about.blade.php, tr/blog.blade.php, tr/blog-post.blade.php   Turkish duplicates
+    home.blade.php, about.blade.php, blog.blade.php, blog-post.blade.php, page.blade.php     English public pages
+    tr/home.blade.php, tr/about.blade.php, tr/blog.blade.php, tr/blog-post.blade.php, tr/page.blade.php   Turkish duplicates
     layouts/master.blade.php, layouts/master-tr.blade.php                    Shared page shell per locale (head/meta/CSS/header/footer)
     welcome.blade.php                        Default Laravel scaffold view — UNUSED, not routed to. Safe to delete; do not build on it.
     filament/pages/                           Custom Filament page Blade views (homepage-settings, about-page-settings, menu-settings, editorial-calendar, activity-log)
@@ -98,6 +101,7 @@ Key duplication to be aware of: **every public-facing view and its Turkish count
 
 - Two locales today: `en` (default) and `tr`. There is no i18n package (no Laravel localization files, no `lang/` directory in active use) — translation is handled entirely by **duplicating routes, controllers methods, views, and database rows** per locale, not by string-translation files. Do not introduce Laravel's `__()` translation-file system for page content; it does not fit this project's model (content is data-driven from the database, not static UI strings).
 - Route convention: English routes are bare (`/`, `/blog`, `/blog/{slug}`), Turkish routes are prefixed with `/tr` (`/tr`, `/tr/blog`, `/tr/blog/{slug}`). Follow this exact prefix convention for any new localized route — do not use a `{locale}` route parameter or subdomain-based localization; it would require a larger refactor and hasn't been decided.
+- Standalone CMS pages (the `Page` model — privacy, terms, FAQ, ...) resolve at root level: `/{slug}` and `/tr/{slug}`. These two routes are registered **last** in `routes/web.php` with a reserved-slug lookahead (admin/blog/about/tr/feed/...) so every other route always wins — keep them at the bottom of the file, and register any new fixed route above them.
 - Article rows carry their own `locale` column and are queried with `Article::locale('en')` / `Article::locale('tr')`. The `translation_of` foreign key links a translated pair together (see Laravel Conventions above) — always set this when creating a translated counterpart of an existing article, so `BlogController::renderShow()` can surface the "other language" link.
 - `hreflang` tags are present in `master.blade.php` but **commented out** with the note "فعال‌سازی بعد از آماده شدن نسخهٔ ترکی" ("enable after the Turkish version is ready"). Do not silently re-enable these — see Important Project Decisions.
 - When adding a new public page, always create both the `en` and `tr` versions together in the same change, plus both route registrations. Never ship an English-only page as "TR to follow later" — that is exactly the pattern that has caused drift in the past (git history shows CSS/layout fixes landing for one locale before the other).
@@ -250,7 +254,7 @@ Rules for any new image-handling work:
 
 ## 23. Testing Strategy
 
-**Current state: there is effectively no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold, not written for this project. None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the 6 public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or any Filament resource/page.
+**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The one real test file is `tests/Feature/PagesModuleTest.php`, covering the standalone Pages module (publish states, locale routing, blog/feed/sitemap isolation, Filament resource access). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
 
 Priority order for adding real tests (highest-value first):
 1. `Article::scopePublished()` — feed it draft/scheduled-future/scheduled-due/published rows and assert visibility; this is the single most important piece of business logic in the app and the easiest to silently break.
