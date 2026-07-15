@@ -105,9 +105,9 @@
     }
 
     /* دسکتاپ: عکس تمام‌ارتفاعِ بخش، چسبیده به بالا/چپ/پایین؛ موبایل: استاتیک زیر متن، چسبیده به پایین */
-    .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:450px}
+    .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:420px}
     @@media (max-width:767px){.about-section{padding-top:32px;padding-bottom:0}}
-    .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
+    .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:560px}
     @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
     .abou-company{color:#393e40;font-weight:800;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:1.8rem;text-align:center}}
@@ -116,18 +116,17 @@
     .about-cta{margin-top:16px}
     @@media (max-width:640px){.about-cta{margin-top:16px}}
     /* عکس — دسکتاپ: مثل سایت مرجع، تصویرِ تمام‌قد با نسبتِ طبیعی (width:auto) که به بالا/چپ/
-       پایینِ بخش چسبیده و از لبهٔ چپِ صفحه بیرون می‌زند. max-width یک «سقفِ ایمنی» است که
-       لبهٔ راستِ عکس را دستِ‌کم ~۶۰px قبل از ستون متن نگه می‌دارد تا متن هرگز روی عکس نیفتد؛
-       چون ستون متن داخلِ .wrapِ وسط‌چین از (نیمِ فضای کنارِ wrap)+500px شروع می‌شود، همان
-       مبنا را منهای ۶۰ برای سقف عرض می‌گیریم. برای عکس‌های معمولی (نسبتِ نزدیک به مربع)
-       عرضِ طبیعی کمتر از این سقف است، پس بدون برش، کاملِ بدن دیده می‌شود. */
+       پایینِ بخش چسبیده و از لبهٔ چپِ صفحه بیرون می‌زند. ستون متن عمداً به 560px هل داده شده
+       تا از دستکش/دستِ فایتر (که لبهٔ راستِ عکس است) فاصله بگیرد و رویش نیفتد. max-width یک
+       «سقفِ ایمنی» است که لبهٔ راستِ عکس را همیشه قبل از ستون متن نگه می‌دارد؛ برای عکس‌های
+       معمولی عرضِ طبیعی کمتر از این سقف است، پس بدون برش کاملِ بدن (و دستکش) دیده می‌شود. */
     .about-bleed-img{
         width:469px;max-width:100%;height:auto;margin-top:20px;display:block;
     }
     @@media (min-width:768px){
         .about-bleed-img{
             position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;width:auto;
-            max-width:calc(max((100vw - 1140px) / 2, 0px) + 455px);
+            max-width:calc(max((100vw - 1140px) / 2, 0px) + 500px);
             object-fit:cover;object-position:left top;
         }
     }
