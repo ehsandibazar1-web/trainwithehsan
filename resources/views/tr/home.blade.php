@@ -105,7 +105,7 @@
     }
 
     /* دسکتاپ: عکس تمام‌ارتفاعِ بخش، چسبیده به بالا/چپ/پایین؛ موبایل: استاتیک زیر متن، چسبیده به پایین */
-    .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:500px}
+    .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:450px}
     @@media (max-width:767px){.about-section{padding-top:32px;padding-bottom:0}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:500px}
     @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
@@ -115,17 +115,19 @@
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
     .about-cta{margin-top:16px}
     @@media (max-width:640px){.about-cta{margin-top:16px}}
-    /* عکس — دسکتاپ: چسبیده به بالا/چپ/پایینِ بخش (تمام‌ارتفاع)؛ عرض دقیقاً تا ۲۰px قبلِ
-       ستون متن کشیده می‌شود. ستون متن داخل .wrapِ وسط‌چین است و از (نیمِ فضای اضافهٔ کنارِ
-       wrap) + 500px شروع می‌شود؛ همین فرمول را برای لبهٔ راستِ عکس تکرار می‌کنیم تا در هر
-       عرضی فاصله ثابت (~20px) بماند و هرگز روی متن نیفتد. */
+    /* عکس — دسکتاپ: مثل سایت مرجع، تصویرِ تمام‌قد با نسبتِ طبیعی (width:auto) که به بالا/چپ/
+       پایینِ بخش چسبیده و از لبهٔ چپِ صفحه بیرون می‌زند. max-width یک «سقفِ ایمنی» است که
+       لبهٔ راستِ عکس را دستِ‌کم ~۶۰px قبل از ستون متن نگه می‌دارد تا متن هرگز روی عکس نیفتد؛
+       چون ستون متن داخلِ .wrapِ وسط‌چین از (نیمِ فضای کنارِ wrap)+500px شروع می‌شود، همان
+       مبنا را منهای ۶۰ برای سقف عرض می‌گیریم. برای عکس‌های معمولی (نسبتِ نزدیک به مربع)
+       عرضِ طبیعی کمتر از این سقف است، پس بدون برش، کاملِ بدن دیده می‌شود. */
     .about-bleed-img{
         width:469px;max-width:100%;height:auto;margin-top:20px;display:block;
     }
     @@media (min-width:768px){
         .about-bleed-img{
-            position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;
-            width:calc(max((100vw - 1140px) / 2, 0px) + 495px);
+            position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;width:auto;
+            max-width:calc(max((100vw - 1140px) / 2, 0px) + 455px);
             object-fit:cover;object-position:left top;
         }
     }
