@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\SiteSetting;
+use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
 {
@@ -89,7 +90,37 @@ class BlogController extends Controller
         $timeline = $this->sortBySortOrder(json_decode($about['timeline'] ?? '[]', true) ?: []);
         unset($about['stats'], $about['certificates'], $about['gallery'], $about['timeline']);
 
+        // ابعاد/نوع تصویر هیرو و og:image — برای ImageObject در JSON-LD و متاتگ‌های og:image:*
+        $heroMeta = $this->imageMeta($about['hero_image'] ?? null);
+        $about['hero_image_width'] = $heroMeta['width'] ?? null;
+        $about['hero_image_height'] = $heroMeta['height'] ?? null;
+
+        $ogMeta = $this->imageMeta($about['seo_og_image'] ?? null);
+        $about['seo_og_image_width'] = $ogMeta['width'] ?? null;
+        $about['seo_og_image_height'] = $ogMeta['height'] ?? null;
+        $about['seo_og_image_mime'] = $ogMeta['mime'] ?? null;
+
         return [$about, $stats, $certificates, $gallery, $timeline];
+    }
+
+    // ابعاد و نوع MIME یک فایل روی دیسک public — بدون شکستن صفحه اگر فایل موجود/خوانا نباشد
+    private function imageMeta(?string $path): array
+    {
+        if (! $path) {
+            return [];
+        }
+
+        $absolute = Storage::disk('public')->path($path);
+
+        if (! is_file($absolute) || ! ($info = @getimagesize($absolute))) {
+            return [];
+        }
+
+        return [
+            'width' => $info[0],
+            'height' => $info[1],
+            'mime' => $info['mime'] ?? null,
+        ];
     }
 
     // مرتب‌سازی آیتم‌های ریپیتر بر اساس فیلد sort_order (خالی‌ها آخر قرار می‌گیرند)

@@ -13,6 +13,9 @@
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
 @section('og_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi.'))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
+@section('og_image_width', (string) $v('seo_og_image_width', ''))
+@section('og_image_height', (string) $v('seo_og_image_height', ''))
+@section('og_image_type', $v('seo_og_image_mime', ''))
 
 @section('json-ld')
 <script type="application/ld+json">
@@ -26,10 +29,31 @@
   "description": "Ehsan Dibazar, dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisans derecesine sahip, 12 yıllık eğitim deneyimiyle.",
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
   "knowsAbout": ["Muay Thai", "Kendini Savunma", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri"],
+  @if($v('hero_image') && $v('hero_image_width') && $v('hero_image_height'))
+  "image": {
+    "@@type": "ImageObject",
+    "contentUrl": @json(asset('storage/' . $v('hero_image'))),
+    "url": @json(asset('storage/' . $v('hero_image'))),
+    "width": {{ (int) $v('hero_image_width') }},
+    "height": {{ (int) $v('hero_image_height') }},
+    "caption": @json($v('hero_name', 'Ehsan Dibazar')),
+    "creator": {"@@id": "https://trainwithehsan.com/tr/about#person"}
+  },
+  @endif
   "sameAs": [
     "https://www.instagram.com/ehsandibazarcoaching/",
     "https://telegram.me/ehsandibazar",
     "https://youtube.com/channel/UCDT9EOHriR9sHvq0PBdmlog"
+  ]
+}
+</script>
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@@type": "ListItem", "position": 1, "name": "Home", "item": @json(url('/tr'))},
+    {"@@type": "ListItem", "position": 2, "name": "Hakkımda", "item": @json(url('/tr/about'))}
   ]
 }
 </script>
