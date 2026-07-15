@@ -3,6 +3,8 @@
 @section('title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
 @section('meta_description', 'Ehsan Dibazar ile İstanbul\'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, 15+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.')
 @section('canonical', url('/tr'))
+@section('og_title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
+@section('og_description', 'Ehsan Dibazar ile İstanbul\'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, 15+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.')
 
 @section('json-ld')
 <script type="application/ld+json">
@@ -52,10 +54,10 @@
     }
     /* .main-text-slider {font-size:1.8rem; color:#fff} / .main-text-slider2 {color:#f3f3f3; 1.5rem} */
     .hero-slide-text{position:relative;z-index:1;max-width:600px}
-    .hero-slide-text h1{font-size:28px;color:#fff;font-weight:600;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)}
+    .hero-slide-text .hero-title{font-size:28px;color:#fff;font-weight:600;line-height:1.5;text-shadow:0 2px 10px rgba(0,0,0,.55),0 1px 3px rgba(0,0,0,.7)}
     .hero-slide-text .sub{font-size:18px;color:#f3f3f3;margin-top:10px;line-height:1.6;text-shadow:0 2px 8px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.75)}
     @@media (max-width:767px){
-        .hero-slide-text h1{font-size:22px}
+        .hero-slide-text .hero-title{font-size:22px}
         .hero-slide-text .sub{font-size:15px}
     }
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
@@ -266,14 +268,16 @@
 @section('content')
     @php($s = $s ?? [])
     @php($members = $members ?? [])
-    @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
+    {{-- مقادیر CMS پیش از بررسی خالی‌بودن trim می‌شوند تا مقدار فقط-فاصله هم به دیفالت برگردد --}}
+    @php($v = fn($k, $d = '') => trim((string) ($s[$k] ?? '')) !== '' ? $s[$k] : $d)
 
     {{-- ============ اسلایدر هیرو ============ --}}
+    {{-- فقط اسلاید اول h1 دارد (تنها H1 قابل‌مشاهده صفحه) — بقیه h2 هستند تا چند H1 در DOM نداشته باشیم --}}
     <div class="hero-slider">
         <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:url('{{ asset('storage/' . $v('hero1_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>{{ $v('hero1_title', 'Kendini Savunma ve Dövüş Sanatları Eğitimi') }}</h1>
+                    <h1 class="hero-title">{{ $v('hero1_title', 'Kendini Savunma ve Dövüş Sanatları Eğitimi') }}</h1>
                     <div class="sub">{{ $v('hero1_sub', 'Tam başlangıç seviyesi için — spor geçmişi ve yaş sınırı yok, kadın ve erkekler için. İstanbul\'da veya online.') }}</div>
                 </div>
             </div>
@@ -281,7 +285,7 @@
         <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:url('{{ asset('storage/' . $v('hero2_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>{{ $v('hero2_title', 'Brezilya Jiu-Jitsu: kaldıraç sanatı') }}</h1>
+                    <h2 class="hero-title">{{ $v('hero2_title', 'Brezilya Jiu-Jitsu: kaldıraç sanatı') }}</h2>
                     <div class="sub">{{ $v('hero2_sub', 'Küçük yapılı birinin daha güçlü bir saldırganı kontrol edebilmesi için geliştirildi — kaba güç yerine teknik ve pozisyon.') }}</div>
                 </div>
             </div>
@@ -289,7 +293,7 @@
         <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:url('{{ asset('storage/' . $v('hero3_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
-                    <h1>{{ $v('hero3_title', 'Martial Intelligence') }}</h1>
+                    <h2 class="hero-title">{{ $v('hero3_title', 'Martial Intelligence') }}</h2>
                     <div class="sub">{{ $v('hero3_sub', 'Baskı altında karar verme — gerçek bir çatışmada en çok önem taşıyan beceri.') }}</div>
                 </div>
             </div>
@@ -379,7 +383,7 @@
                         @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
                     </div>
                     <div class="title-news">{{ $article->title }}</div>
-                    <div class="news-short-text">{{ $article->excerpt }}</div>
+                    <div class="news-short-text">{{ $article->excerpt ?: Str::limit(strip_tags($article->body), 100) }}</div>
                     <div class="news-more-row"><span class="more-news">Devamı</span></div>
                 </a>
                 @empty
@@ -406,10 +410,11 @@
                     @php($membersList = !empty($members) ? $members : [['name' => 'Sajjad'], ['name' => 'Davoud'], ['name' => 'Omid'], ['name' => 'Mohammad'], ['name' => 'Amir'], ['name' => 'Sara']])
                     <ul class="user-list">
                         @foreach($membersList as $m)
+                        @php($mName = trim($m['name'] ?? '') !== '' ? $m['name'] : 'Üye')
                         <li>
                             <div class="img-user" @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
-                                @if(empty($m['photo'])){{ mb_substr($m['name'] ?? '', 0, 1) }}@endif
-                            </div>{{ $m['name'] ?? '' }}
+                                @if(empty($m['photo'])){{ mb_substr($mName, 0, 1) }}@endif
+                            </div>{{ $mName }}
                         </li>
                         @endforeach
                     </ul>
