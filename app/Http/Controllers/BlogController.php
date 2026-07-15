@@ -40,7 +40,7 @@ class BlogController extends Controller
     {
         $prefix = "home.$locale.";
 
-        $raw = SiteSetting::where('key', 'like', $prefix . '%')
+        $raw = SiteSetting::where('key', 'like', $prefix.'%')
             ->pluck('value', 'key');
 
         $s = [];
@@ -52,6 +52,52 @@ class BlogController extends Controller
         unset($s['members']);
 
         return [$s, $members];
+    }
+
+    // صفحه درباره ما — انگلیسی
+    public function about()
+    {
+        [$about, $stats, $certificates, $gallery, $timeline] = $this->aboutSettings('en');
+
+        return view('about', compact('about', 'stats', 'certificates', 'gallery', 'timeline'));
+    }
+
+    // صفحه درباره ما — ترکی
+    public function aboutTr()
+    {
+        [$about, $stats, $certificates, $gallery, $timeline] = $this->aboutSettings('tr');
+
+        return view('tr.about', compact('about', 'stats', 'certificates', 'gallery', 'timeline'));
+    }
+
+    // خواندن یک‌جای تنظیمات صفحه درباره ما از دیتابیس (یک کوئری)
+    private function aboutSettings(string $locale): array
+    {
+        $prefix = "about.$locale.";
+
+        $raw = SiteSetting::where('key', 'like', $prefix.'%')
+            ->pluck('value', 'key');
+
+        $about = [];
+        foreach ($raw as $key => $value) {
+            $about[substr($key, strlen($prefix))] = $value;
+        }
+
+        $stats = json_decode($about['stats'] ?? '[]', true) ?: [];
+        $certificates = $this->sortBySortOrder(json_decode($about['certificates'] ?? '[]', true) ?: []);
+        $gallery = $this->sortBySortOrder(json_decode($about['gallery'] ?? '[]', true) ?: []);
+        $timeline = $this->sortBySortOrder(json_decode($about['timeline'] ?? '[]', true) ?: []);
+        unset($about['stats'], $about['certificates'], $about['gallery'], $about['timeline']);
+
+        return [$about, $stats, $certificates, $gallery, $timeline];
+    }
+
+    // مرتب‌سازی آیتم‌های ریپیتر بر اساس فیلد sort_order (خالی‌ها آخر قرار می‌گیرند)
+    private function sortBySortOrder(array $items): array
+    {
+        usort($items, fn ($a, $b) => ($a['sort_order'] ?? 9999) <=> ($b['sort_order'] ?? 9999));
+
+        return $items;
     }
 
     // لیست مقالات — انگلیسی

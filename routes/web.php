@@ -10,13 +10,9 @@ Route::get('/', [BlogController::class, 'home']);
 
 Route::get('/tr', [BlogController::class, 'homeTr']);
 
-Route::get('/about', function () {
-    return view('about');
-});
+Route::get('/about', [BlogController::class, 'about']);
 
-Route::get('/tr/about', function () {
-    return view('tr.about');
-});
+Route::get('/tr/about', [BlogController::class, 'aboutTr']);
 
 Route::get('/blog', [BlogController::class, 'index']);
 Route::get('/blog/{slug}', [BlogController::class, 'show']);
@@ -42,5 +38,6 @@ Route::get('/system-cache-flush-7k2p9x', function () {
 });
 Route::get('/system-migrate-9x4kq2', function () {
     Artisan::call('migrate', ['--force' => true]);
-    return '<pre>' . Artisan::output() . '</pre>';
+
+    return '<pre>'.Artisan::output().'</pre>';
 });
