@@ -14,12 +14,14 @@ use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
+use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Str;
+use Spatie\Activitylog\Models\Activity;
 use UnitEnum;
 
 /**
@@ -48,6 +50,11 @@ class BrandMemory extends Page implements HasForms
     public const LOCALES = ['en' => 'English', 'tr' => 'Turkish', 'fa' => 'Persian'];
 
     public ?array $data = [];
+
+    // بخشِ فعلاً انتخاب‌شده برای مشاهده‌ی تاریخچه — رندر پنل تاریخچه در بلید صرفاً یک شرط ساده‌ی
+    // Livewire است، نه یک Filament Action تودرتو (اکشن‌های تعبیه‌شده داخل Schema::Section از طریق
+    // callAction() قابل تست/فراخوانی مستقیم نیستند)
+    public ?int $historySectionId = null;
 
     public function mount(): void
     {
@@ -101,7 +108,62 @@ class BrandMemory extends Page implements HasForms
                     ->label('Included in AI prompts')
                     ->inline(false),
                 Tabs::make("tabs_{$section->id}")->tabs($tabs),
+                Html::make('<button type="button" wire:click="viewHistory('.$section->id.')" style="font-size:0.8rem;color:rgb(37 99 235);background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;">View version history</button>'),
             ]);
+    }
+
+    public function viewHistory(int $sectionId): void
+    {
+        $this->historySectionId = $sectionId;
+    }
+
+    public function closeHistory(): void
+    {
+        $this->historySectionId = null;
+    }
+
+    public function getHistorySectionProperty(): ?BrandMemorySection
+    {
+        return $this->historySectionId ? BrandMemorySection::find($this->historySectionId) : null;
+    }
+
+    /**
+     * نسخه‌های قبلیِ این بخش (همه‌ی زبان‌ها) — از همان مکانیزم spatie/laravel-activitylog که
+     * BrandMemoryValue::getActivitylogOptions() فعال می‌کند، نه یک جدول نسخه‌ی جداگانه.
+     */
+    public function getHistoryActivitiesProperty()
+    {
+        if (! $this->historySectionId) {
+            return collect();
+        }
+
+        $valueIds = BrandMemoryValue::where('brand_memory_section_id', $this->historySectionId)->pluck('id');
+
+        return Activity::query()
+            ->where('log_name', 'brand_memory_value')
+            ->where('subject_type', (new BrandMemoryValue)->getMorphClass())
+            ->whereIn('subject_id', $valueIds)
+            ->with('subject')
+            ->latest('id')
+            ->limit(20)
+            ->get();
+    }
+
+    /**
+     * بازیابی یک نسخه‌ی قدیمی — یعنی content همان لحظه (attribute_changes.attributes.content) را
+     * دوباره روی BrandMemoryValue می‌نویسد؛ چون از طریق مدل (نه query builder) انجام می‌شود، خودش
+     * هم یک رویداد فعالیت تازه ثبت می‌کند — تاریخچه هرگز حذف/بازنویسی نمی‌شود، فقط اضافه می‌شود.
+     */
+    public function restoreVersion(int $activityId): void
+    {
+        $activity = Activity::query()->where('log_name', 'brand_memory_value')->findOrFail($activityId);
+        $content = $activity->attribute_changes['attributes']['content'] ?? null;
+
+        BrandMemoryValue::findOrFail($activity->subject_id)->update(['content' => $content]);
+
+        Notification::make()->success()->title('Version restored')->send();
+
+        $this->form->fill($this->loadState());
     }
 
     public function save(): void

@@ -8,6 +8,7 @@ use App\Models\BrandMemoryValue;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Spatie\Activitylog\Models\Activity;
 use Tests\TestCase;
 
 class BrandMemoryPageTest extends TestCase
@@ -96,5 +97,46 @@ class BrandMemoryPageTest extends TestCase
             ->callAction('deleteSection', data: ['section_id' => $mission->id]);
 
         $this->assertNotNull(BrandMemorySection::find($mission->id));
+    }
+
+    public function test_view_history_shows_previous_versions_of_a_section(): void
+    {
+        $mission = BrandMemorySection::where('key', 'mission')->first();
+        $value = BrandMemoryValue::create(['brand_memory_section_id' => $mission->id, 'locale' => 'en', 'content' => 'First version.']);
+        $value->update(['content' => 'Second version.']);
+
+        Livewire::actingAs($this->owner())
+            ->test(BrandMemory::class)
+            ->call('viewHistory', $mission->id)
+            ->assertSee('First version.')
+            ->assertSee('Second version.');
+    }
+
+    public function test_close_history_hides_the_panel_again(): void
+    {
+        $mission = BrandMemorySection::where('key', 'mission')->first();
+
+        Livewire::actingAs($this->owner())
+            ->test(BrandMemory::class)
+            ->call('viewHistory', $mission->id)
+            ->assertSet('historySectionId', $mission->id)
+            ->call('closeHistory')
+            ->assertSet('historySectionId', null);
+    }
+
+    public function test_restore_version_writes_the_old_content_back_and_logs_a_new_version(): void
+    {
+        $mission = BrandMemorySection::where('key', 'mission')->first();
+        $value = BrandMemoryValue::create(['brand_memory_section_id' => $mission->id, 'locale' => 'en', 'content' => 'First version.']);
+        $value->update(['content' => 'Second version.']);
+
+        $firstVersionActivity = Activity::where('log_name', 'brand_memory_value')->where('subject_id', $value->id)->oldest('id')->first();
+
+        Livewire::actingAs($this->owner())
+            ->test(BrandMemory::class)
+            ->call('restoreVersion', $firstVersionActivity->id);
+
+        $this->assertSame('First version.', $value->fresh()->content);
+        $this->assertCount(3, Activity::where('log_name', 'brand_memory_value')->where('subject_id', $value->id)->get());
     }
 }
