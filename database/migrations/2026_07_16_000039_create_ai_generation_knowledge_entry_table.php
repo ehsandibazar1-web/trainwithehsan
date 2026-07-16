@@ -17,7 +17,11 @@ return new class extends Migration
             $table->foreignId('knowledge_entry_id')->constrained()->cascadeOnDelete();
             $table->timestamps();
 
-            $table->unique(['ai_generation_id', 'knowledge_entry_id']);
+            // نام صریح و کوتاه — نام خودکار Laravel برای این جفت ستون از سقف ۶۴ کاراکتریِ
+            // MySQL برای نام شناسه‌ها عبور می‌کند (SQLSTATE 42000 / 1059)؛ همان درسی که قبلاً برای
+            // internal_link_suggestions گرفته شده بود، اینجا فراموش شده بود — نگاه کنید به
+            // migration بعدی برای نصب‌هایی که این نسخه‌ی شکسته را قبلاً اجرا کرده‌اند
+            $table->unique(['ai_generation_id', 'knowledge_entry_id'], 'ai_gen_knowledge_entry_unique');
         });
     }
 
