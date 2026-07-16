@@ -60,6 +60,23 @@ class MediaLibrary extends Page implements HasForms
     // بیشترین تعداد آیتمی که یک‌جا نشان داده می‌شود — در این مقیاس محتوا کافی است، نیازی به صفحه‌بندی واقعی نیست
     private const MAX_ITEMS = 300;
 
+    // لینک مستقیم از جاهای دیگر پنل (مثلا SEO Center) با ?media=ID — پوشه‌ی درست باز و آیتم انتخاب می‌شود
+    public function mount(): void
+    {
+        $mediaId = request()->integer('media');
+        if (! $mediaId) {
+            return;
+        }
+
+        $media = Media::find($mediaId);
+        if (! $media) {
+            return;
+        }
+
+        $this->currentFolderId = $media->folder_id;
+        $this->selectedMediaId = $media->id;
+    }
+
     public function updatedUploads(): void
     {
         $this->validate(['uploads.*' => ['file', 'max:15360']]);
