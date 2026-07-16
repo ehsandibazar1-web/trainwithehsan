@@ -48,6 +48,18 @@ class ActionRegistry
             'response_shape' => 'text',
             'instruction' => 'Write a standalone, quotable 1-2 sentence summary of this article, suitable for a blog listing card and an RSS feed description. Return ONLY the excerpt text — no quotes, no explanation.',
         ],
+        // بدنه‌ی مقاله/صفحه — تنها فیلدی که پاسخش HTML خام است، نه متن ساده/لیست؛ به‌جای «generate»
+        // فقط حالت‌های ویرایشیِ روی محتوای موجود دارد (این دستیار زمینه‌ی کافی برای نوشتن یک مقاله‌ی
+        // کامل از صفر ندارد) — همین چهار/پنج حالت است که «بهبود مقدمه»، «بازنویسی نتیجه‌گیری»،
+        // «کوتاه‌ترش کن» و مثال‌های مشابه در چت هوش مصنوعی را ممکن می‌کند
+        'body' => [
+            'label' => 'Article Body',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['improve', 'rewrite', 'expand', 'shorten', 'simplify'],
+            'response_shape' => 'html',
+            'max_tokens' => 4096,
+            'instruction' => 'Return the full replacement body content as clean, semantic HTML only — real <h2>/<h3> headings, <p> paragraphs, <ul>/<ol> lists where appropriate, no inline styles, no <script> tags. Preserve the overall structure and topic, just apply the requested change. Return ONLY the HTML — no markdown, no code fences, no explanation outside it.',
+        ],
         'faq' => [
             'label' => 'FAQ',
             'applicable_to' => ['Article'],

@@ -154,6 +154,77 @@ class AiAssistantPanel extends Component
 
     public function generateField(string $field, string $mode): void
     {
+        $this->queueGeneration($field, $mode);
+        $this->notifyQueued('Generation');
+    }
+
+    // چهار دکمه‌ی سریع روی متن بدنه — همان generateField روی فیلد body با یک حالت ثابت، فقط یک
+    // میان‌بر برای Quick Actions
+    public function quickBodyAction(string $mode): void
+    {
+        $this->queueGeneration('body', $mode);
+        $this->notifyQueued('Article body ('.$mode.')');
+    }
+
+    // میان‌بر Quick Actions «SEO Only» — فقط چهار فیلد سئو/OG و اسلاگ را صف می‌کند، نه همه‌چیز
+    public function quickSeoOnly(): void
+    {
+        foreach (['seo_title', 'meta_description', 'og_title', 'og_description', 'slug'] as $key) {
+            if (in_array($this->recordType, ActionRegistry::for($key)['applicable_to'], true)) {
+                $this->queueGeneration($key, 'generate');
+            }
+        }
+
+        $this->notifyQueued('SEO fields');
+    }
+
+    // میان‌بر Quick Actions «FAQ Only» — فقط برای Article معنی دارد (ActionRegistry همین را برای Page رد می‌کند)
+    public function quickFaqOnly(): void
+    {
+        $this->queueGeneration('faq', 'generate');
+        $this->notifyQueued('FAQ');
+    }
+
+    // دکمه‌ی اصلی «✨ Optimize Entire Article» / Quick Actions «Generate Everything» — عمداً همان
+    // یک عمل است (طبق درخواست کاربر، فقط زیر دو عنوان متفاوت)؛ هر فیلد قابل‌تولیدِ این نوع رکورد را
+    // صف می‌کند، به‌جز content_review_summary (که دکمه‌ی مخصوص خودش را در تب Review دارد) و بدنه
+    // (که حالت generate ندارد — نگاه کنید به ActionRegistry). هیچ‌کدام خودکار Apply نمی‌شوند.
+    public function optimizeEntireArticle(): void
+    {
+        foreach (ActionRegistry::applicableTo($this->recordType) as $key => $definition) {
+            if ($key === 'content_review_summary' || ! in_array('generate', $definition['modes'], true)) {
+                continue;
+            }
+
+            $this->queueGeneration($key, 'generate');
+        }
+
+        $this->notifyQueued('Every suggestion for this article');
+    }
+
+    // پیشرفتِ تقریبیِ یک دسته‌ی تولید گروهی («۳ از ۱۴ انجام شد») — بدون ستون batch_id، فقط از
+    // تعداد تولیدهای صف‌شده/در‌حال‌اجرا در برابر تعداد کل تولیدهای همین رکورد در ۵ دقیقه‌ی اخیر
+    public function getGenerationProgressProperty(): ?string
+    {
+        $pending = AiGeneration::where('content_type', $this->recordType)
+            ->where('content_id', $this->record->id)
+            ->whereIn('status', ['queued', 'processing'])
+            ->count();
+
+        if ($pending === 0) {
+            return null;
+        }
+
+        $recentTotal = AiGeneration::where('content_type', $this->recordType)
+            ->where('content_id', $this->record->id)
+            ->where('created_at', '>=', now()->subMinutes(5))
+            ->count();
+
+        return max(0, $recentTotal - $pending).' of '.$recentTotal.' done';
+    }
+
+    private function queueGeneration(string $field, string $mode): void
+    {
         // ALT روی رکورد Article/Page ذخیره نمی‌شود، روی Media متناظر — پس مقدار فعلی هم باید از آنجا خوانده شود
         $inputSnapshot = $field === 'alt_text' ? $this->mediaForRecord()?->alt_text : $this->record->getAttribute($field);
 
@@ -169,10 +240,13 @@ class AiAssistantPanel extends Component
         ]);
 
         RunAiContentGeneration::dispatch($generation->id);
+    }
 
+    private function notifyQueued(string $what): void
+    {
         Notification::make()
             ->success()
-            ->title('Generation queued')
+            ->title($what.' queued')
             ->body('This runs in the background — a queue worker must be running (php artisan queue:work) for it to complete. This page refreshes automatically while it runs.')
             ->persistent()
             ->send();

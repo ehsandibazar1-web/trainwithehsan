@@ -11,10 +11,8 @@
 
         .ai-edit-backdrop{display:none}
 
-        @media (prefers-color-scheme: dark) {
-            .ai-edit-sidebar{background:#1f2937;border-color:#374151}
-            .ai-edit-sidebar-header .heading{color:#f9fafb}
-        }
+        :root.dark .ai-edit-sidebar{background:#1f2937;border-color:#374151}
+        :root.dark .ai-edit-sidebar-header .heading{color:#f9fafb}
 
         @media (max-width: 1024px) {
             .ai-edit-layout{display:block}

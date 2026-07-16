@@ -58,6 +58,35 @@
         .ai-ca-score-cat .num.mid{color:#92400e}
         .ai-ca-score-cat .num.bad{color:#b91c1c}
         .ai-ca-score-cat .issues{margin:.3rem 0 0 1rem;padding:0;font-size:.68rem;color:#9ca3af}
+
+        .ai-ca-quick-actions{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem}
+        .ai-ca-quick-btn{font-size:.75rem;padding:.35rem .65rem;border-radius:.5rem;border:1px solid rgb(209 213 219);background:#f9fafb;color:#374151;cursor:pointer}
+        .ai-ca-quick-btn:hover{background:#f3f4f6}
+
+        /* Filament toggles dark mode via a `dark` class on <html>, not prefers-color-scheme — match that mechanism */
+        :root.dark .ai-ca-header .title{color:#9ca3af}
+        :root.dark .ai-ca-header .title strong{color:#f9fafb}
+        :root.dark .ai-ca-card,
+        :root.dark .ai-ca-findings,
+        :root.dark .ai-ca-score,
+        :root.dark .ai-ca-diff{background:#1f2937;border-color:#374151}
+        :root.dark .ai-ca-card h3{color:#f9fafb}
+        :root.dark .ai-ca-current{background:#111827;border-color:#374151;color:#d1d5db}
+        :root.dark .ai-ca-mode-btn,
+        :root.dark .ai-ca-quick-btn{background:#111827;border-color:#374151;color:#d1d5db}
+        :root.dark .ai-ca-mode-btn:hover,
+        :root.dark .ai-ca-quick-btn:hover{background:#1f2937}
+        :root.dark .ai-ca-preview{background:#1e3a5f;border-color:#1e40af;color:#dbeafe}
+        :root.dark .ai-ca-diff del{background:#450a0a;color:#fca5a5}
+        :root.dark .ai-ca-diff ins{background:#14532d;color:#86efac}
+        :root.dark .ai-ca-tabs{border-color:#374151}
+        :root.dark .ai-ca-tab-btn{color:#9ca3af}
+        :root.dark .ai-ca-tab-btn.active{color:#f9fafb}
+        :root.dark .ai-ca-finding{border-color:#374151}
+        :root.dark .ai-ca-score-overall{color:#f9fafb}
+        :root.dark .ai-ca-score-cat{border-color:#374151}
+        :root.dark .ai-ca-score-cat .name{color:#9ca3af}
+        :root.dark .ai-ca-history-item{border-color:#374151}
     </style>
 
     <div @if ($this->isPolling) wire:poll.3s="$refresh" @endif>
@@ -70,15 +99,36 @@
             @endif
         </div>
 
+        <div style="margin-bottom:.75rem">
+            <x-filament::button wire:click="optimizeEntireArticle" wire:loading.attr="disabled" wire:confirm="Queue AI suggestions for every optimizable field on this {{ strtolower($recordType) }}? Nothing is applied automatically — you review and approve each one.">
+                ✨ Optimize Entire Article
+            </x-filament::button>
+        </div>
+
+        <div class="ai-ca-quick-actions">
+            <button type="button" class="ai-ca-quick-btn" wire:click="optimizeEntireArticle" wire:loading.attr="disabled" wire:confirm="Queue AI suggestions for every optimizable field on this {{ strtolower($recordType) }}?">Generate Everything</button>
+            <button type="button" class="ai-ca-quick-btn" wire:click="quickSeoOnly" wire:loading.attr="disabled">SEO Only</button>
+            @if ($recordType === 'Article')
+                <button type="button" class="ai-ca-quick-btn" wire:click="quickFaqOnly" wire:loading.attr="disabled">FAQ Only</button>
+            @endif
+            <button type="button" class="ai-ca-quick-btn" wire:click="quickBodyAction('rewrite')" wire:loading.attr="disabled">Rewrite</button>
+            <button type="button" class="ai-ca-quick-btn" wire:click="quickBodyAction('improve')" wire:loading.attr="disabled">Improve</button>
+            <button type="button" class="ai-ca-quick-btn" wire:click="quickBodyAction('expand')" wire:loading.attr="disabled">Expand</button>
+            <button type="button" class="ai-ca-quick-btn" wire:click="quickBodyAction('simplify')" wire:loading.attr="disabled">Simplify</button>
+            <button type="button" class="ai-ca-quick-btn" wire:click="setTab('review')">Review</button>
+        </div>
+
         @if ($this->isPolling)
-            <div class="ai-ca-status processing" style="margin-bottom:1rem">Generating… this page refreshes automatically.</div>
+            <div class="ai-ca-status processing" style="margin-bottom:1rem">
+                Generating{{ $this->generationProgress ? ' — '.$this->generationProgress : '' }}… this page refreshes automatically.
+            </div>
         @endif
 
         @php($scoreCard = $this->scoreCard)
         <div class="ai-ca-score">
             <div class="ai-ca-score-head">
                 <div class="ai-ca-score-overall">{{ $scoreCard['overall'] }}<span class="max">/100</span></div>
-                <div class="ai-ca-score-label">AI Health Report — overall score is the average of the six categories below. Hover a category for what's missing.</div>
+                <div class="ai-ca-score-label">AI Health Report — overall score is the average of the six categories below, each explaining what's missing.</div>
             </div>
             <div class="ai-ca-score-grid">
                 @foreach ($scoreCard['categories'] as $category)
@@ -143,7 +193,7 @@
                         @elseif (is_array($field['current_value']))
                             {{ collect($field['current_value'])->map(fn ($v) => is_array($v) ? ($v['question'] ?? '') : $v)->implode(' · ') }}
                         @else
-                            {{ \Illuminate\Support\Str::limit($field['current_value'], 200) }}
+                            {{ \Illuminate\Support\Str::limit(strip_tags($field['current_value']), 200) }}
                         @endif
                     </div>
 

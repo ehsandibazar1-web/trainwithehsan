@@ -16,6 +16,8 @@ class ContentAssistantService
 {
     private const MAX_BODY_CHARS = 6000;
 
+    private const MAX_BODY_HTML_CHARS = 12000;
+
     public function __construct(
         private readonly AiProvider $provider,
         private readonly ContentReviewService $reviewService,
@@ -41,6 +43,7 @@ class ContentAssistantService
             $this->buildSystemPrompt($definition, $mode),
             $this->buildUserPrompt($record, $field, $definition),
             $this->imagesFor($record, $field),
+            array_merge(['max_tokens' => $definition['max_tokens'] ?? 2048], $options),
         );
 
         return $this->parseResponse($raw, $definition['response_shape']);
@@ -112,6 +115,19 @@ class ContentAssistantService
             $lines[] = 'Target keywords: '.implode(', ', $keywords);
         }
 
+        // برای فیلد body خودِ HTML خام نشان داده می‌شود (نه نسخه‌ی strip_tags شده) تا هوش مصنوعی
+        // ساختار موجود (heading ها، لیست‌ها) را ببیند و در بازنویسی حفظ کند؛ چون این همان محتوایی
+        // است که زیر «Current value» هم می‌آمد، آن خط برای body عمداً حذف می‌شود تا دوبار فرستاده نشود
+        if ($field === 'body') {
+            $rawBody = trim((string) $record->body);
+
+            if ($rawBody !== '') {
+                $lines[] = 'Content (HTML):'."\n".mb_substr($rawBody, 0, self::MAX_BODY_HTML_CHARS);
+            }
+
+            return implode("\n\n", $lines);
+        }
+
         $body = trim(strip_tags((string) $record->body));
 
         if ($body !== '') {
@@ -170,11 +186,17 @@ class ContentAssistantService
 
         return match ($shape) {
             'text' => ['result' => trim($raw, "\"' \t\n\r\0\x0B"), 'warnings' => []],
+            'html' => ['result' => $this->cleanHtml($raw), 'warnings' => []],
             'list' => $this->parseJsonArray($raw, isAssoc: false),
             'qa_pairs' => $this->parseJsonArray($raw, isAssoc: true),
             'internal_link_suggestions' => $this->parseStructuredArray($raw, ['id', 'type', 'anchor_text', 'reason']),
             'external_link_suggestions' => $this->parseStructuredArray($raw, ['url', 'anchor_text', 'reason']),
         };
+    }
+
+    private function cleanHtml(string $raw): string
+    {
+        return trim(preg_replace('/^```(html)?|```$/m', '', $raw));
     }
 
     /**
