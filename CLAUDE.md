@@ -33,8 +33,9 @@ Two audiences to keep in mind on every change:
 
 ```
 app/
-  Console/Commands/PublishDueArticles.php   Scheduled auto-publish job
+  Console/Commands/PublishDueArticles.php   Scheduled auto-publish job — also advances any linked `ContentPlan` to `published` and fires `PublishingCompleted`, see Section 25
   Console/Commands/BackfillMediaLibrary.php  One-off `media:backfill` — registers pre-DAM article/page images in the Media Library
+  Console/Commands/NotifyApproachingDeadlines.php   `content-plans:notify-deadlines`, hourly — warns about `ContentPlan.due_at` within 24h, see Section 25
   Filament/
     Resources/Articles/                     ArticleResource + Schemas/ArticleForm.php, Tables/ArticlesTable.php, Pages/
     Resources/Pages/                        PageResource (standalone site pages: privacy, terms, FAQ, ...) — same layout as Articles
@@ -44,9 +45,13 @@ app/
     Resources/AiPrompts/                    Prompt Library — saved AI instructions with one-click copy
     Resources/AiProfiles/                   AI Profiles — provider name + defaults that fill gaps in imported content
     Resources/ApiTokens/                    API tokens for the AI Import API — create (shown once) / revoke, last-used tracking
+    Resources/Tags/                          TagResource (nav "Tags", "Content Planner" group) — plain List/Create/Edit/Delete, see Section 25
+    Resources/WorkflowStages/                WorkflowStageResource (nav "Workflow Stages") — reorderable, default-stage/checklist-template management, see Section 25
+    Resources/ContentPlans/                  ContentPlanResource — Create/Edit form + shared table class only (`shouldRegisterNavigation() => false`, ContentPlanner is the real entry point), see Section 25
     Pages/AiImport.php                       Paste-area importer for AI-generated articles (JSON/Markdown → validate → preview → import), with template/profile pickers
     Pages/DraftQueue.php                     Imported drafts awaiting review — edit / signed preview / publish-now
-    Pages/EditorialCalendar.php              Drag-and-drop article scheduling calendar
+    Pages/EditorialCalendar.php              Superseded — now a thin redirect to the Content Planner's Calendar view (`shouldRegisterNavigation() => false`), see Section 25
+    Pages/ContentPlanner.php                 Content Planner (nav "Planner", "Content Planner" nav group) — one page, four switchable views (Kanban/Calendar/Table/Dashboard), see Section 25
     Pages/HomepageSettings.php               Homepage content-block editor (per locale)
     Pages/AboutPageSettings.php              About page content-block editor (hero, stats, certificates, gallery, timeline, CTA, SEO — per locale)
     Pages/MenuSettings.php                   Header nav menu editor (per locale)
@@ -75,6 +80,7 @@ app/
   Jobs/RunAiContentGeneration.php            Queued — thin dispatch wrapper over ContentAssistantService::generate(), $tries=1, with two cancellation checkpoints — see Section 23
   Jobs/ProcessAiChatMessage.php              Queued — classifies a chat message's intent (ContentAssistantService::classifyIntent) and routes it to RunAiContentGeneration, TranslateArticleDraft, or a plain reply — see Section 23
   Jobs/TranslateArticleDraft.php             Queued — builds a real translated draft Article (via ArticleImportService::import()) or Page (direct Eloquent create), always status=draft — see Section 23
+  Notifications/WorkflowStageChanged.php, ReviewRequested.php, PublishingCompleted.php, DeadlineApproaching.php   Channel-agnostic (`via()` filtered through NotificationPreference), in-app-only today via `toDatabase()` → `Filament\Notifications\Notification`, see Section 25
   Mail/
     NewsletterVerificationMail.php           Double-opt-in confirmation email (per-subscriber locale)
     NewsletterCampaignMail.php               Queued newsletter email — used by the admin bulk send, base for future campaigns
@@ -97,6 +103,12 @@ app/
     AiActionOverride.php                      Per-ActionRegistry-field provider/model override — unique on `action_key`; no row for a field means "use the default provider" — see Section 24
     AiUsageLog.php                             One row per ProviderManager::respond() call, success or failure — denormalized provider_slug/model (no FK) so deleting a config never breaks usage history — see Section 24
     AiProviderSetting.php                     Singleton settings row (default/failover/fallback provider) — `current()` is the only read path — see Section 24
+    Tag.php                                   Content-organization tag (auto-slug), `MorphToMany` on Article/Page via `taggables` — deliberately separate from Keyword, see Section 25
+    WorkflowStage.php                         Configurable pipeline stage (label/slug/sort_order/color/is_default/is_terminal/checklist_items JSON) — see Section 25
+    ContentPlan.php                           The planner card — can exist with no Article/Page yet, `moveToStage()`/`materializeContent()`, see Section 25
+    ContentTask.php                           Per-plan task (title/status/due_at/assigned_to/notes/sort_order) — see Section 25
+    ContentPlanStageTransition.php            Immutable per-move audit row, feeds dashboard math (avg publish/review time) — see Section 25
+    NotificationPreference.php                Per-user/event/channel opt-out row — no row means enabled — see Section 25
     User.php                                  Default Laravel auth user (admin login)
   Services/ArticleImport/ArticleImportService.php   UI-independent import pipeline (parse → validate → map → import) — the AiImport page calls it today; a future secure API must reuse it unchanged
   Services/Media/MediaProcessor.php          Image pipeline used by every upload path (Media Library, Article/Page featured image): stores the original untouched, generates WebP + thumbnail + responsive WebP variants; `replace()` overwrites content at the *same* disk_path so existing references never break
@@ -119,7 +131,7 @@ app/
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services incl. `anthropic`, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24)
+  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}) — see Section 25
 lang/
   en/newsletter.php, tr/newsletter.php       ALL user-facing newsletter strings (form messages, result pages, emails) — the only lang files in the project
   factories/, seeders/
@@ -129,7 +141,7 @@ resources/
     tr/home.blade.php, tr/about.blade.php, tr/blog.blade.php, tr/blog-post.blade.php, tr/page.blade.php   Turkish duplicates
     layouts/master.blade.php, layouts/master-tr.blade.php                    Shared page shell per locale (head/meta/CSS/header/footer)
     welcome.blade.php                        Default Laravel scaffold view — UNUSED, not routed to. Safe to delete; do not build on it.
-    filament/pages/                           Custom Filament page Blade views (homepage-settings, about-page-settings, menu-settings, footer-settings, editorial-calendar, activity-log, media-library, seo-center, internal-linking-center, ai-content-assistant, system-maintenance) — ai-content-assistant.blade.php is now a thin `@livewire('ai-assistant-panel', [..., 'standalone' => true])` shell
+    filament/pages/                           Custom Filament page Blade views (homepage-settings, about-page-settings, menu-settings, footer-settings, activity-log, media-library, seo-center, internal-linking-center, ai-content-assistant, system-maintenance, content-planner, editorial-calendar-redirect) — ai-content-assistant.blade.php is now a thin `@livewire('ai-assistant-panel', [..., 'standalone' => true])` shell; the old editorial-calendar.blade.php was deleted (dead code) once EditorialCalendar became a redirect, see Section 25
     filament/resources/articles/pages/edit-article.blade.php, filament/resources/pages/pages/edit-page.blade.php   Custom EditRecord views (override `$view` on EditArticle/EditPage) — wrap `{{ $this->content }}` in a two-column layout with the embedded AI Assistant sidebar/drawer — see Section 23
     livewire/ai-assistant-panel.blade.php     The shared AI Assistant markup — mounted by both the embedded sidebar and the standalone page — see Section 23
   css/app.css, js/app.js                      Vite entry points (Tailwind + minimal JS)
@@ -141,6 +153,7 @@ public/                                       index.php, favicon, robots.txt, co
 tests/
   Feature/ExampleTest.php, Unit/ExampleTest.php   Default Laravel scaffold tests only — NOT project-specific coverage (see Testing Strategy)
   Feature/AiAssistantPanelTest.php           Sidebar-redesign coverage (Section 23): DiffService, ContentReviewService::scoreCard(), the body field, Quick Actions/Optimize Entire Article, AI Chat + ProcessAiChatMessage, Translate + TranslateArticleDraft, cancellation, History — kept separate from AiContentAssistantTest.php, which still covers the original ActionRegistry/ContentAssistantService/job/provider layer unchanged
+  Feature/TagsTest.php, ContentPlanTest.php, EditorialNotificationsTest.php, WorkflowStageResourceTest.php, ContentPlanResourceTest.php, ContentPlannerKanbanTest.php, ContentPlannerCalendarTest.php, ContentPlannerTableDashboardTest.php, ContentPlannerAiIntegrationTest.php   Editorial Workflow & Content Planner coverage — see Section 25
 ```
 
 Key duplication to be aware of: **every public-facing view and its Turkish counterpart are separate files** (`home.blade.php` / `tr/home.blade.php`, etc.), and `routes/web.php` registers separate controller methods per locale (`home`/`homeTr`, `index`/`indexTr`, `show`/`showTr`). This is a deliberate current structure, not an oversight in progress — see "Important Project Decisions" before attempting to collapse it.
@@ -164,6 +177,7 @@ Key duplication to be aware of: **every public-facing view and its Turkish count
 - **SEO Center** (`SeoCenter` page, nav item "SEO Center"): another fully custom Livewire screen (sidebar of 10 issue categories with counts, filter toolbar, findings table, CSV export) — read-only, no drag-drop/upload, so it's simpler than Media Library but follows the same "custom Page, not a Resource" precedent, and the same inline `<style>`-in-Blade convention as `EditorialCalendar`/`MediaLibrary` rather than a component library. All audit logic lives in `App\Services\Seo\SeoAuditService` (see Section 8) — the page class is thin: it holds Livewire filter state, calls the service, and streams CSV downloads via `response()->streamDownload()` returned directly from a `wire:click`-bound method (Livewire 3's documented file-download-from-action pattern). `MediaLibrary::mount()` was extended to read an optional `?media=ID` query string and pre-select that item (opening its folder) — this is how SEO Center's "Missing ALT Text" findings deep-link into the DAM for a Media-backed image; reuse this same query-param convention for any other page that needs to deep-link into the Media Library, rather than inventing a second selection mechanism.
 - **Internal Linking Center** (`InternalLinkingCenter` page, nav item "Internal Linking"): a third custom Livewire screen, one step more complex than SEO Center — three tabs (`$activeTab`: dashboard/suggestions/graph) inside a single page rather than three separate nav items, following the same "don't proliferate nav items for one feature" instinct as grouping AI Studio's screens. The dashboard tab is a near-exact copy of SEO Center's sidebar-categories-plus-table layout (same `ilc-*` CSS class names mirroring SEO Center's `seo-*` ones) — reuse that structure for any future audit-style page rather than inventing a fourth variant. See Section 22 for what each tab actually does and which parts reuse `SeoAuditService`.
 - **AI Content Assistant** — the AI generate/improve/review/chat/translate logic lives in `App\Livewire\AiAssistantPanel`, this project's **first plain Livewire component** (`extends \Livewire\Component`, not a `Filament\Pages\Page`). It's mounted in two places with the same component class and Blade view (`resources/views/livewire/ai-assistant-panel.blade.php`): (1) embedded directly in `EditArticle`/`EditPage` via a custom `$view` override (`resources/views/filament/resources/articles/pages/edit-article.blade.php` and the `pages/pages/edit-page.blade.php` equivalent) that wraps `{{ $this->content }}` in a two-column layout — a collapsible right sidebar on desktop, a bottom drawer below `1024px`, Alpine.js state persisted to `localStorage`, toggled by a header `Action::make('aiAssistant')` that dispatches a `toggle-ai-sidebar` browser event (`$this->dispatch(...)`) rather than navigating away; (2) the thin `App\Filament\Pages\AiContentAssistant` page (`mount()` reads `?article=ID`/`?page=ID`, 404s if neither resolves) kept live as a standalone fallback/deep link, passing `standalone=true` so its "Back to editing" button and full-width layout render. Same `ai-ca-*`-prefixed inline `<style>`-in-Blade convention as the other custom screens, now with `:root.dark` overrides (Filament's actual dark-mode toggle mechanism — **not** `prefers-color-scheme`, which doesn't track it) since this is the first AI Studio screen styled for dark mode. Uses `$activeTab` (generate/review/history) and this project's first conditional `wire:poll` (rendered while any generation is queued/processing, or a chat reply is pending). See Section 23 for the full feature — sidebar embedding, AI Chat, diff preview, health score card, Quick Actions, Translate, and cancellation.
+- **Content Planner** (nav group): `TagResource` (nav "Tags"), `WorkflowStageResource` (nav "Workflow Stages"), `ContentPlanResource` (routable Create/Edit only, `shouldRegisterNavigation() => false`), and `ContentPlanner` (nav "Planner") — the group's actual entry point, one Page with four switchable views (Kanban/Calendar/Table/Dashboard) following the same "one Page, several tabs" precedent as SEO Center/Internal Linking Center/AI Content Assistant. `EditorialCalendar` still exists (its old URL must keep working) but is `shouldRegisterNavigation() => false` and does nothing but redirect into this group's Calendar view. See Section 25 for the full feature.
 - `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, and `FooterSettings` manually decode/encode JSON and normalize Filament's `FileUpload` return shape (e.g. `array_values(array_filter($value))[0] ?? null`) in `mount()`/`save()`. This is brittle by nature (tied to Filament's current return shape) — if a Filament upgrade changes `FileUpload`'s value shape, check these files first.
 - Layout-level CMS data (header menu `menu.{locale}.items`, footer `footer.{locale}.*`) is loaded **inline in the master layouts** via `@php` + `SiteSetting` (the footer block sits before the `<style>` tag because the background image is used inside the CSS) — not via controllers or view composers. Follow that in-layout pattern for any future layout-level content.
 - Repeater items that need manual ordering (e.g. `AboutPageSettings`'s `certificates`/`gallery`/`timeline`) get an explicit numeric `sort_order` field alongside Filament's built-in `->reorderable()` drag handle, and the consuming controller sorts by it (`BlogController::sortBySortOrder()`) before passing data to the view. Reuse this pattern — plain numeric field + a small `usort` in the controller — rather than relying on array order alone, since admins may want to reorder without dragging.
@@ -309,9 +323,10 @@ This is real, implemented behavior — document it precisely:
 - An article's `status` is one of `draft`, `scheduled`, `published` (`ArticleForm`).
 - `Article::scopePublished()` treats an article as publicly visible if `status = published`, **or** if `status = scheduled` AND `published_at <= now()` — this is a deliberate safety net (Farsi comment: "even if cron stops working, the article still shows up on time") so a stalled scheduler never blocks content from appearing once its time has passed.
 - Separately, `php artisan articles:publish-due` (run every 5 minutes via `routes/console.php`) proactively flips due `scheduled` articles to `published` and clears `cache`/`view` caches — this is what makes the homepage/blog list reflect the newly-published article immediately rather than waiting for a cache TTL.
-- `EditorialCalendar` (Filament page) lets Ehsan drag an article to a new date on a calendar to reschedule it — this writes to the same `published_at`/`status` fields, nothing calendar-specific in the schema.
+- `ContentPlanner`'s Calendar view (Filament page, superseding the old standalone `EditorialCalendar` — see Section 25) lets Ehsan drag an article to a new date on a calendar to reschedule it — this writes to the same `published_at`/`status` fields, nothing calendar-specific in the schema.
 - When editing this pipeline, preserve both halves (the scope's time-based fallback, and the command's active flip + cache clear) — removing either changes observable behavior (removing the scope fallback means a stalled scheduler hides due content indefinitely; removing the command's cache clear means published content is delayed until the next natural cache expiry).
 - Every article change is recorded via `spatie/laravel-activitylog` (title/locale/status/published_at/category, dirty-only) and visible in the Filament `ActivityLogPage` — don't bypass Eloquent (e.g. raw DB updates) for article status changes, or this audit trail silently breaks.
+- `PublishDueArticles` also advances any `ContentPlan` linked to a just-published article (via `Article::contentPlan()`) to the `published` workflow stage and fires the `PublishingCompleted` notification — a small, deliberate addition to this command, not a second poller; the command remains the single source of truth for "did this actually publish" (see Section 25).
 
 ## 21. Image Optimization Rules — Media Library (DAM)
 
@@ -391,27 +406,192 @@ Added after the AI Content Assistant (Section 23) shipped with a single, contain
   - **`App\Filament\Resources\AiUsageLogs\AiUsageLogResource`** (nav "AI Usage Logs") — fully read-only (`canCreate()`/`canEdit()`/`canDelete()` all `false`), following `ImportLogResource`'s established shape exactly: filters (provider/status/action/user/date range), a per-row "Error" modal action (visible only on failed rows) showing the sanitized `error_message`, and an "Export CSV" bulk action over the selected rows (same `response()->streamDownload()` pattern as `NewsletterSubscribersTable`).
 - **Testing**: `tests/Feature/ProviderManagerTest.php` covers `ProviderManager` directly against `Http::fake()` — the legacy `.env` fallback (both "nothing configured anywhere" and "DB configured but unusable"), the DB-configured default provider taking priority, per-action override (including one pointing at an unusable provider falling back to the default), failover on and off, cost estimation with and without catalog pricing, and API-key redaction in a persisted error message. `tests/Feature/AiProviderSettingsTest.php` covers the `AiProviderConfigResource`/`AiActionRouting` Filament screens: encrypted key save/redisplay behavior, Test Connection success/failure updating the config row, Set as Default, and the routing page's save/delete-on-reset behavior. `tests/Feature/AiUsageLogsTest.php` covers the read-only resource: listing, the read-only guards, the error-detail action's visibility, CSV export, and filtering.
 
-## 25. Performance Rules
+## 25. Editorial Workflow & Content Planner
+
+A production pipeline layer sitting on top of everything else in this file — from a bare idea with
+no `Article`/`Page` yet, through drafting, review, scheduling, and publication — built as a genuinely
+new layer, not a rebuild of anything: scheduling/publishing, AI generation, SEO scoring, tagging
+infrastructure, and the activity log are all reused exactly as they existed before this feature.
+
+- **`Tag` is deliberately separate from `Keyword` — confirmed, not an oversight.** `App\Models\Tag`
+  (`name`, `slug` auto-generated from `name` on create if left blank, optional `color`) plus a
+  polymorphic many-to-many `taggables` pivot (`tag_id`/`taggable_type`/`taggable_id`, unique on all
+  three so the same tag can still apply to an `Article` and a `Page` independently) is this project's
+  **first real tagging system** — `Keyword` remains untouched and SEO-only (target keywords for
+  Internal Linking Center scoring). `Article`/`Page` both get a `tags(): MorphToMany` alongside their
+  existing `keywords(): MorphMany`; `ArticleForm`/`PageForm` gained a `tags` multi-select
+  (`->relationship('tags', 'name')->multiple()->preload()->createOptionForm([...])`) next to the
+  existing `keywords` repeater — two visibly different UI patterns for two deliberately different
+  concepts. `App\Filament\Resources\Tags\TagResource` (nav "Tags", the new "Content Planner" group)
+  is plain List/Create/Edit/Delete.
+- **`App\Models\WorkflowStage`** is the configurable pipeline (`App\Filament\Resources\WorkflowStages\WorkflowStageResource`,
+  nav "Workflow Stages"): `label`, unique `slug`, `sort_order` (drag-reorderable in the table via
+  `->reorderable('sort_order')`), `color`, `is_default` (exactly one row — `CreateWorkflowStage`/`EditWorkflowStage`
+  unset any other row's flag when one is saved with it on), `is_terminal` (informational only), and a
+  `checklist_items` JSON array of `{key,label}` pairs — the per-stage checklist template. A seed
+  migration creates the eight requested default stages in order (`idea → research → ai_draft →
+  human_review → seo_review → scheduled → published → archived`), with SEO Review pre-populated with
+  exactly the requested checklist (Meta Title, Meta Description, FAQ, Internal Links, Images, Schema,
+  ALT Text). **Only the seven `WorkflowStage::STAGE_*` constant slugs are wired to automatic behavior**
+  (materializing a draft, syncing with the scheduler, firing notifications, dashboard math) — admins
+  can freely add custom stages or rename/reorder anything else; renaming or deleting one of the seven
+  known slugs simply means that specific integration point stops firing for it, not that anything
+  breaks. A stage with any `ContentPlan` rows in it cannot be deleted (`restrictOnDelete()` at the DB
+  level, and the Delete action is hidden in the UI whenever `contentPlans()->exists()`).
+- **`App\Models\ContentPlan`** is the planner card — and the central, explicitly-confirmed design
+  decision of this feature: **it can exist as a pure idea with no `Article`/`Page` row at all**
+  (`contentable_type`/`contentable_id` nullable polymorphic, `content_type` — `'Article'`/`'Page'` —
+  optionally chosen up front or left blank to decide later). Also carries `category` (free string,
+  matching `Article.category`'s existing convention — no taxonomy table added here either),
+  `workflow_stage_id`, `priority` (`low`/`medium`/`high`/`critical` via `PRIORITY_*` constants),
+  `author_id`/`assigned_to` (nullable FKs to `users` — schema-ready for multiple team members; see
+  the "future multi-user" note under Important Project Decisions below), `planned_publish_at` (used
+  **only** until a real `Article`/`Page` exists), `due_at` (+ `deadline_notified_at` guard — see
+  Notifications below), `checklist_state` (JSON, keyed `{stage_slug: {item_key: bool}}` so two
+  stages can reuse the same item key without colliding), `notes`, a `tags()` morphToMany (registered
+  in the morph map as `'ContentPlan'`), a `tasks()` hasMany, and `LogsActivity` configured the same
+  way as `Article` (`logOnly(['title','workflow_stage_id','priority','assigned_to','planned_publish_at','due_at'])`,
+  `logOnlyDirty()`, `useLogName('content_plan')`).
+  - **`ContentPlan::moveToStage(WorkflowStage $stage, ?User $actor = null)`** is the single write path
+    for stage changes (used by the Kanban drag-drop, bulk actions, the calendar's automatic Published
+    sync, and the resource form). It's a no-op if already in that stage; otherwise it updates the
+    column, records a `ContentPlanStageTransition` row (`from_stage_id`/`to_stage_id`/`changed_by`,
+    immutable, no `updated_at`), and — only when entering the `ai_draft` stage with no `contentable_id`
+    yet — calls `materializeContent()`. Notifications (below) fire after the DB transaction commits.
+  - **`ContentPlan::materializeContent()`** creates the real `Article` (or `Page`) from the idea: empty
+    `body`, `status = 'draft'`, title/locale/category copied over, tags synced onto the new record,
+    slug de-duplicated per-locale (`title-2`, `title-3`, …). It **never generates content** — the body
+    starts empty specifically so the existing AI Assistant (or the admin directly) fills it in inside
+    the normal editor, never automatically (see the AI Studio integration bullet below). Idempotent —
+    calling it again once `contentable_id` is set just returns the existing record.
+  - **`Article`/`Page` both gained a `contentPlan(): MorphOne`** (the reverse of `ContentPlan`'s
+    `contentable()`) so other code can go from a materialized record back to its plan — used by
+    `PublishDueArticles`, which now also advances a linked plan to the `published` stage (and fires
+    `PublishingCompleted`) the moment it auto-publishes a scheduled article; this is the **one**
+    small, deliberate addition to that command, not a parallel poller — the cron stays the single
+    source of truth for "did this actually publish," the plan just follows along.
+- **`App\Models\ContentTask`** — per-plan tasks (`title`, `status` via `STATUS_PENDING/IN_PROGRESS/DONE`
+  constants, `due_at`, `assigned_to`, `notes`, `sort_order`), managed as a `Repeater::make('tasks')->relationship()->orderColumn('sort_order')`
+  on `ContentPlanResource`'s form — exactly the requested "Write introduction / Create featured image /
+  Review SEO / Translate / Approve" shape, with no fixed list of task titles (free text).
+- **`App\Models\ContentPlanStageTransition`** exists **specifically for fast dashboard math**
+  (average time-to-publish, average time-in-review, production-per-month) — deliberately separate
+  from `activity_log` (which `ContentPlan` also writes to, for a human-readable audit trail), the same
+  "two mechanisms, two purposes" split already established between `ai_usage_logs` and `activity_log`
+  in Section 24. Querying "how long did this spend in review" from Spatie's JSON `properties` column
+  would be awkward; a plain ordered table of `(content_plan_id, from_stage_id, to_stage_id, changed_by,
+  created_at)` rows is not.
+- **Notifications — channel-agnostic by explicit request, in-app only for now.** A standard
+  `notifications` table (hand-written migration matching Laravel's `notifications:table` stub — this
+  project had never published it before) plus `App\Models\NotificationPreference` (`user_id`,
+  `event_key`, `channel`, `enabled`, unique on all three; **opt-out semantics** — no row means enabled,
+  so nothing needs seeding for existing installs to keep receiving notifications). Four real
+  `Illuminate\Notifications\Notification` classes in `App\Notifications`
+  (`WorkflowStageChanged`, `ReviewRequested`, `PublishingCompleted`, `DeadlineApproaching`) — each
+  `via()` calls `NotificationPreference::filterChannels($user, self::EVENT_KEY, self::AVAILABLE_CHANNELS)`
+  (currently `['database']` only) so adding `'mail'`/`'slack'`/`'telegram'` later is purely additive:
+  a new `toMail()`/`toSlack()` method on the class plus extending its `AVAILABLE_CHANNELS` constant,
+  no change to any call site. Every class's `toDatabase()` returns
+  `Filament\Notifications\Notification::make()->title(...)->body(...)->getDatabaseMessage()` — the
+  documented bridge that makes a plain Laravel notification render correctly in Filament's own
+  database-notifications bell (`AdminPanelProvider->databaseNotifications()->databaseNotificationsPolling('30s')`,
+  this project's first use of that panel feature) — a raw custom array would not. `ContentPlan::moveToStage()`
+  notifies the assignee (falling back to the author, or nobody if neither is set) on every stage
+  change, plus `ReviewRequested` when entering `human_review`/`seo_review` and `PublishingCompleted`
+  when entering `published`. `App\Console\Commands\NotifyApproachingDeadlines` (`content-plans:notify-deadlines`,
+  hourly via `routes/console.php`, mirroring `articles:publish-due`'s cron pattern) warns about
+  `due_at` within 24 hours, excluding plans already in `published`/`archived`; `deadline_notified_at`
+  (reset to `null` automatically whenever `due_at` changes, via a `static::saving()` hook on
+  `ContentPlan`) stops it from re-notifying every hour for the same deadline.
+- **`App\Filament\Resources\ContentPlans\ContentPlanResource`** supplies the actual Create/Edit form
+  (title, type, locale, category, priority, author/assignee, tags, planned publish date, draft
+  deadline, the tasks repeater, notes, and a `Section` of checklist `Checkbox`es that only renders
+  once the record is in a stage whose `checklist_items` is non-empty, bound to
+  `checklist_state.{stage_slug}.{item_key}`) plus a shared `ContentPlanTable` class (columns:
+  title/locale/category/tags/author/assignee/stage/priority/SEO+AI+readability scores/publish
+  date/last updated — the three score columns call `ContentReviewService::scoreCard()` on the linked
+  `contentable`, reusing Section 23's existing scoring, never recomputing anything). The resource is
+  `shouldRegisterNavigation() => false` — `App\Filament\Pages\ContentPlanner` (below) is the intended
+  entry point; this resource only supplies routable Create/Edit pages and the reusable table class.
+- **`App\Filament\Pages\ContentPlanner`** (nav "Planner", the "Content Planner" nav group) is one page
+  with four switchable views (`$activeView`, `#[Url(as: 'view')]`-bound so it's deep-linkable),
+  following the exact same "one Page, several tabs" precedent as SEO Center/Internal Linking Center/AI
+  Content Assistant rather than four separate nav items:
+  - **Kanban** — one column per `WorkflowStage` (by `sort_order`), cards showing everything the spec
+    asked for (title/language/category/tags/author/stage/priority/the three reused scores/publish
+    date/last updated). Drag-and-drop uses the exact same vanilla HTML5 Drag-and-Drop pattern as
+    `EditorialCalendar` (native `dragstart`/`dragover`/`drop`, `@this.call(...)`, re-wired via
+    `Livewire.hook('morph.updated', ...)`) — no Kanban library was added, matching this project's
+    "build small custom JS instead of a new dependency" precedent. Checkbox multi-select
+    (`wire:model.live="selectedPlanIds"`, a plain array-bound checkbox group) backs a bulk-action bar
+    (move stage / set priority / delete).
+  - **Calendar** — **relocates**, not rebuilds, `EditorialCalendar`'s month/week grid computation and
+    reschedule logic, extended to show `Page`s alongside `Article`s and two new pin types sourced from
+    `ContentPlan`: "planned" (an idea's `planned_publish_at`, only while `contentable_id` is still
+    null) and "deadline" (`due_at`, hidden once the plan reaches `published`/`archived`). Dragging any
+    chip still only changes the date, preserving time-of-day — `rescheduleItem($kind, $type, $id,
+    $newDate)` dispatches to the right column (`published_at` on the `Article`/`Page`,
+    `planned_publish_at`, or `due_at`) depending on the chip's `data-kind`. `EditorialCalendar` itself
+    is now a **thin redirect** (`mount()` → `redirect(ContentPlanner::getUrl().'?view=calendar')`,
+    `shouldRegisterNavigation() => false`) — the old URL keeps working, but there is only one calendar
+    now, not two; its old Blade view was deleted as dead code.
+  - **Table** — a hand-rolled Blade table (matching the SEO Center/Internal Linking Center convention
+    rather than mixing in Filament's separate `HasTable` component on a page that already has three
+    other hand-rolled views) reusing the **same** `filteredPlans` collection as Kanban — no second
+    query.
+  - **Dashboard** — stat cards (Ideas/Drafts/In Review/Scheduled/Published, grouped straight off
+    `content_plans.workflow_stage_id`) plus average days-to-publish (creation → first `published`
+    transition per plan) and average days-in-review (only counting review-stage visits that have
+    since moved on — a plan still sitting in review isn't averaged in yet) computed from
+    `content_plan_stage_transitions`, and a content-production-per-month bar chart for the last six
+    months rendered as plain CSS bars (no charting library added, consistent with Internal Linking
+    Center's deterministic server-side SVG graph elsewhere in this codebase).
+  - A **shared filter bar** (workflow stage / language / author / category / tag / priority /
+    publication status — `none`/`draft`/`scheduled`/`published`, the first meaning "no `contentable`
+    yet") and a global title **search** apply identically across Kanban/Calendar/Table via one
+    `baseQuery()` method — the three views never filter independently.
+- **AI Studio integration never runs generation automatically — it only navigates.** This is a direct
+  consequence of the already-established rule (Section 23/29) that AI generation is always an explicit
+  admin click inside `AiAssistantPanel`. "Generate Draft" (shown on a card only while `contentable_id`
+  is null) calls `ContentPlan::moveToStage()` into `ai_draft` (materializing the record) and then
+  redirects the browser straight to that record's `EditArticle`/`EditPage` screen — where the existing
+  embedded AI Assistant sidebar is immediately available. Once a card has content, an "AI Assistant →"
+  link takes the admin straight to the existing standalone `AiContentAssistant` page
+  (`?article=ID`/`?page=ID` — already documented in Section 6 as a deliberate "fallback/deep link"
+  entry point, exactly the use case this is). Both paths are pure navigation over 100% pre-existing AI
+  Studio code; **no new AI/LLM call of any kind was added by this feature.**
+- **Testing**: `tests/Feature/TagsTest.php`, `tests/Feature/ContentPlanTest.php` (stage seeding,
+  `moveToStage()` transitions/idempotency, materialization incl. slug de-duplication and the Article/Page
+  branch, `effectivePublishDate()`, `PublishDueArticles`' new sync behavior, the activity log entry,
+  the stage-delete DB guard), `tests/Feature/EditorialNotificationsTest.php` (assignee/author fallback,
+  no-recipient no-op, review/publishing notification firing, opt-out preferences, the Filament-message
+  shape, the deadline command's 24h window/exclusion/dedup/reset), `tests/Feature/WorkflowStageResourceTest.php`,
+  `tests/Feature/ContentPlanResourceTest.php`, `tests/Feature/ContentPlannerKanbanTest.php`,
+  `tests/Feature/ContentPlannerCalendarTest.php` (incl. the redirect and both chip-kind reschedule
+  paths), `tests/Feature/ContentPlannerTableDashboardTest.php` (incl. the averaging math), and
+  `tests/Feature/ContentPlannerAiIntegrationTest.php`.
+
+## 26. Performance Rules
 
 - Database: SQLite with session/cache/queue all on the same database connection (`database` driver for all three). This is fine at current traffic; if concurrent write load grows (many simultaneous sessions + queued jobs + cache writes), moving cache/session to Redis and/or the DB to MySQL/Postgres is the first lever to pull — do not attempt in-place SQLite tuning workarounds instead.
 - No caching layer sits in front of `SiteSetting` reads or the homepage/blog article queries today — each page load queries fresh. At current content volume this is not a measured problem; if you add caching here, invalidate it from the same places that already clear cache today (`PublishDueArticles`, the Filament save hooks) rather than introducing a second, parallel cache-invalidation path.
 - The two maintenance routes (`system-cache-flush-*`, `system-migrate-*`) are also, incidentally, a performance/availability risk since anyone can trigger a full cache clear at will — another reason they must be fixed (see Security Rules).
 - Keep `composer install --no-dev --optimize-autoloader` and `artisan config:cache`/`route:cache`/`view:cache` as standard for any production deploy (see Deployment Workflow) — these are the main have-you-done-this-yet performance checks for a Laravel app of this shape.
 
-## 26. Testing Strategy
+## 27. Testing Strategy
 
-**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access), `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource) `tests/Feature/AiImportTest.php` (AI import: JSON/Markdown parsing, validation errors, field mapping, scheduling/draft/published paths, image download into the media library, import logging, admin page access), `tests/Feature/AiStudioTest.php` (preview history, rollback, profile defaults, draft queue scoping, AI Studio resource pages), `tests/Feature/AiImportApiTest.php` (API auth, forced-draft policy, signed preview URL, dry-run validation, queueing, rate limiting, token resource), `tests/Feature/MediaLibraryTest.php` (`MediaProcessor` store/replace/delete — original kept, WebP/thumbnail/responsive derivatives generated and cleaned up, replace preserves `disk_path`; `MediaFolder` nesting + empty-only deletion; `MediaUsageScanner` against Article/Page/SiteSetting; `Media::warnings()` thresholds — all against the services directly, not the Livewire page, matching this project's existing pattern of testing the service layer rather than the Filament UI), `tests/Feature/SeoAuditTest.php` (`SeoAuditService::run()` — each of the 9 fast categories, including the always-empty missing-canonicals check and the Article-vs-Page split on missing-schema; `checkExternalLinks()` against `Http::fake()`), `tests/Feature/InternalLinkingTest.php` (`InternalLinkResolver::parseInternalPath()` including the external-URL guard; `LinkGraphService` inbound/outbound counting, dedup of repeated links to the same target, draft-inclusive no-inbound/no-outbound vs. published-only weak-linking, the always-empty redirect-chains check; `SuggestionEngine` keyword/category scoring, locale isolation, already-linked exclusion, and `generateAndPersist()`'s upsert + approved/dismissed preservation + stale-pending cleanup; the `Keyword` morphMany relation on both `Article` and `Page`), and `tests/Feature/AiContentAssistantTest.php` (`ActionRegistry` model-scoping; `NullProvider`/`AnthropicProvider` against `Http::fake()`, including the container binding switching on `services.anthropic.key`; `ContentAssistantService::generate()`'s prompt-building and response-parsing for every response shape — text/list/qa_pairs/internal_link_suggestions/external_link_suggestions, including malformed-JSON and markdown-fenced-JSON handling; `RunAiContentGeneration`'s queued→completed/failed transitions; apply/restore snapshot round-trips including the `alt_text`→`Media` special case; `AiAssistantPanel::applyInternalLinkSuggestions()` creating `origin=ai` pending rows; `ContentReviewService`'s checks against fixture HTML; `SeoAuditService::checkUrls()`), and `tests/Feature/AiAssistantPanelTest.php` (the AI Assistant sidebar redesign, Section 23: `DiffService::diffWords()`; `ContentReviewService::scoreCard()`'s six categories; the `body` field's `html` response shape; Quick Actions/`optimizeEntireArticle()` queuing the right field set; `ContentAssistantService::classifyIntent()`'s action/translate/chat routing and validation fallbacks; `ProcessAiChatMessage`; `buildTranslationPayload()` and `TranslateArticleDraft` for both Article and Page, including the `faqs: null` validation-error fix; `AiGeneration::isCancellable()`/cancellation checkpoints in both jobs; `AiGeneration::scopeForRecord()` and the History tab). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, the Article Filament resource, or the `MediaLibrary`/`SeoCenter`/`InternalLinkingCenter` pages' own Livewire interactions (folder CRUD, upload wiring, filters, CSV download, bulk suggestion approval, graph rendering) — the latter were verified manually in a browser during development (see git history) but have no automated coverage. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
+**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access), `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource) `tests/Feature/AiImportTest.php` (AI import: JSON/Markdown parsing, validation errors, field mapping, scheduling/draft/published paths, image download into the media library, import logging, admin page access), `tests/Feature/AiStudioTest.php` (preview history, rollback, profile defaults, draft queue scoping, AI Studio resource pages), `tests/Feature/AiImportApiTest.php` (API auth, forced-draft policy, signed preview URL, dry-run validation, queueing, rate limiting, token resource), `tests/Feature/MediaLibraryTest.php` (`MediaProcessor` store/replace/delete — original kept, WebP/thumbnail/responsive derivatives generated and cleaned up, replace preserves `disk_path`; `MediaFolder` nesting + empty-only deletion; `MediaUsageScanner` against Article/Page/SiteSetting; `Media::warnings()` thresholds — all against the services directly, not the Livewire page, matching this project's existing pattern of testing the service layer rather than the Filament UI), `tests/Feature/SeoAuditTest.php` (`SeoAuditService::run()` — each of the 9 fast categories, including the always-empty missing-canonicals check and the Article-vs-Page split on missing-schema; `checkExternalLinks()` against `Http::fake()`), `tests/Feature/InternalLinkingTest.php` (`InternalLinkResolver::parseInternalPath()` including the external-URL guard; `LinkGraphService` inbound/outbound counting, dedup of repeated links to the same target, draft-inclusive no-inbound/no-outbound vs. published-only weak-linking, the always-empty redirect-chains check; `SuggestionEngine` keyword/category scoring, locale isolation, already-linked exclusion, and `generateAndPersist()`'s upsert + approved/dismissed preservation + stale-pending cleanup; the `Keyword` morphMany relation on both `Article` and `Page`), and `tests/Feature/AiContentAssistantTest.php` (`ActionRegistry` model-scoping; `NullProvider`/`AnthropicProvider` against `Http::fake()`, including the container binding switching on `services.anthropic.key`; `ContentAssistantService::generate()`'s prompt-building and response-parsing for every response shape — text/list/qa_pairs/internal_link_suggestions/external_link_suggestions, including malformed-JSON and markdown-fenced-JSON handling; `RunAiContentGeneration`'s queued→completed/failed transitions; apply/restore snapshot round-trips including the `alt_text`→`Media` special case; `AiAssistantPanel::applyInternalLinkSuggestions()` creating `origin=ai` pending rows; `ContentReviewService`'s checks against fixture HTML; `SeoAuditService::checkUrls()`), and `tests/Feature/AiAssistantPanelTest.php` (the AI Assistant sidebar redesign, Section 23: `DiffService::diffWords()`; `ContentReviewService::scoreCard()`'s six categories; the `body` field's `html` response shape; Quick Actions/`optimizeEntireArticle()` queuing the right field set; `ContentAssistantService::classifyIntent()`'s action/translate/chat routing and validation fallbacks; `ProcessAiChatMessage`; `buildTranslationPayload()` and `TranslateArticleDraft` for both Article and Page, including the `faqs: null` validation-error fix; `AiGeneration::isCancellable()`/cancellation checkpoints in both jobs; `AiGeneration::scopeForRecord()` and the History tab). The Editorial Workflow & Content Planner (Section 25) is covered by `tests/Feature/TagsTest.php`, `ContentPlanTest.php`, `EditorialNotificationsTest.php`, `WorkflowStageResourceTest.php`, `ContentPlanResourceTest.php`, `ContentPlannerKanbanTest.php`, `ContentPlannerCalendarTest.php`, `ContentPlannerTableDashboardTest.php`, and `ContentPlannerAiIntegrationTest.php` — including `PublishDueArticles`' new `ContentPlan`-sync addition specifically, though the command's own core flip-to-published logic remains covered only by this addition's tests, not a dedicated test of the pre-existing behavior (see priority list below, still open). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`'s own core due-article flip (only its new `ContentPlan` sync side effect is tested), the Article Filament resource, or the `MediaLibrary`/`SeoCenter`/`InternalLinkingCenter`/`ContentPlanner`'s own Livewire interactions beyond what's listed above (folder CRUD, upload wiring, filters, CSV download, bulk suggestion approval, graph rendering) — the latter were verified manually in a browser during development (see git history) but have no automated coverage. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
 
 Priority order for adding real tests (highest-value first):
 1. `Article::scopePublished()` — feed it draft/scheduled-future/scheduled-due/published rows and assert visibility; this is the single most important piece of business logic in the app and the easiest to silently break.
-2. `PublishDueArticles` — assert it flips due scheduled articles to published and leaves others untouched.
+2. `PublishDueArticles` — assert it flips due scheduled articles to published and leaves others untouched (its `ContentPlan`-sync side effect is already tested — see Section 25 — but the command's own original due-flip logic still is not).
 3. `BlogController` feature tests for both locales — home/index/show return 200, show correct articles, 404 on missing slug.
 4. `SeoController` — sitemap includes only published articles, RSS feed is well-formed XML and locale-filtered.
 5. `PreviewController` — unsigned access is rejected, signed access works even for a draft article.
 
 Run tests with `php artisan test` (or `composer test`, which clears config cache first). Use `laravel/pint` for style, not a separate linter. Do not adopt Pest unless the user asks — the project is on plain PHPUnit today (`phpunit/phpunit` ^12.5) with no Pest dependency installed.
 
-## 27. Important Project Decisions
+## 28. Important Project Decisions
 
 These are decisions already made — do not silently reverse them:
 - **Pixel-parity with `ehsandibazar.com` is a deliberate, ongoing goal**, not an accident of a rushed build — a large fraction of commit history is dedicated to matching exact CSS values, image positioning, and layout from that reference site (see Brand Identity). When touching public-site visuals, check whether the current behavior was arrived at through this matching process before "fixing" it — it may be intentionally unusual to match the reference.
@@ -426,8 +606,12 @@ These are decisions already made — do not silently reverse them:
 - **The AI Content Assistant (Section 23) is this project's first real LLM integration** — deliberately, not by oversight; everything in "AI Studio" before it was a paste-in import pipeline (see Architecture). Anthropic was picked as the first working provider, and the provider layer's intentional abstraction (`App\Services\AiAssistant\Contracts\AiProvider`) has since been exercised for real: four more vendors (OpenAI, Gemini, Grok, DeepSeek) and a full `ProviderManager` orchestration layer were added without touching `ContentAssistantService`'s calling code — see Section 24. Don't couple any calling code to a specific vendor's request/response shape; go through `ProviderManager`, never a concrete `AiProvider` implementation directly.
 - **The AI Provider Integration Layer (Section 24) keeps the pre-existing `ANTHROPIC_API_KEY`/.env path as a permanent, load-bearing fallback, not a migration shim to be removed later** — this was an explicit, confirmed requirement (not a default assumption): any installation that has never touched the new Provider Settings screens must keep working exactly as it did before this feature shipped. Do not make database configuration mandatory, and do not remove the legacy binding in `AppServiceProvider`.
 - **`seo_title`/`meta_description`/`og_title`/`og_description` are real columns now, not derived-only** — before this feature, the public templates always computed these from `title`/`excerpt`/`body`. They still do, but only as a fallback when the column is blank (`$article->seo_title ?: $article->title`, etc., in `blog-post.blade.php`/`page.blade.php` and their `tr/` counterparts). Don't remove the fallback — every existing article/page has these columns `null` and must keep rendering exactly as before until an admin (or the AI Assistant) sets one explicitly.
+- **`Tag` (Section 25) is deliberately separate from `Keyword`, confirmed with the user, not a naming accident** — `Keyword` stays SEO-only (Internal Linking Center scoring); `Tag` is the new, general-purpose content-organization/filtering entity. Do not merge them into one model or table.
+- **`ContentPlan` (Section 25) can exist with no `Article`/`Page` at all — this was an explicit, confirmed design decision ("Yes, standalone Idea"), not a temporary gap.** Materialization into a real record only ever happens via `moveToStage()` entering the `ai_draft` stage, and the created record's body always starts empty — content generation is never automatic, even for this new feature (see Section 23's already-established rule).
+- **Only the seven `WorkflowStage::STAGE_*` slugs (`idea`/`research`/`ai_draft`/`human_review`/`seo_review`/`scheduled`/`published`/`archived`) have wired automatic behavior** (materialization, the `PublishDueArticles` sync, notifications, dashboard math) — admins can add/rename/reorder any other stage freely, but renaming or deleting one of these seven silently stops that specific integration point from firing. This is documented behavior, not a bug to "fix" by hardcoding stage IDs elsewhere.
+- **`EditorialCalendar` is superseded by `ContentPlanner`'s Calendar view (Section 25), by explicit user request** — its URL and drag-and-drop scheduling behavior were kept working via a thin redirect, but it is not a second, independent calendar. Do not resurrect standalone calendar logic in `EditorialCalendar` itself.
 
-## 28. Things That Must Never Be Changed
+## 29. Things That Must Never Be Changed
 
 - Do not change the `articles` table's two-row-per-translation model (`locale` + `translation_of`) without an explicit request and a data migration plan — every controller, scope, and Filament form assumes this shape.
 - Do not remove the `scopePublished()` time-based fallback for `scheduled` articles — it is a deliberate resilience mechanism against scheduler downtime, not redundant logic.
@@ -447,8 +631,11 @@ These are decisions already made — do not silently reverse them:
 - Do not remove the legacy `AnthropicProvider`/`NullProvider` container binding in `AppServiceProvider`, and do not make database-backed provider configuration mandatory anywhere in `ProviderManager::resolveCandidates()` — the `.env`-only fallback (`ANTHROPIC_API_KEY`) is a confirmed, permanent requirement so every pre-existing installation keeps working untouched (see Section 24 and Important Project Decisions).
 - Do not store, log, or re-display a decrypted AI provider API key anywhere outside `ProviderManager`'s own use of it to make the request — never in `ai_usage_logs.error_message` (see `ProviderManager::sanitizeError()`), never pre-filled back into the `AiProviderConfigForm` edit field, never in an exception message that reaches the browser or a log file (see Section 24, Security Rules).
 - Do not let `AiActionOverride`/`ai_provider_settings` reference a provider that isn't `is_usable`; `ProviderManager::resolveCandidates()`'s fallback-to-default behavior when an override target is unusable (see Section 24) must stay — a misconfigured per-field override must never hard-fail a generation when a usable default exists.
+- Do not make `ContentPlan::materializeContent()` (Section 25) generate real body content, or call it from anywhere other than `moveToStage()` entering `ai_draft` — materialization must stay a plain, empty-body Eloquent create; the AI Assistant (or the admin) fills the body afterward, inside the normal editor, never automatically.
+- Do not make `SuggestionEngine`/Internal Linking Center's `approved`/`dismissed` preservation rule (see above) the only place this pattern applies — `ContentPlanStageTransition` rows (Section 25) are similarly append-only history and must never be edited or deleted by a regeneration/sync path; `PublishDueArticles`' `ContentPlan` sync only ever calls `moveToStage()` (which appends), never touches past transition rows directly.
+- Do not remove the `EditorialCalendar` redirect or let its route 404 — the URL must keep working per the confirmed "keep URLs... compatible where possible" requirement (see Section 25 and Important Project Decisions).
 
-## 29. Future Development Guidelines
+## 30. Future Development Guidelines
 
 Ordered roughly by impact:
 1. **Confirm/establish a real SQLite backup mechanism on the production server** — see SQLite Backup Strategy; this is currently unverified/likely missing and is a data-loss risk.
@@ -468,10 +655,12 @@ Ordered roughly by impact:
 15. ~~Add a second `AiProvider` implementation~~ — **done** (Section 24): OpenAI, Gemini, Grok, and DeepSeek were all added alongside a `ProviderManager` orchestration layer, per-field routing, failover, encrypted credentials, usage logging, and cost estimation. A future 6th/7th vendor follows the exact same one-class-plus-one-`DRIVERS`-entry pattern documented there — not a refactor.
 16. **Wire AI-suggested schema (Section 23's `schema` field) into the actual templates** if the read-only JSON-snippet preview proves not enough — today it's deliberately copy-paste-to-a-developer only, consistent with `SeoAuditService::missingSchema()`'s existing "template-level gap, needs explicit sign-off" stance; don't wire it in as a side effect of an unrelated task.
 17. **Consider a lightweight per-provider spend/quota alert** on top of `ai_usage_logs` (Section 24) — e.g. a daily digest or a Filament notification once estimated cost crosses an admin-configured threshold — genuinely useful once real usage volume exists, but speculative today since no provider has been used in production yet; don't build it preemptively.
+18. **Real multi-user access is still schema-ready only, not implemented.** The Editorial Workflow (Section 25) added nullable `author_id`/`assigned_to` FKs on `ContentPlan` and a per-user `NotificationPreference` table specifically so a future multi-user team fits without another migration — but `User::canAccessPanel()` still hardcodes a single admin email, and no roles/permissions system exists. Wiring up real RBAC (who can move a card to `published`, who can see whose tasks, etc.) is a separate, explicitly-scoped security decision — don't infer it from the presence of these columns.
+19. **Enable additional notification channels (mail/Slack/Telegram/push) once needed** — the four `App\Notifications\*` classes (Section 25) were built channel-agnostic on purpose (`via()` filtered through `NotificationPreference`); adding a channel is purely additive (one `toMail()`/`toSlack()` method + extending `AVAILABLE_CHANNELS`), no call-site changes required.
 
-When in doubt about whether a change fits this project's grain, re-read sections 2, 14, 27, and 28 above before proceeding.
+When in doubt about whether a change fits this project's grain, re-read sections 2, 14, 28, and 29 above before proceeding.
 
-## 30. Keeping CLAUDE.md Updated
+## 31. Keeping CLAUDE.md Updated
 
 This file is the **single source of truth** for future Claude Code sessions working on this repository — it exists so a new session can be productive immediately without re-exploring the entire codebase from scratch.
 
