@@ -115,7 +115,7 @@
                     {!! $article->body !!}
                 </div>
 
-                <div class="share-box">
+                <div class="share-box reveal">
                     <h3>Bu makaleyi paylaş</h3>
                     <div class="share-buttons">
                         <a href="https://t.me/share/url?url={{ urlencode(url('/tr/blog/' . $article->slug)) }}&text={{ urlencode($article->title) }}" target="_blank" rel="noopener" class="share-btn share-btn-tg">Telegram</a>
@@ -124,7 +124,7 @@
                     </div>
                 </div>
 
-                <div class="hoosh-box">
+                <div class="hoosh-box reveal">
                     <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
                         <div class="hoosh-avatar">ED</div>
                         <div>
@@ -145,9 +145,9 @@
                         <legend style="font-size:17px;font-weight:800;color:#000;padding:0">İlgili Makaleler</legend>
                     </fieldset>
                 </div>
-                <div class="related-grid">
+                <div class="related-grid reveal-group">
                     @foreach($related as $rel)
-                    <a href="{{ url('/tr/blog/' . $rel->slug) }}" class="related-card">
+                    <a href="{{ url('/tr/blog/' . $rel->slug) }}" class="related-card reveal">
                         <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ asset('storage/' . $rel->image_path) }}')" @endif></div>
                         <h4>{{ $rel->title }}</h4>
                         <p>{{ Str::limit($rel->excerpt, 80) }}</p>
@@ -165,9 +165,9 @@
                         <legend style="font-size:17px;font-weight:800;color:#000;padding:0">Son Makaleler</legend>
                     </fieldset>
                 </div>
-                <div style="margin-top:10px">
+                <div class="reveal-group" style="margin-top:10px">
                     @foreach($latest as $item)
-                    <div class="sidebar-last-item">
+                    <div class="sidebar-last-item reveal">
                         <div class="thumb" @if($item->image_path) style="background-image:url('{{ asset('storage/' . $item->image_path) }}')" @endif></div>
                         <div>
                             <h5><a href="{{ url('/tr/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></h5>

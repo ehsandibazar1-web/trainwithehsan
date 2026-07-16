@@ -332,12 +332,12 @@
     <section class="video-section">
         <div class="wrap">
             @php($videoDefaults = ['Why train martial arts & self-defense', 'How the training works', 'What is self-defense & martial sport'])
-            <div class="row-video">
+            <div class="row-video reveal-group">
                 @foreach([1, 2, 3] as $i)
                 @php($vEmbed = $embed($v("video{$i}_embed")))
                 @php($vFile = $v("video{$i}_file"))
                 @php($vThumb = $v("video{$i}_thumb"))
-                <div class="video-card js-video" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
+                <div class="video-card js-video reveal" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
                     <div class="video-card__img" @if($vThumb) style="background:url('{{ asset('storage/' . $vThumb) }}') center/cover no-repeat" @endif>
                         <span class="video-icon">▶</span>
                     </div>
@@ -351,7 +351,7 @@
     {{-- ============ درباره / اپلیکیشن ============ --}}
     <section class="about-section">
         <div class="wrap">
-            <div class="about-text-col">
+            <div class="about-text-col reveal">
                 <h2 class="abou-company">{{ $v('app_title', 'The Ehsan Dibazar Self-Defense Academy app') }}</h2>
                 <div class="sub-title">{{ $v('app_subtitle', 'Step-by-step video training, anywhere') }}</div>
                 <div class="about-text">{{ $v('app_text', 'The training app contains structured video courses that teach the process of self-defense step by step, so you can learn at your own pace. Our focus is on giving you the most effective training programs in martial arts and self-defense — with real quality, in the right order, so you actually reach your goal.') }}</div>
@@ -370,14 +370,14 @@
     {{-- ============ دوره‌های آموزشی و محصولات ============ --}}
     <section class="counter">
         <div class="wrap">
-            <h2 class="title-counter">{{ $v('courses_title', 'Courses & Products') }}</h2>
-            <div class="sun-counter">{{ $v('courses_subtitle', 'Choose the format that fits you — in-person coaching in Istanbul, remote training through the app, or Brazilian Jiu-Jitsu classes.') }}</div>
+            <h2 class="title-counter reveal">{{ $v('courses_title', 'Courses & Products') }}</h2>
+            <div class="sun-counter reveal">{{ $v('courses_subtitle', 'Choose the format that fits you — in-person coaching in Istanbul, remote training through the app, or Brazilian Jiu-Jitsu classes.') }}</div>
             @php($courseDefaults = [['In-Person', 'In-Person Coaching'], ['Remote', 'Remote Training (App)'], ['BJJ', 'Brazilian Jiu-Jitsu']])
             <div class="courses-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
-                <div class="learn-grid carousel-track">
+                <div class="learn-grid carousel-track reveal-group">
                 @foreach([1, 2, 3] as $i)
-                <a href="{{ url('/courses') }}" class="l-box">
+                <a href="{{ url('/courses') }}" class="l-box reveal">
                     <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
                         @unless($v("course{$i}_image"))<b>{{ $courseDefaults[$i - 1][0] }}</b>@endunless
                     </div>
@@ -393,15 +393,15 @@
     {{-- ============ مطالب آموزشی (داینامیک از دیتابیس) ============ --}}
     <section class="section-news">
         <div class="wrap">
-            <h3 class="title-section">Training Articles</h3>
-            <div class="sub-title-section">
+            <h3 class="title-section reveal">Training Articles</h3>
+            <div class="sub-title-section reveal">
                 <a href="{{ url('/blog') }}">View the full archive ⟶</a>
             </div>
             <div class="articles-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
-                <div class="news-grid carousel-track">
+                <div class="news-grid carousel-track reveal-group">
                 @forelse($latestArticles ?? collect() as $article)
-                <a class="news-card" href="{{ url('/blog/' . $article->slug) }}">
+                <a class="news-card reveal" href="{{ url('/blog/' . $article->slug) }}">
                     <div class="img-news" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}');background-size:cover;background-position:center" @endif>
                         @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
                     </div>
@@ -422,7 +422,7 @@
     <section class="result-section">
         <div class="wrap">
             <div class="result-grid">
-                <div>
+                <div class="reveal">
                     <h2 class="abou-company">{{ $v('members_title', 'Member Results') }}</h2>
                     <div class="sub-title">{{ $v('members_subtitle', 'Martial arts and self-defense training that builds real capability — and gives people stronger, more confident lives.') }}</div>
                     <div class="about-cta">
@@ -431,10 +431,10 @@
                 </div>
                 <div>
                     @php($membersList = !empty($members) ? $members : [['name' => 'Sajjad'], ['name' => 'Davoud'], ['name' => 'Omid'], ['name' => 'Mohammad'], ['name' => 'Amir'], ['name' => 'Sara']])
-                    <ul class="user-list">
+                    <ul class="user-list reveal-group">
                         @foreach($membersList as $m)
                         @php($mName = trim($m['name'] ?? '') !== '' ? $m['name'] : 'Member')
-                        <li>
+                        <li class="reveal">
                             <div class="img-user" @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
                                 @if(empty($m['photo'])){{ mb_substr($mName, 0, 1) }}@endif
                             </div>{{ $mName }}
@@ -449,8 +449,8 @@
     {{-- ============ اینستاگرام — نوار اول ============ --}}
     <section class="inst2">
         <div class="wrap">
-            <div class="inst-grid">
-                <div class="insta-link">
+            <div class="inst-grid reveal-group">
+                <div class="insta-link reveal">
                     <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
                         <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-logo-img">
                     </a>
@@ -459,9 +459,9 @@
                     </div>
                 </div>
                 @if($v('insta1_image'))
-                    <img src="{{ asset('storage/' . $v('insta1_image')) }}" alt="Instagram" class="bg-ins-img">
+                    <img src="{{ asset('storage/' . $v('insta1_image')) }}" alt="Instagram" class="bg-ins-img reveal">
                 @else
-                    <div class="bg-ins"></div>
+                    <div class="bg-ins reveal"></div>
                 @endif
             </div>
         </div>
@@ -470,13 +470,13 @@
     {{-- ============ اینستاگرام — نوار دوم ============ --}}
     <section class="inst">
         <div class="wrap">
-            <div class="inst-grid">
+            <div class="inst-grid reveal-group">
                 @if($v('insta2_image'))
-                    <img src="{{ asset('storage/' . $v('insta2_image')) }}" alt="Instagram" class="bg-ins-img">
+                    <img src="{{ asset('storage/' . $v('insta2_image')) }}" alt="Instagram" class="bg-ins-img reveal">
                 @else
-                    <div class="bg-ins"></div>
+                    <div class="bg-ins reveal"></div>
                 @endif
-                <div class="insta-link">
+                <div class="insta-link reveal">
                     <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
                         <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-logo-img">
                     </a>
