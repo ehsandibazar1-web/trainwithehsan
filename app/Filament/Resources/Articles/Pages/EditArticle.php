@@ -2,15 +2,18 @@
 
 namespace App\Filament\Resources\Articles\Pages;
 
-use App\Filament\Pages\AiContentAssistant;
 use App\Filament\Resources\Articles\ArticleResource;
 use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Resources\Pages\EditRecord;
 
+// نمای سفارشی $view: سایدبار AI Assistant تعبیه‌شده — نگاه کنید به
+// resources/views/filament/resources/articles/pages/edit-article.blade.php
 class EditArticle extends EditRecord
 {
     protected static string $resource = ArticleResource::class;
+
+    protected string $view = 'filament.resources.articles.pages.edit-article';
 
     protected function getHeaderActions(): array
     {
@@ -18,7 +21,7 @@ class EditArticle extends EditRecord
             Action::make('aiAssistant')
                 ->label('AI Assistant')
                 ->icon('heroicon-o-sparkles')
-                ->url(fn () => AiContentAssistant::getUrl(['article' => $this->record->id])),
+                ->action(fn () => $this->dispatch('toggle-ai-sidebar')),
             DeleteAction::make(),
         ];
     }
