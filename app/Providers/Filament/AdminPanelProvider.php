@@ -17,13 +17,14 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 class AdminPanelProvider extends PanelProvider
 {
     public function panel(Panel $panel): Panel
     {
-        return $panel
+        $panel = $panel
             ->default()
             ->id('admin')
             ->path('admin')
@@ -31,10 +32,6 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
-            // زنگولهٔ اعلان‌ها — App\Notifications\* روی کانال database می‌نویسند، این فقط
-            // خواندن/نمایش همان اعلان‌ها را در پنل فعال می‌کند
-            ->databaseNotifications()
-            ->databaseNotificationsPolling('30s')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -59,5 +56,20 @@ class AdminPanelProvider extends PanelProvider
             ->authMiddleware([
                 Authenticate::class,
             ]);
+
+        // زنگولهٔ اعلان‌ها — App\Notifications\* روی کانال database می‌نویسند، این فقط
+        // خواندن/نمایش همان اعلان‌ها را در پنل فعال می‌کند.
+        // این ویژگی روی هر صفحهٔ پنل (حتی System Maintenance) در بالای صفحه رندر می‌شود، پس اگر
+        // مایگریشن‌های این فیچر روی سرور هنوز اجرا نشده باشند (deploy کد و اجرای مایگریشن دو مرحلهٔ
+        // جدا هستند — بدون SSH)، جدول notifications وجود ندارد و کل پنل با خطای 500 روبرو می‌شود.
+        // با این گارد، تا وقتی جدول ساخته نشده زنگوله را غیرفعال می‌کنیم تا پنل (و از جمله همین صفحهٔ
+        // System Maintenance که برای اجرای مایگریشن لازم است) همیشه در دسترس بماند.
+        if (Schema::hasTable('notifications')) {
+            $panel = $panel
+                ->databaseNotifications()
+                ->databaseNotificationsPolling('30s');
+        }
+
+        return $panel;
     }
 }
