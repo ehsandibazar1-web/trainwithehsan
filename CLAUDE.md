@@ -139,7 +139,7 @@ app/
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services incl. `anthropic`, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications (`notifiable_type` explicitly `varchar(100)`, not `morphs()`'s default 255 — same MySQL/utf8mb4 index-key-length lesson as `ai_generations`/`taggables`) + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}), a fix-up migration for the `notifications` index on installs that hit the key-length error before this fix (2026_07_16_000033) — see Section 25, brand_memory_sections + brand_memory_values + a seed migration inserting the 25 default sections (2026_07_16_00003{4-6}) — see Section 26, knowledge_entries + knowledge_entry_attachments + ai_generation_knowledge_entry (2026_07_16_00003{7-9}) — see Section 27
+  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications (`notifiable_type` explicitly `varchar(100)`, not `morphs()`'s default 255 — same MySQL/utf8mb4 index-key-length lesson as `ai_generations`/`taggables`) + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}), a fix-up migration for the `notifications` index on installs that hit the key-length error before this fix (2026_07_16_000033) — see Section 25, brand_memory_sections + brand_memory_values + a seed migration inserting the 25 default sections (2026_07_16_00003{4-6}) — see Section 26, knowledge_entries + knowledge_entry_attachments + ai_generation_knowledge_entry (2026_07_16_00003{7-9}) — see Section 27, a fix-up migration giving `ai_generation_knowledge_entry`'s unique index an explicit short name on installs that hit MySQL's 64-character identifier-length error (SQLSTATE 42000/1059) before this fix (2026_07_17_000000) — same key-length lesson as `ai_generations`/`taggables`/`notifications` above, missed for this one table when it first shipped
 lang/
   en/newsletter.php, tr/newsletter.php       ALL user-facing newsletter strings (form messages, result pages, emails) — the only lang files in the project
   factories/, seeders/
@@ -166,6 +166,7 @@ tests/
   Feature/AdminPanelResilienceTest.php      Asserts the admin panel (incl. System Maintenance) stays reachable even before this feature's migrations have run — see Section 25's `databaseNotifications()` guard
   Feature/BrandMemoryTest.php, BrandMemoryPageTest.php   Brand Memory coverage — see Section 26
   Feature/KnowledgeBaseTest.php, KnowledgeBaseRetrievalTest.php, KnowledgeBaseGenerationIntegrationTest.php, KnowledgeEntryResourceTest.php   Knowledge Base coverage — see Section 27
+  Feature/KnowledgeBaseMigrationFixTest.php   Asserts the `ai_generation_knowledge_entry` pair is actually unique at the DB level and that the `2026_07_17_000000` fix-up migration is idempotent — see Section 27
 ```
 
 Key duplication to be aware of: **every public-facing view and its Turkish counterpart are separate files** (`home.blade.php` / `tr/home.blade.php`, etc.), and `routes/web.php` registers separate controller methods per locale (`home`/`homeTr`, `index`/`indexTr`, `show`/`showTr`). This is a deliberate current structure, not an oversight in progress — see "Important Project Decisions" before attempting to collapse it.
@@ -801,7 +802,12 @@ inside `ContentAssistantService::generate()`.
   `knowledge_entry_ids: int[]`, alongside the existing `result`/`warnings`.
 - **"Which knowledge was used" is tracked per generation, not just logged.** A new pivot table,
   `ai_generation_knowledge_entry` (mirrors `taggables`'s own shape: plain `id` + two FKs + timestamps
-  + a unique constraint on the pair), backs
+  + a unique constraint on the pair — **the unique index needs an explicit short name**, since the
+  auto-generated one for this table+column combination exceeds MySQL's 64-character identifier
+  limit (SQLSTATE 42000/1059); this was missed when the table first shipped and fixed by a
+  `2026_07_17_000000` fix-up migration, same "give it a short name / add a corrective migration for
+  already-affected installs" lesson as `internal_link_suggestions` and `notifications` elsewhere in
+  this file — do not remove the explicit name from either migration), backs
   `AiGeneration::knowledgeEntries(): BelongsToMany` / `KnowledgeEntry::generations(): BelongsToMany`.
   `App\Jobs\RunAiContentGeneration` syncs `generate()`'s returned `knowledge_entry_ids` onto the
   `AiGeneration` via this pivot immediately after a successful completion (never on failure/
@@ -828,9 +834,11 @@ inside `ContentAssistantService::generate()`.
   `tests/Feature/KnowledgeBaseGenerationIntegrationTest.php` (`ContentAssistantService::generate()`
   actually injecting relevant knowledge into the outbound prompt and returning the right
   `knowledge_entry_ids`, the `content_review_summary`/cross-locale exclusions,
-  `RunAiContentGeneration` persisting — or correctly not persisting — the usage pivot), and
+  `RunAiContentGeneration` persisting — or correctly not persisting — the usage pivot),
   `tests/Feature/KnowledgeEntryResourceTest.php` (the Filament resource: list/create/edit/delete,
-  attachment upload registering a real `KnowledgeEntryAttachment` row, the locale filter).
+  attachment upload registering a real `KnowledgeEntryAttachment` row, the locale filter), and
+  `tests/Feature/KnowledgeBaseMigrationFixTest.php` (the `ai_generation_knowledge_entry` pair is
+  actually unique at the DB level, and the `2026_07_17_000000` fix-up migration is idempotent).
 
 ## 28. Performance Rules
 
@@ -909,6 +917,7 @@ These are decisions already made — do not silently reverse them:
 - Do not make `ContentAssistantService::classifyIntent()` or `buildTranslationPayload()`/`buildTranslateSystemPrompt()` pull from the Knowledge Base — retrieval only happens inside `generate()` (see Section 27); chat-intent classification doesn't need supporting facts, and translation must preserve only the source content's own facts, not have new candidates mixed in from a fresh retrieval pass.
 - Do not let a failed or unconfigured Knowledge Base retrieval ever block, delay, or degrade content generation — `KnowledgeBaseService::retrieveRelevant()`'s fallback to keyword-only ranking (see Section 27) must stay; do not make the AI-ranking step a hard dependency.
 - Do not let `KnowledgeEntryAttachment` uploads go through `App\Services\Media\MediaProcessor` — that pipeline is image-only (WebP/thumbnail/responsive generation); Knowledge Base attachments are plain documents stored as-is (see Section 27 and Image Optimization Rules).
+- Do not remove the explicit `'ai_gen_knowledge_entry_unique'` name from either the `ai_generation_knowledge_entry` table's unique index or the `2026_07_17_000000` fix-up migration that adds it on already-affected installs — the auto-generated name for this table+column pair exceeds MySQL's 64-character identifier limit (SQLSTATE 42000/1059), a real production failure this fix-up migration exists to correct (see Section 27).
 
 ## 32. Future Development Guidelines
 
