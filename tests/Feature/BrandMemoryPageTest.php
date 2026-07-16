@@ -139,4 +139,30 @@ class BrandMemoryPageTest extends TestCase
         $this->assertSame('First version.', $value->fresh()->content);
         $this->assertCount(3, Activity::where('log_name', 'brand_memory_value')->where('subject_id', $value->id)->get());
     }
+
+    public function test_preview_prompt_shows_the_exact_system_prompt_including_brand_memory(): void
+    {
+        $mission = BrandMemorySection::where('key', 'mission')->first();
+        BrandMemoryValue::create(['brand_memory_section_id' => $mission->id, 'locale' => 'en', 'content' => 'Teach real self-defense.']);
+
+        Livewire::actingAs($this->owner())
+            ->test(BrandMemory::class)
+            ->callAction('previewPrompt', data: [
+                'field' => 'seo_title',
+                'mode' => 'generate',
+                'locale' => 'en',
+            ])
+            ->assertSee('Write a compelling, click-worthy SEO title')
+            ->assertSee('Teach real self-defense.');
+    }
+
+    public function test_close_preview_clears_the_result(): void
+    {
+        Livewire::actingAs($this->owner())
+            ->test(BrandMemory::class)
+            ->callAction('previewPrompt', data: ['field' => 'seo_title', 'mode' => 'generate', 'locale' => 'en'])
+            ->assertSet('previewPromptResult', fn ($value) => filled($value))
+            ->call('closePreview')
+            ->assertSet('previewPromptResult', null);
+    }
 }

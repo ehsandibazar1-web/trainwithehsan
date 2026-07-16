@@ -6,6 +6,18 @@
         previous versions.
     </p>
 
+    @if ($this->previewPromptResult)
+        <div style="border: 1px solid rgb(229 231 235); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <strong>Preview Prompt — exactly what is sent to the AI</strong>
+                <button type="button" wire:click="closePreview" style="font-size: 0.8rem; background: none; border: none; cursor: pointer; text-decoration: underline;">
+                    Close
+                </button>
+            </div>
+            <pre style="white-space: pre-wrap; font-family: ui-monospace, monospace; font-size: 0.8rem; background: rgb(249 250 251); padding: 0.75rem; border-radius: 0.375rem;">{{ $this->previewPromptResult }}</pre>
+        </div>
+    @endif
+
     @if ($this->historySection)
         <div style="border: 1px solid rgb(229 231 235); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">

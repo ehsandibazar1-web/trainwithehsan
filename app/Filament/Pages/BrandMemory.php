@@ -4,6 +4,8 @@ namespace App\Filament\Pages;
 
 use App\Models\BrandMemorySection;
 use App\Models\BrandMemoryValue;
+use App\Services\AiAssistant\ActionRegistry;
+use App\Services\AiAssistant\ContentAssistantService;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
@@ -18,6 +20,7 @@ use Filament\Schemas\Components\Html;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Components\Tabs;
 use Filament\Schemas\Components\Tabs\Tab;
+use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Str;
@@ -55,6 +58,11 @@ class BrandMemory extends Page implements HasForms
     // Livewire است، نه یک Filament Action تودرتو (اکشن‌های تعبیه‌شده داخل Schema::Section از طریق
     // callAction() قابل تست/فراخوانی مستقیم نیستند)
     public ?int $historySectionId = null;
+
+    // نتیجه‌ی آخرین «Preview Prompt» — همان چیزی که واقعاً به ارائه‌دهنده‌ی هوش مصنوعی فرستاده
+    // می‌شود، از App\Services\AiAssistant\ContentAssistantService::previewSystemPrompt() که خودِ
+    // سازنده‌های خصوصی پرامپت را دوباره استفاده می‌کند (بدون هیچ منطق پرامپتی تکراری اینجا)
+    public ?string $previewPromptResult = null;
 
     public function mount(): void
     {
@@ -120,6 +128,11 @@ class BrandMemory extends Page implements HasForms
     public function closeHistory(): void
     {
         $this->historySectionId = null;
+    }
+
+    public function closePreview(): void
+    {
+        $this->previewPromptResult = null;
     }
 
     public function getHistorySectionProperty(): ?BrandMemorySection
@@ -198,6 +211,37 @@ class BrandMemory extends Page implements HasForms
     protected function getHeaderActions(): array
     {
         return [
+            Action::make('previewPrompt')
+                ->label('Preview Prompt')
+                ->icon(Heroicon::OutlinedEye)
+                ->color('gray')
+                ->schema([
+                    Select::make('field')
+                        ->label('Field')
+                        ->options(fn () => collect(ActionRegistry::all())->map(fn (array $d) => $d['label']))
+                        ->native(false)
+                        ->live()
+                        ->required(),
+                    Select::make('mode')
+                        ->label('Mode')
+                        ->options(fn (Get $get) => ActionRegistry::exists($get('field') ?? '')
+                            ? array_combine(ActionRegistry::for($get('field'))['modes'], ActionRegistry::for($get('field'))['modes'])
+                            : [])
+                        ->native(false)
+                        ->required()
+                        ->visible(fn (Get $get) => filled($get('field'))),
+                    Select::make('locale')
+                        ->label('Content locale')
+                        ->options(['en' => 'English', 'tr' => 'Turkish'])
+                        ->native(false)
+                        ->default('en')
+                        ->required(),
+                ])
+                ->action(function (array $data): void {
+                    $this->previewPromptResult = app(ContentAssistantService::class)
+                        ->previewSystemPrompt($data['field'], $data['mode'], $data['locale']);
+                }),
+
             Action::make('addSection')
                 ->label('Add Custom Section')
                 ->icon(Heroicon::OutlinedPlus)

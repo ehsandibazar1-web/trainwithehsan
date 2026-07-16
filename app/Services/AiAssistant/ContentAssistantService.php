@@ -27,6 +27,25 @@ class ContentAssistantService
     ) {}
 
     /**
+     * پیش‌نمایش دقیق system promptی که برای یک فیلد/حالت/زبان مشخص فرستاده می‌شود — از همان
+     * سازنده‌های خصوصی این کلاس استفاده می‌کند تا هیچ منطق پرامپتی جای دیگری تکرار نشود؛ برای
+     * دکمه‌ی «Preview Prompt» در App\Filament\Pages\BrandMemory. هیچ فراخوانی واقعی به هوش
+     * مصنوعی انجام نمی‌دهد و روی هیچ رکوردی نمی‌نویسد.
+     */
+    public function previewSystemPrompt(string $field, string $mode, string $locale = 'en'): string
+    {
+        $definition = ActionRegistry::for($field);
+
+        if ($field === 'translate') {
+            $languageName = $mode === 'tr' ? 'Turkish' : 'English';
+
+            return $this->buildTranslateSystemPrompt($languageName, 'Article', $locale);
+        }
+
+        return $this->buildSystemPrompt($definition, $mode, $locale);
+    }
+
+    /**
      * @return array{result: mixed, warnings: string[]}
      */
     public function generate(Model $record, string $field, string $mode, array $options = []): array
