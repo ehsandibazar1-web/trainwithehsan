@@ -1,0 +1,102 @@
+<?php
+
+namespace App\Services\AiAssistant\Providers;
+
+use App\Services\AiAssistant\Contracts\AiProvider;
+use App\Services\AiAssistant\Contracts\UsageAwareProvider;
+use App\Services\AiAssistant\Support\ProviderCredentials;
+use Illuminate\Support\Facades\Http;
+
+/**
+ * Google Gemini (Generative Language API) — شکل درخواست/پاسخش با بقیه فرق دارد (system_instruction
+ * جدا از contents، کلید API به‌جای هدر در query string، تصویرها به‌صورت inline_data باید ارسال
+ * شوند نه یک URL عمومی)، برای همین پایه‌ی OpenAiCompatibleProvider را به اشتراک نمی‌گذارد.
+ */
+class GeminiProvider implements AiProvider, UsageAwareProvider
+{
+    private const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+
+    private ?array $lastUsage = null;
+
+    public function __construct(private readonly ProviderCredentials $credentials) {}
+
+    public function respond(string $systemPrompt, string $userPrompt, array $images = [], array $options = []): string
+    {
+        $key = $this->credentials->apiKey;
+
+        if (blank($key)) {
+            throw new \RuntimeException('Google Gemini API key is not configured — set it on the Gemini row in AI Studio → Provider Settings.');
+        }
+
+        $parts = [['text' => $userPrompt]];
+
+        foreach ($images as $imageUrl) {
+            if ($inline = $this->fetchImageAsInlineData($imageUrl)) {
+                $parts[] = ['inline_data' => $inline];
+            }
+        }
+
+        $baseUrl = rtrim($this->credentials->baseUrl ?: self::DEFAULT_BASE_URL, '/');
+        $model = $options['model'] ?? $this->credentials->model ?? 'gemini-2.5-pro';
+        $maxTokens = $options['max_tokens'] ?? $this->credentials->maxTokens ?? 2048;
+        $temperature = $options['temperature'] ?? $this->credentials->temperature;
+        $timeout = $options['timeout'] ?? $this->credentials->timeoutSeconds ?? 60;
+
+        $generationConfig = ['maxOutputTokens' => $maxTokens];
+        if ($temperature !== null) {
+            $generationConfig['temperature'] = $temperature;
+        }
+
+        // کلید API در Gemini به‌جای هدر Authorization در query string فرستاده می‌شود — طبق مستندات
+        // رسمی همین API، نه یک انتخاب دلخواه اینجا
+        $response = Http::timeout($timeout)
+            ->connectTimeout(10)
+            ->post("{$baseUrl}/models/{$model}:generateContent?key={$key}", [
+                'system_instruction' => ['parts' => [['text' => $systemPrompt]]],
+                'contents' => [['role' => 'user', 'parts' => $parts]],
+                'generationConfig' => $generationConfig,
+            ]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException('Gemini API request failed: '.$response->status().' '.$response->body());
+        }
+
+        $text = (string) $response->json('candidates.0.content.parts.0.text');
+
+        if (blank($text)) {
+            throw new \RuntimeException('Gemini API returned an empty response.');
+        }
+
+        $usage = $response->json('usageMetadata');
+        $this->lastUsage = $usage ? [
+            'prompt_tokens' => $usage['promptTokenCount'] ?? null,
+            'completion_tokens' => $usage['candidatesTokenCount'] ?? null,
+        ] : null;
+
+        return $text;
+    }
+
+    public function lastUsage(): ?array
+    {
+        return $this->lastUsage;
+    }
+
+    /** @return array{mime_type: string, data: string}|null */
+    private function fetchImageAsInlineData(string $imageUrl): ?array
+    {
+        try {
+            $response = Http::timeout(15)->get($imageUrl);
+        } catch (\Throwable) {
+            return null;
+        }
+
+        if (! $response->successful()) {
+            return null;
+        }
+
+        return [
+            'mime_type' => $response->header('Content-Type') ?: 'image/jpeg',
+            'data' => base64_encode($response->body()),
+        ];
+    }
+}
