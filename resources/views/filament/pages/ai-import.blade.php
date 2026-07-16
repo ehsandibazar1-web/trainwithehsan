@@ -173,8 +173,12 @@
                             <td style="padding:.45rem .6rem">{{ $log->ai_provider ?? '—' }}</td>
                             <td style="padding:.45rem .6rem">{{ $log->format ?? '—' }}</td>
                             <td style="padding:.45rem .6rem">
-                                @if($log->status === 'imported')
+                                @if($log->isRolledBack())
+                                    <span style="color:#92600c;font-weight:600">Rolled back</span>
+                                @elseif($log->status === 'imported')
                                     <span style="color:#15803d;font-weight:600">Imported</span>
+                                @elseif($log->status === 'previewed')
+                                    <span style="color:#1d4ed8;font-weight:600">Previewed</span>
                                 @else
                                     <span style="color:#b91c1c;font-weight:600" title="{{ implode(' | ', $log->errors ?? []) }}">Failed</span>
                                 @endif

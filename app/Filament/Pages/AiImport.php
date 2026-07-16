@@ -3,6 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Resources\Articles\ArticleResource;
+use App\Models\AiProfile;
+use App\Models\AiTemplate;
 use App\Services\ArticleImport\ArticleImportService;
 use BackedEnum;
 use Filament\Forms\Components\Select;
@@ -14,12 +16,17 @@ use Filament\Pages\Page;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Illuminate\Support\Str;
+use UnitEnum;
 
 class AiImport extends Page implements HasForms
 {
     use InteractsWithForms;
 
     protected static string|BackedEnum|null $navigationIcon = Heroicon::OutlinedSparkles;
+
+    protected static string|UnitEnum|null $navigationGroup = 'AI Studio';
+
+    protected static ?int $navigationSort = 1;
 
     protected static ?string $navigationLabel = 'AI Import';
 
@@ -38,13 +45,32 @@ class AiImport extends Page implements HasForms
 
     public function mount(): void
     {
-        $this->form->fill(['format' => 'auto', 'raw' => '']);
+        $this->form->fill(['format' => 'auto', 'raw' => '', 'template_id' => null, 'profile_id' => null]);
     }
 
     public function form(Schema $schema): Schema
     {
         return $schema
             ->components([
+                Select::make('template_id')
+                    ->label('Load a saved template (optional)')
+                    ->options(fn () => AiTemplate::orderBy('name')->pluck('name', 'id'))
+                    ->placeholder('— start from a blank paste area —')
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set): void {
+                        if ($state && ($template = AiTemplate::find($state))) {
+                            $set('raw', $template->content);
+                            $set('format', $template->format);
+                        }
+                    })
+                    ->helperText('Templates are managed under AI Studio → AI Templates.'),
+
+                Select::make('profile_id')
+                    ->label('AI profile (optional)')
+                    ->options(fn () => AiProfile::orderBy('name')->pluck('name', 'id'))
+                    ->placeholder('— no profile —')
+                    ->helperText('Tags the import with the provider and fills in defaults (language, status, …) the pasted content leaves out. Managed under AI Studio → AI Profiles.'),
+
                 Select::make('format')
                     ->label('Content format')
                     ->options([
@@ -63,6 +89,14 @@ class AiImport extends Page implements HasForms
             ->statePath('data');
     }
 
+    /** پروفایل انتخاب‌شده — پیش‌فرض‌ها و نام ارائه‌دهنده از اینجا می‌آیند */
+    private function selectedProfile(): ?AiProfile
+    {
+        $id = $this->form->getState()['profile_id'] ?? null;
+
+        return $id ? AiProfile::find($id) : null;
+    }
+
     public function runValidate(): void
     {
         $this->importedInfo = null;
@@ -79,7 +113,17 @@ class AiImport extends Page implements HasForms
     public function runPreview(): void
     {
         $this->importedInfo = null;
-        $this->analysis = $this->analyzeInput();
+
+        // پیش‌نمایش در تاریخچه ثبت می‌شود (Preview History) — ولی همچنان هیچ مقاله‌ای ساخته نمی‌شود
+        $state = $this->form->getState();
+        $profile = $this->selectedProfile();
+
+        $this->analysis = app(ArticleImportService::class)->preview(
+            (string) ($state['raw'] ?? ''),
+            (string) ($state['format'] ?? 'auto'),
+            ['user_id' => auth()->id(), 'source' => 'panel', 'ai_provider' => $profile?->provider],
+            $profile?->importDefaults() ?? [],
+        );
         $this->preview = $this->analysis['errors'] === [] ? $this->buildPreview($this->analysis['payload']) : null;
 
         if ($this->preview === null) {
@@ -90,15 +134,17 @@ class AiImport extends Page implements HasForms
     public function runImport(): void
     {
         $state = $this->form->getState();
+        $profile = $this->selectedProfile();
 
         $result = app(ArticleImportService::class)->import(
             (string) ($state['raw'] ?? ''),
             (string) ($state['format'] ?? 'auto'),
-            ['user_id' => auth()->id(), 'source' => 'panel'],
+            ['user_id' => auth()->id(), 'source' => 'panel', 'ai_provider' => $profile?->provider],
+            $profile?->importDefaults() ?? [],
         );
 
         if ($result['article'] === null) {
-            $this->analysis = app(ArticleImportService::class)->analyze((string) ($state['raw'] ?? ''), (string) ($state['format'] ?? 'auto'));
+            $this->analysis = $this->analyzeInput();
             $this->preview = null;
             $this->importedInfo = null;
             Notification::make()->danger()->title('Import failed — see the problems listed below')->send();
@@ -116,7 +162,12 @@ class AiImport extends Page implements HasForms
         ];
         $this->analysis = null;
         $this->preview = null;
-        $this->form->fill(['format' => $state['format'] ?? 'auto', 'raw' => '']);
+        $this->form->fill([
+            'format' => $state['format'] ?? 'auto',
+            'raw' => '',
+            'template_id' => null,
+            'profile_id' => $state['profile_id'] ?? null,
+        ]);
 
         Notification::make()->success()->title('Article imported: '.$article->title)->send();
     }
@@ -124,10 +175,12 @@ class AiImport extends Page implements HasForms
     private function analyzeInput(): array
     {
         $state = $this->form->getState();
+        $profile = $this->selectedProfile();
 
         return app(ArticleImportService::class)->analyze(
             (string) ($state['raw'] ?? ''),
             (string) ($state['format'] ?? 'auto'),
+            $profile?->importDefaults() ?? [],
         );
     }
 
