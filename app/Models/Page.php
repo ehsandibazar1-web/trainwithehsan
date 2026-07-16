@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 
 class Page extends Model
@@ -33,6 +34,12 @@ class Page extends Model
     public function keywords(): MorphMany
     {
         return $this->morphMany(Keyword::class, 'keywordable');
+    }
+
+    // برچسب‌های سازمان‌دهی محتوا (Content Planner) — جدا از keywords() که فقط برای سئو است
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
     }
 
     // مسیر عمومی صفحه بر اساس زبان — صفحات مستقل در ریشه‌ی سایت هستند، نه زیر /blog

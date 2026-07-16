@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -39,6 +40,12 @@ class Article extends Model
     public function keywords(): MorphMany
     {
         return $this->morphMany(Keyword::class, 'keywordable');
+    }
+
+    // برچسب‌های سازمان‌دهی محتوا (Content Planner) — جدا از keywords() که فقط برای سئو است
+    public function tags(): MorphToMany
+    {
+        return $this->morphToMany(Tag::class, 'taggable');
     }
 
     // مسیر عمومی مقاله بر اساس زبان

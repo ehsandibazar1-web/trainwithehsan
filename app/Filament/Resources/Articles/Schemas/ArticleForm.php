@@ -56,6 +56,19 @@ class ArticleForm
                     ->label('Category')
                     ->nullable(),
 
+                Select::make('tags')
+                    ->relationship('tags', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
+                    ->label('Tags')
+                    ->helperText('Used for organizing and filtering content in the Content Planner — separate from the SEO keywords below.')
+                    ->createOptionForm([
+                        TextInput::make('name')
+                            ->label('Tag name')
+                            ->required(),
+                    ]),
+
                 Textarea::make('excerpt')
                     ->label('Excerpt')
                     ->rows(3)
