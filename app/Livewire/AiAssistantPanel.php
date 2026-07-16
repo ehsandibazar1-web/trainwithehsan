@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\Pages\PageResource;
+use App\Jobs\ProcessAiChatMessage;
 use App\Jobs\RunAiContentGeneration;
+use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
 use App\Models\Article;
 use App\Models\InternalLinkSuggestion;
@@ -16,6 +18,7 @@ use App\Services\AiAssistant\DiffService;
 use App\Services\Seo\SeoAuditService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Component;
@@ -38,6 +41,8 @@ class AiAssistantPanel extends Component
     public ?Model $record = null;
 
     public string $activeTab = 'generate'; // generate | review
+
+    public string $chatInput = '';
 
     public function mount(string $recordType, int $recordId, bool $standalone = false): void
     {
@@ -103,11 +108,7 @@ class AiAssistantPanel extends Component
 
     private function mediaForRecord(): ?Media
     {
-        if (blank($this->record->image_path)) {
-            return null;
-        }
-
-        return Media::where('disk_path', $this->record->image_path)->first();
+        return Media::forRecord($this->record);
     }
 
     public function getReviewFindingsProperty(): array
@@ -150,6 +151,44 @@ class AiAssistantPanel extends Component
             ->where('content_id', $this->record->id)
             ->whereIn('status', ['queued', 'processing'])
             ->exists();
+    }
+
+    // ============ AI Chat ============
+
+    public function getChatMessagesProperty(): Collection
+    {
+        return AiChatMessage::forRecord($this->recordType, $this->record->id)
+            ->with('relatedGeneration')
+            ->orderBy('created_at')
+            ->get();
+    }
+
+    // وقتی آخرین پیام از کاربر است و هنوز پاسخ assistant نیامده، یعنی ProcessAiChatMessage هنوز
+    // در صف/در‌حال‌اجراست — سایدبار در این حالت هم باید poll کند (جدا از isPolling که فقط
+    // AiGeneration را می‌بیند، نه پیام‌های چت)
+    public function getIsChatPendingProperty(): bool
+    {
+        return $this->chatMessages->last()?->role === 'user';
+    }
+
+    public function sendChatMessage(): void
+    {
+        $message = trim($this->chatInput);
+
+        if ($message === '') {
+            return;
+        }
+
+        $userMessage = AiChatMessage::create([
+            'content_type' => $this->recordType,
+            'content_id' => $this->record->id,
+            'role' => 'user',
+            'message' => $message,
+        ]);
+
+        $this->chatInput = '';
+
+        ProcessAiChatMessage::dispatch($this->recordType, $this->record->id, $userMessage->id);
     }
 
     public function generateField(string $field, string $mode): void

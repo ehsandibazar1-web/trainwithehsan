@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\ProcessAiChatMessage;
 use App\Jobs\RunAiContentGeneration;
 use App\Livewire\AiAssistantPanel;
+use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
 use App\Models\Article;
 use App\Models\Media;
@@ -303,5 +305,206 @@ class AiAssistantPanelTest extends TestCase
         $article = $this->makeArticle();
 
         $this->assertNull($this->makePanel($article)->generationProgress);
+    }
+
+    // ============ Media::forRecord (Phase R4) ============
+
+    public function test_media_for_record_returns_null_without_an_image_path(): void
+    {
+        $article = $this->makeArticle();
+
+        $this->assertNull(Media::forRecord($article));
+    }
+
+    public function test_media_for_record_finds_the_matching_media_row(): void
+    {
+        $article = $this->makeArticle(['image_path' => 'articles/guard.jpg']);
+        $media = Media::create([
+            'original_name' => 'guard.jpg', 'disk' => 'public', 'disk_path' => 'articles/guard.jpg',
+            'url' => '/storage/articles/guard.jpg', 'type' => 'image', 'mime_type' => 'image/jpeg', 'size' => 1000,
+        ]);
+
+        $this->assertTrue(Media::forRecord($article)->is($media));
+    }
+
+    // ============ ContentAssistantService::classifyIntent (Phase R4, AI Chat) ============
+
+    public function test_classify_intent_returns_a_valid_action_for_a_known_field_and_mode(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode([
+            'intent' => 'action', 'field' => 'faq', 'mode' => 'generate', 'reply' => 'Generating 5 FAQs now.',
+        ]));
+
+        $result = app(ContentAssistantService::class)->classifyIntent($article, 'Generate 5 FAQs');
+
+        $this->assertSame('action', $result['intent']);
+        $this->assertSame('faq', $result['field']);
+        $this->assertSame('generate', $result['mode']);
+        $this->assertSame('Generating 5 FAQs now.', $result['reply']);
+    }
+
+    public function test_classify_intent_falls_back_to_chat_when_the_field_or_mode_is_invalid(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode([
+            'intent' => 'action', 'field' => 'not_a_real_field', 'mode' => 'generate', 'reply' => 'Sure.',
+        ]));
+
+        $result = app(ContentAssistantService::class)->classifyIntent($article, 'Do something weird');
+
+        $this->assertSame('chat', $result['intent']);
+        $this->assertNull($result['field']);
+        $this->assertNull($result['mode']);
+    }
+
+    public function test_classify_intent_rejects_a_mode_not_allowed_for_that_field(): void
+    {
+        $article = $this->makeArticle();
+        // «faq» فقط generate/improve/expand دارد — shorten برایش مجاز نیست
+        $this->fakeAnthropicText(json_encode([
+            'intent' => 'action', 'field' => 'faq', 'mode' => 'shorten', 'reply' => 'Sure.',
+        ]));
+
+        $result = app(ContentAssistantService::class)->classifyIntent($article, 'Shorten the FAQ');
+
+        $this->assertSame('chat', $result['intent']);
+    }
+
+    public function test_classify_intent_returns_translate_with_a_valid_target_locale(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode([
+            'intent' => 'translate', 'target_locale' => 'tr', 'reply' => 'Preparing a Turkish draft.',
+        ]));
+
+        $result = app(ContentAssistantService::class)->classifyIntent($article, 'Translate to Turkish');
+
+        $this->assertSame('translate', $result['intent']);
+        $this->assertSame('tr', $result['target_locale']);
+    }
+
+    public function test_classify_intent_falls_back_to_chat_when_translate_has_no_target_locale(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode(['intent' => 'translate', 'reply' => 'Translate to what?']));
+
+        $result = app(ContentAssistantService::class)->classifyIntent($article, 'Translate this');
+
+        $this->assertSame('chat', $result['intent']);
+    }
+
+    public function test_classify_intent_falls_back_to_chat_on_malformed_json(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText('Sure, happy to help with that!');
+
+        $result = app(ContentAssistantService::class)->classifyIntent($article, 'Hello there');
+
+        $this->assertSame('chat', $result['intent']);
+        $this->assertSame('Sure, happy to help with that!', $result['reply']);
+    }
+
+    // ============ ProcessAiChatMessage job (Phase R4) ============
+
+    public function test_process_chat_message_queues_a_generation_and_links_it_to_the_assistant_reply(): void
+    {
+        Bus::fake([RunAiContentGeneration::class]);
+
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode([
+            'intent' => 'action', 'field' => 'seo_title', 'mode' => 'generate', 'reply' => 'On it!',
+        ]));
+
+        $userMessage = AiChatMessage::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'role' => 'user', 'message' => 'Generate an SEO title',
+        ]);
+
+        (new ProcessAiChatMessage('Article', $article->id, $userMessage->id))->handle(app(ContentAssistantService::class));
+
+        $generation = AiGeneration::where('content_id', $article->id)->sole();
+        $this->assertSame('seo_title', $generation->field);
+
+        $assistantMessage = AiChatMessage::where('role', 'assistant')->sole();
+        $this->assertSame('On it!', $assistantMessage->message);
+        $this->assertSame($generation->id, $assistantMessage->related_generation_id);
+
+        Bus::assertDispatched(RunAiContentGeneration::class);
+    }
+
+    public function test_process_chat_message_replies_without_queuing_anything_for_plain_chat(): void
+    {
+        Bus::fake([RunAiContentGeneration::class]);
+
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode(['intent' => 'chat', 'reply' => 'This article looks great!']));
+
+        $userMessage = AiChatMessage::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'role' => 'user', 'message' => 'How does this look?',
+        ]);
+
+        (new ProcessAiChatMessage('Article', $article->id, $userMessage->id))->handle(app(ContentAssistantService::class));
+
+        $this->assertSame(0, AiGeneration::where('content_id', $article->id)->count());
+
+        $assistantMessage = AiChatMessage::where('role', 'assistant')->sole();
+        $this->assertSame('This article looks great!', $assistantMessage->message);
+        $this->assertNull($assistantMessage->related_generation_id);
+
+        Bus::assertNotDispatched(RunAiContentGeneration::class);
+    }
+
+    public function test_process_chat_message_does_nothing_when_the_user_message_was_deleted(): void
+    {
+        $article = $this->makeArticle();
+
+        (new ProcessAiChatMessage('Article', $article->id, 999999))->handle(app(ContentAssistantService::class));
+
+        $this->assertSame(0, AiChatMessage::count());
+    }
+
+    // ============ AiAssistantPanel chat wiring (Phase R4) ============
+
+    public function test_send_chat_message_creates_a_user_message_and_dispatches_the_job(): void
+    {
+        Bus::fake();
+
+        $article = $this->makeArticle();
+        $panel = $this->makePanel($article);
+        $panel->chatInput = 'Improve the introduction';
+        $panel->sendChatMessage();
+
+        $message = AiChatMessage::sole();
+        $this->assertSame('user', $message->role);
+        $this->assertSame('Improve the introduction', $message->message);
+        $this->assertSame('', $panel->chatInput);
+
+        Bus::assertDispatched(ProcessAiChatMessage::class);
+    }
+
+    public function test_send_chat_message_ignores_blank_input(): void
+    {
+        Bus::fake();
+
+        $article = $this->makeArticle();
+        $panel = $this->makePanel($article);
+        $panel->chatInput = '   ';
+        $panel->sendChatMessage();
+
+        $this->assertSame(0, AiChatMessage::count());
+        Bus::assertNotDispatched(ProcessAiChatMessage::class);
+    }
+
+    public function test_is_chat_pending_is_true_only_when_the_last_message_is_from_the_user(): void
+    {
+        $article = $this->makeArticle();
+
+        $this->assertFalse($this->makePanel($article)->isChatPending);
+
+        AiChatMessage::create(['content_type' => 'Article', 'content_id' => $article->id, 'role' => 'user', 'message' => 'Hi']);
+        $this->assertTrue($this->makePanel($article)->isChatPending);
+
+        AiChatMessage::create(['content_type' => 'Article', 'content_id' => $article->id, 'role' => 'assistant', 'message' => 'Hello!']);
+        $this->assertFalse($this->makePanel($article)->isChatPending);
     }
 }

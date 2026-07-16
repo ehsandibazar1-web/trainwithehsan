@@ -101,4 +101,16 @@ class Media extends Model
     {
         return count($this->usages()) > 0;
     }
+
+    // رکورد Media متناظر با تصویر شاخص یک Article/Page — با تطبیق disk_path (نه کلید خارجی، طبق
+    // «Image Optimization Rules» در CLAUDE.md)؛ هم AiAssistantPanel هم ProcessAiChatMessage همین
+    // را صدا می‌زنند تا این جست‌وجوی سه‌خطی دو بار پیاده‌سازی نشود
+    public static function forRecord(Model $record): ?self
+    {
+        if (blank($record->image_path)) {
+            return null;
+        }
+
+        return self::where('disk_path', $record->image_path)->first();
+    }
 }

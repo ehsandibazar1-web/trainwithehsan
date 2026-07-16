@@ -49,6 +49,118 @@ class ContentAssistantService
         return $this->parseResponse($raw, $definition['response_shape']);
     }
 
+    /**
+     * پیام آزادِ چت را به یک عمل مشخص طبقه‌بندی می‌کند — برای App\Jobs\ProcessAiChatMessage.
+     * هرگز خودش چیزی تولید/اعمال نمی‌کند؛ فقط تشخیص می‌دهد که پیام باید کدام فیلد/حالتِ همین
+     * ActionRegistry را صف کند (intent=action)، یک ترجمه‌ی کامل بخواهد (intent=translate)، یا صرفاً
+     * یک پاسخ گفتگویی است (intent=chat) — سپس همان مسیرهای موجودِ generateField/ترجمه فراخوانی
+     * می‌شوند، نه یک مسیر تولید جدید.
+     *
+     * @return array{intent: 'action'|'translate'|'chat', field: ?string, mode: ?string, target_locale: ?string, reply: string}
+     */
+    public function classifyIntent(Model $record, string $message): array
+    {
+        $modelType = $record instanceof Article ? 'Article' : 'Page';
+
+        $raw = $this->provider->respond(
+            $this->buildIntentSystemPrompt($modelType),
+            $this->buildIntentUserPrompt($record, $message),
+            [],
+            ['max_tokens' => 400],
+        );
+
+        return $this->parseIntentResponse($raw, $modelType);
+    }
+
+    private function buildIntentSystemPrompt(string $modelType): string
+    {
+        $fieldList = collect(ActionRegistry::applicableTo($modelType))
+            ->reject(fn (array $definition, string $key) => $key === 'content_review_summary')
+            ->map(fn (array $definition, string $key) => "- {$key} (\"{$definition['label']}\") — modes: ".implode(', ', $definition['modes']))
+            ->implode("\n");
+
+        return <<<PROMPT
+            You are an AI writing assistant embedded in the editor for a Brazilian Jiu-Jitsu / self-defense training website (bilingual: English and Turkish). The user just sent a chat message about the content they are currently editing. Classify their intent and respond with ONLY a JSON object (no markdown fences, no other text) with these keys:
+            - "intent": one of "action", "translate", "chat"
+            - "field": if intent is "action", the exact field key from the list below (else null)
+            - "mode": if intent is "action", one of that field's allowed modes exactly as listed (else null)
+            - "target_locale": if intent is "translate", "en" or "tr" (else null)
+            - "reply": a short, friendly 1-2 sentence reply — acknowledge what you're about to do for "action"/"translate", or directly answer the question for "chat"
+
+            Available fields and their modes:
+            {$fieldList}
+
+            Examples: "Generate 5 FAQs" -> field=faq, mode=generate. "Improve the introduction" -> field=body, mode=improve. "Rewrite the conclusion" -> field=body, mode=rewrite. "Make it shorter" -> field=body, mode=shorten. "Improve readability" -> field=body, mode=improve. "Make it more persuasive" -> field=body, mode=improve. "Write a better CTA" -> field=cta, mode=improve. "Generate SEO title" -> field=seo_title, mode=generate. "Translate to Turkish" -> intent=translate, target_locale=tr. "Translate to English" -> intent=translate, target_locale=en. If the message doesn't map to a specific field/action (a general question, a compliment, an unclear request, or something this assistant can't do), use intent="chat" and answer directly in "reply".
+            PROMPT;
+    }
+
+    private function buildIntentUserPrompt(Model $record, string $message): string
+    {
+        $lines = [
+            'Locale: '.($record->locale ?? 'en'),
+            'Title: '.($record->title ?? ''),
+        ];
+
+        $body = trim(strip_tags((string) $record->body));
+
+        if ($body !== '') {
+            $lines[] = 'Content (excerpt): '.mb_substr($body, 0, 2000);
+        }
+
+        $lines[] = 'User message: '.$message;
+
+        return implode("\n\n", $lines);
+    }
+
+    /**
+     * @return array{intent: 'action'|'translate'|'chat', field: ?string, mode: ?string, target_locale: ?string, reply: string}
+     */
+    private function parseIntentResponse(string $raw, string $modelType): array
+    {
+        $stripped = preg_replace('/^```(json)?|```$/m', '', trim($raw));
+        $decoded = json_decode(trim($stripped), true);
+
+        if (! is_array($decoded) || ! isset($decoded['intent'])) {
+            return [
+                'intent' => 'chat',
+                'field' => null,
+                'mode' => null,
+                'target_locale' => null,
+                'reply' => trim($raw) ?: "Sorry, I couldn't understand that — could you rephrase?",
+            ];
+        }
+
+        $intent = in_array($decoded['intent'], ['action', 'translate', 'chat'], true) ? $decoded['intent'] : 'chat';
+        $field = $decoded['field'] ?? null;
+        $mode = $decoded['mode'] ?? null;
+
+        if ($intent === 'action') {
+            $isValidAction = is_string($field) && ActionRegistry::exists($field)
+                && in_array($modelType, ActionRegistry::for($field)['applicable_to'], true)
+                && in_array($mode, ActionRegistry::for($field)['modes'], true);
+
+            if (! $isValidAction) {
+                $intent = 'chat';
+            }
+        }
+
+        $targetLocale = in_array($decoded['target_locale'] ?? null, ['en', 'tr'], true) ? $decoded['target_locale'] : null;
+
+        if ($intent === 'translate' && ! $targetLocale) {
+            $intent = 'chat';
+        }
+
+        $reply = $decoded['reply'] ?? null;
+
+        return [
+            'intent' => $intent,
+            'field' => $intent === 'action' ? $field : null,
+            'mode' => $intent === 'action' ? $mode : null,
+            'target_locale' => $intent === 'translate' ? $targetLocale : null,
+            'reply' => is_string($reply) && trim($reply) !== '' ? trim($reply) : 'Got it.',
+        ];
+    }
+
     private function buildSystemPrompt(array $definition, string $mode): string
     {
         $modeInstruction = match ($mode) {

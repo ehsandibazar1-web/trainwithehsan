@@ -63,6 +63,19 @@
         .ai-ca-quick-btn{font-size:.75rem;padding:.35rem .65rem;border-radius:.5rem;border:1px solid rgb(209 213 219);background:#f9fafb;color:#374151;cursor:pointer}
         .ai-ca-quick-btn:hover{background:#f3f4f6}
 
+        .ai-ca-chat{border:1px solid rgb(229 231 235);border-radius:.75rem;background:#fff;padding:.75rem;margin-bottom:1rem}
+        .ai-ca-chat-thread{max-height:14rem;overflow-y:auto;display:flex;flex-direction:column;gap:.5rem;margin-bottom:.6rem}
+        .ai-ca-chat-empty{font-size:.78rem;color:#9ca3af;font-style:italic;padding:.25rem 0}
+        .ai-ca-chat-msg{display:flex}
+        .ai-ca-chat-msg.user{justify-content:flex-end}
+        .ai-ca-chat-msg.assistant{justify-content:flex-start}
+        .ai-ca-chat-msg .bubble{max-width:85%;font-size:.8rem;padding:.45rem .65rem;border-radius:.65rem;white-space:pre-line}
+        .ai-ca-chat-msg.user .bubble{background:#d9bb75;color:#111827}
+        .ai-ca-chat-msg.assistant .bubble{background:#f3f4f6;color:#111827}
+        .ai-ca-chat-msg .bubble.typing{font-style:italic;color:#6b7280}
+        .ai-ca-chat-form{display:flex;gap:.4rem}
+        .ai-ca-chat-input{flex:1;font-size:.8rem;padding:.4rem .6rem;border-radius:.5rem;border:1px solid rgb(209 213 219)}
+
         /* Filament toggles dark mode via a `dark` class on <html>, not prefers-color-scheme — match that mechanism */
         :root.dark .ai-ca-header .title{color:#9ca3af}
         :root.dark .ai-ca-header .title strong{color:#f9fafb}
@@ -87,9 +100,13 @@
         :root.dark .ai-ca-score-cat{border-color:#374151}
         :root.dark .ai-ca-score-cat .name{color:#9ca3af}
         :root.dark .ai-ca-history-item{border-color:#374151}
+        :root.dark .ai-ca-chat{background:#1f2937;border-color:#374151}
+        :root.dark .ai-ca-chat-msg.assistant .bubble{background:#111827;color:#e5e7eb}
+        :root.dark .ai-ca-chat-msg.user .bubble{color:#111827}
+        :root.dark .ai-ca-chat-input{background:#111827;border-color:#374151;color:#e5e7eb}
     </style>
 
-    <div @if ($this->isPolling) wire:poll.3s="$refresh" @endif>
+    <div @if ($this->isPolling || $this->isChatPending) wire:poll.3s="$refresh" @endif>
         <div class="ai-ca-header">
             <div class="title">AI Assistant for <strong>{{ $record->title }}</strong> ({{ strtoupper($record->locale) }})</div>
             @if ($standalone)
@@ -97,6 +114,38 @@
                     Back to editing
                 </x-filament::button>
             @endif
+        </div>
+
+        <div class="ai-ca-chat">
+            <div class="ai-ca-chat-thread">
+                @forelse ($this->chatMessages as $chatMessage)
+                    <div class="ai-ca-chat-msg {{ $chatMessage->role }}">
+                        <div class="bubble">{{ $chatMessage->message }}</div>
+                        @if ($chatMessage->relatedGeneration)
+                            <div class="ai-ca-status {{ in_array($chatMessage->relatedGeneration->status, ['queued', 'processing']) ? 'processing' : '' }} {{ $chatMessage->relatedGeneration->status === 'failed' ? 'failed' : '' }}">
+                                {{ ucfirst($chatMessage->relatedGeneration->field) }} — {{ $chatMessage->relatedGeneration->status }}
+                            </div>
+                        @endif
+                    </div>
+                @empty
+                    <div class="ai-ca-chat-empty">
+                        Ask me anything about this {{ strtolower($recordType) }} — try "Generate 5 FAQs", "Improve the introduction", "Make it shorter", or "Translate to Turkish".
+                    </div>
+                @endforelse
+
+                @if ($this->isChatPending)
+                    <div class="ai-ca-chat-msg assistant">
+                        <div class="bubble typing">Thinking…</div>
+                    </div>
+                @endif
+            </div>
+
+            <form wire:submit.prevent="sendChatMessage" class="ai-ca-chat-form">
+                <input type="text" wire:model="chatInput" placeholder="Ask the AI assistant…" class="ai-ca-chat-input" @disabled($this->isChatPending)>
+                <x-filament::button type="submit" size="sm" :disabled="$this->isChatPending" wire:loading.attr="disabled">
+                    Send
+                </x-filament::button>
+            </form>
         </div>
 
         <div style="margin-bottom:.75rem">
