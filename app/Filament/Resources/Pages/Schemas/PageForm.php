@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Pages\Schemas;
 
 use App\Models\Page;
+use App\Services\Media\MediaProcessor;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
@@ -10,6 +12,7 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class PageForm
 {
@@ -55,9 +58,14 @@ class PageForm
 
                 FileUpload::make('image_path')
                     ->label('Featured image')
+                    ->helperText('Automatically added to the Media Library (WebP + thumbnail + responsive sizes generated).')
                     ->image()
                     ->disk('public')
                     ->directory('pages')
+                    // ثبت خودکار در کتابخانه‌ی رسانه (DAM) + تولید WebP/تامبنیل/سایزهای واکنش‌گرا در همان لحظه‌ی آپلود
+                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file) => app(MediaProcessor::class)
+                        ->store($file, $component->getDirectory(), $component->getDiskName())
+                        ->disk_path)
                     ->nullable(),
 
                 Select::make('status')

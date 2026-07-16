@@ -1,0 +1,9 @@
+parameters:
+    level: 7
+    paths:
+        - src
+    exceptions:
+        check:
+            missingCheckedExceptionInThrows: true
+        uncheckedExceptionClasses:
+            - Error
