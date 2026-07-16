@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Article;
+use App\Models\ContentPlan;
 use App\Models\Page;
 use App\Services\AiAssistant\Contracts\AiProvider;
 use App\Services\AiAssistant\Providers\AnthropicProvider;
@@ -43,6 +44,7 @@ class AppServiceProvider extends ServiceProvider
         Relation::morphMap([
             'Article' => Article::class,
             'Page' => Page::class,
+            'ContentPlan' => ContentPlan::class,
         ]);
 
         // محدودیت نرخ فرم خبرنامه — جلوی ثبت‌نام انبوه/اسپم را می‌گیرد

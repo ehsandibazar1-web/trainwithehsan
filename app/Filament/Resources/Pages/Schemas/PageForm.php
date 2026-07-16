@@ -51,6 +51,19 @@ class PageForm
                     ->nullable()
                     ->helperText('Optional — if this page is the other-language version of an existing page, pick it here.'),
 
+                Select::make('tags')
+                    ->relationship('tags', 'name')
+                    ->multiple()
+                    ->preload()
+                    ->searchable()
+                    ->label('Tags')
+                    ->helperText('Used for organizing and filtering content in the Content Planner — separate from the SEO keywords below.')
+                    ->createOptionForm([
+                        TextInput::make('name')
+                            ->label('Tag name')
+                            ->required(),
+                    ]),
+
                 Section::make('SEO & social preview (optional)')
                     ->description('Leave blank to keep using the title/body automatically — only fill these in if you want different wording for Google or social shares. The AI Assistant (button at the top of this page once saved) can suggest all four.')
                     ->collapsed()
