@@ -61,6 +61,21 @@ class ArticleForm
                     ->nullable()
                     ->helperText('Short text shown on the article card in the blog list.'),
 
+                Repeater::make('keywords')
+                    ->relationship()
+                    ->label('Target keywords (SEO)')
+                    ->helperText('The search phrases this article should rank for. Used by the Internal Linking Center to suggest which other articles/pages should link here.')
+                    ->schema([
+                        TextInput::make('keyword')
+                            ->label('Keyword')
+                            ->required(),
+                    ])
+                    ->addActionLabel('Add keyword')
+                    ->itemLabel(fn (array $state): ?string => $state['keyword'] ?? null)
+                    ->defaultItems(0)
+                    ->reorderable(false)
+                    ->columnSpanFull(),
+
                 RichEditor::make('body')
                     ->label('Article body')
                     ->required()

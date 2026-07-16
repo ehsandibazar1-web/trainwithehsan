@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -31,6 +32,12 @@ class Article extends Model
     public function translations()
     {
         return $this->hasMany(Article::class, 'translation_of');
+    }
+
+    // کلیدواژه‌های هدفِ سئو — پایه‌ی امتیازدهی پیشنهادهای لینک داخلی در Internal Linking Center
+    public function keywords(): MorphMany
+    {
+        return $this->morphMany(Keyword::class, 'keywordable');
     }
 
     // مسیر عمومی مقاله بر اساس زبان

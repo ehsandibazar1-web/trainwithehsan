@@ -25,9 +25,10 @@ class SeoAuditService
     // آستانه‌ی توضیحات کوتاه/بی‌کیفیت — همون چیزی که در متا توضیحات واقعی سایت رندر می‌شود
     private const MIN_DESCRIPTION_LENGTH = 50;
 
-    private const RESERVED_PAGE_SLUGS = ['admin', 'blog', 'about', 'tr', 'feed', 'preview', 'storage', 'livewire'];
-
-    public function __construct(private readonly HtmlContentScanner $scanner) {}
+    public function __construct(
+        private readonly HtmlContentScanner $scanner,
+        private readonly InternalLinkResolver $resolver,
+    ) {}
 
     /**
      * تمام بررسی‌های سریع (بدون تماس شبکه‌ای) — برای اجرای خودکار در بارگذاری صفحه.
@@ -63,7 +64,7 @@ class SeoAuditService
 
         foreach ($this->allLinkSources($items) as $source) {
             foreach ($this->scanner->links($source['html']) as $link) {
-                if (! $this->isExternal($link['href'])) {
+                if (! $this->resolver->isExternal($link['href'])) {
                     continue;
                 }
 
@@ -130,17 +131,23 @@ class SeoAuditService
      * Home و About عمداً اینجا نیستند — محتوای آن‌ها متن ثابتِ دستی در Blade/SiteSetting است، نه رکورد
      * قابل‌ویرایشِ تکراری، پس چک «تکراری/گمشده» برایشان معنی‌دار نیست (نویز کاذب تولید می‌کند).
      *
+     * عمومی است چون LinkGraphService (کتابخانه‌ی داخلی لینک‌سازی) هم از همین فهرست استفاده می‌کند
+     * تا مقاله/صفحه را دوباره از دیتابیس نخواند — به «Section 8 / Internal Linking Center» در
+     * CLAUDE.md مراجعه کنید.
+     *
      * @return Collection<int, array<string, mixed>>
      */
-    private function collectContentItems(): Collection
+    public function collectContentItems(): Collection
     {
         $articles = Article::all()->map(function (Article $article) {
             return [
                 'model' => 'Article',
                 'id' => $article->id,
                 'locale' => $article->locale,
+                'slug' => $article->slug,
                 'status' => $article->status,
                 'title' => $article->title,
+                'category' => $article->category,
                 'raw_description' => filled($article->excerpt) ? $article->excerpt : strip_tags($article->body ?? ''),
                 'body' => $article->body,
                 'path' => $article->path(),
@@ -153,8 +160,10 @@ class SeoAuditService
                 'model' => 'Page',
                 'id' => $page->id,
                 'locale' => $page->locale,
+                'slug' => $page->slug,
                 'status' => $page->status,
                 'title' => $page->title,
+                'category' => null, // Page مدل «دسته» ندارد
                 'raw_description' => strip_tags($page->body ?? ''),
                 'body' => $page->body,
                 'path' => $page->path(),
@@ -314,11 +323,11 @@ class SeoAuditService
 
         foreach ($this->allLinkSources($items) as $source) {
             foreach ($this->scanner->links($source['html']) as $link) {
-                if ($this->isExternal($link['href']) || $this->isSkippable($link['href'])) {
+                if ($this->resolver->isExternal($link['href']) || $this->resolver->isSkippable($link['href'])) {
                     continue;
                 }
 
-                if ($this->internalPathExists($link['href'])) {
+                if ($this->resolver->internalPathExists($link['href'])) {
                     continue;
                 }
 
@@ -342,11 +351,11 @@ class SeoAuditService
 
         foreach ($this->allLinkSources($items) as $source) {
             foreach ($this->scanner->links($source['html']) as $link) {
-                if ($this->isExternal($link['href']) || $this->isSkippable($link['href'])) {
+                if ($this->resolver->isExternal($link['href']) || $this->resolver->isSkippable($link['href'])) {
                     continue;
                 }
 
-                $linkedPaths->push($this->normalizedPath($link['href']));
+                $linkedPaths->push($this->resolver->normalizedPath($link['href']));
             }
         }
 
@@ -354,7 +363,7 @@ class SeoAuditService
 
         return $items
             ->filter(fn ($item) => $item['status'] === 'published')
-            ->filter(fn ($item) => ! $linkedPaths->contains($this->normalizedPath($item['path'])))
+            ->filter(fn ($item) => ! $linkedPaths->contains($this->resolver->normalizedPath($item['path'])))
             ->map(function ($item) {
                 $extra = $item['model'] === 'Page'
                     ? ' It is also not included in sitemap.xml (standalone pages are not part of the sitemap today — see SeoController).'
@@ -373,9 +382,11 @@ class SeoAuditService
      * منابع لینک‌های داخلیِ سایت — بدنه‌ی مقاله/صفحه + منوی هدر + ستون‌های فوتر (هر دو زبان).
      * این همان جاهایی است که یک بازدیدکننده یا Googlebot می‌تواند از آن‌ها به صفحات دیگر برسد.
      *
+     * عمومی است چون LinkGraphService هم برای ساخت گراف کامل لینک‌های داخلی از همین منابع استفاده می‌کند.
+     *
      * @return array<int, array{html: ?string, meta: array<string, mixed>}>
      */
-    private function allLinkSources(Collection $items): array
+    public function allLinkSources(Collection $items): array
     {
         $sources = $items->map(fn ($item) => [
             'html' => $item['body'],
@@ -422,64 +433,6 @@ class SeoAuditService
         }
 
         return $sources;
-    }
-
-    private function isExternal(string $href): bool
-    {
-        $host = parse_url($href, PHP_URL_HOST);
-        if ($host === null) {
-            return false; // مسیر نسبی — داخلی
-        }
-
-        $appHost = parse_url((string) config('app.url'), PHP_URL_HOST);
-
-        return $appHost === null || strcasecmp($host, $appHost) !== 0;
-    }
-
-    private function isSkippable(string $href): bool
-    {
-        return $href === '' || $href === '#' || str_starts_with($href, '#')
-            || str_starts_with($href, 'mailto:') || str_starts_with($href, 'tel:')
-            || str_starts_with($href, 'javascript:');
-    }
-
-    private function normalizedPath(string $href): string
-    {
-        $path = parse_url($href, PHP_URL_PATH) ?? '/';
-
-        return $path === '/' ? '/' : rtrim($path, '/');
-    }
-
-    /**
-     * آیا این مسیر داخلی، مسیر واقعی سایت است؟ منعکس‌کننده‌ی مسیرهای ثبت‌شده در routes/web.php —
-     * اگر آن فایل تغییر کرد، این متد هم باید هماهنگ شود.
-     */
-    private function internalPathExists(string $href): bool
-    {
-        $path = $this->normalizedPath($href);
-
-        $static = ['/', '/tr', '/about', '/tr/about', '/blog', '/tr/blog', '/feed', '/tr/feed', '/sitemap.xml'];
-        if (in_array($path, $static, true)) {
-            return true;
-        }
-
-        if (preg_match('#^/blog/([A-Za-z0-9-]+)$#', $path, $m)) {
-            return Article::where('locale', 'en')->where('slug', $m[1])->exists();
-        }
-
-        if (preg_match('#^/tr/blog/([A-Za-z0-9-]+)$#', $path, $m)) {
-            return Article::where('locale', 'tr')->where('slug', $m[1])->exists();
-        }
-
-        if (preg_match('#^/tr/([A-Za-z0-9-]+)$#', $path, $m) && ! in_array($m[1], self::RESERVED_PAGE_SLUGS, true)) {
-            return Page::where('locale', 'tr')->where('slug', $m[1])->exists();
-        }
-
-        if (preg_match('#^/([A-Za-z0-9-]+)$#', $path, $m) && ! in_array($m[1], self::RESERVED_PAGE_SLUGS, true)) {
-            return Page::where('locale', 'en')->where('slug', $m[1])->exists();
-        }
-
-        return false;
     }
 
     private function finding(array $item, string $category, string $detail): array
