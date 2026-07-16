@@ -7,6 +7,7 @@ use App\Services\Media\MediaProcessor;
 use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
@@ -48,6 +49,21 @@ class PageForm
                     ->searchable()
                     ->nullable()
                     ->helperText('Optional — if this page is the other-language version of an existing page, pick it here.'),
+
+                Repeater::make('keywords')
+                    ->relationship()
+                    ->label('Target keywords (SEO)')
+                    ->helperText('The search phrases this page should rank for. Used by the Internal Linking Center to suggest which articles/pages should link here.')
+                    ->schema([
+                        TextInput::make('keyword')
+                            ->label('Keyword')
+                            ->required(),
+                    ])
+                    ->addActionLabel('Add keyword')
+                    ->itemLabel(fn (array $state): ?string => $state['keyword'] ?? null)
+                    ->defaultItems(0)
+                    ->reorderable(false)
+                    ->columnSpanFull(),
 
                 RichEditor::make('body')
                     ->label('Page content')

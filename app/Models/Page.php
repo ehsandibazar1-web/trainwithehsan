@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Str;
 
 class Page extends Model
@@ -25,6 +26,12 @@ class Page extends Model
     public function translations()
     {
         return $this->hasMany(Page::class, 'translation_of');
+    }
+
+    // کلیدواژه‌های هدفِ سئو — پایه‌ی امتیازدهی پیشنهادهای لینک داخلی در Internal Linking Center
+    public function keywords(): MorphMany
+    {
+        return $this->morphMany(Keyword::class, 'keywordable');
     }
 
     // مسیر عمومی صفحه بر اساس زبان — صفحات مستقل در ریشه‌ی سایت هستند، نه زیر /blog
