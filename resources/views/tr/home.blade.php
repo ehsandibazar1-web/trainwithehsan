@@ -369,8 +369,10 @@
     {{-- ============ دوره‌های آموزشی و محصولات ============ --}}
     <section class="counter">
         <div class="wrap">
-            <h2 class="title-counter reveal">{{ $v('courses_title', 'Kurslar ve Ürünler') }}</h2>
-            <div class="sun-counter reveal">{{ $v('courses_subtitle', 'Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.') }}</div>
+            <div class="reveal">
+                <h2 class="title-counter">{{ $v('courses_title', 'Kurslar ve Ürünler') }}</h2>
+                <div class="sun-counter">{{ $v('courses_subtitle', 'Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.') }}</div>
+            </div>
             @php($courseDefaults = [['Yüz Yüze', 'Yüz Yüze Koçluk'], ['Uzaktan', 'Uzaktan Eğitim (Uygulama)'], ['BJJ', 'Brezilya Jiu-Jitsu']])
             <div class="courses-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
@@ -392,9 +394,11 @@
     {{-- ============ مطالب آموزشی (داینامیک از دیتابیس) ============ --}}
     <section class="section-news">
         <div class="wrap">
-            <h3 class="title-section reveal">Eğitim Makaleleri</h3>
-            <div class="sub-title-section reveal">
-                <a href="{{ url('/tr/blog') }}">Tüm arşivi görüntüle ⟶</a>
+            <div class="reveal">
+                <h3 class="title-section">Eğitim Makaleleri</h3>
+                <div class="sub-title-section">
+                    <a href="{{ url('/tr/blog') }}">Tüm arşivi görüntüle ⟶</a>
+                </div>
             </div>
             <div class="articles-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
