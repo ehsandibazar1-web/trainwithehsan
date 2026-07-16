@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ImportLog extends Model
 {
     protected $fillable = [
-        'user_id', 'source', 'ai_provider', 'format', 'status',
+        'user_id', 'api_token_id', 'source', 'ai_provider', 'format', 'status',
         'errors', 'warnings', 'article_id', 'article_title', 'locale',
         'faq_count', 'image_count', 'rolled_back_at', 'rolled_back_by',
     ];
@@ -26,6 +26,11 @@ class ImportLog extends Model
     public function article()
     {
         return $this->belongsTo(Article::class);
+    }
+
+    public function apiToken()
+    {
+        return $this->belongsTo(ApiToken::class);
     }
 
     public function rolledBackBy()

@@ -26,7 +26,7 @@ Two audiences to keep in mind on every change:
 - **Persistence**: SQLite (`DB_CONNECTION=sqlite`) by default. Session, cache, and queue all use the **database** driver (`SESSION_DRIVER=database`, `CACHE_STORE=database`, `QUEUE_CONNECTION=database`) — there is no Redis/Memcached in actual use today even though `.env.example` lists Redis config (unused placeholder from the Laravel skeleton).
 - **Scheduling**: `routes/console.php` registers `Schedule::command('articles:publish-due')->everyFiveMinutes()`. This requires the Laravel scheduler (`php artisan schedule:run`) to be wired into a real cron entry on the server — verify this exists on prod/staging; it is not automatic.
 - **Activity logging**: `spatie/laravel-activitylog` (v5) logs `Article` changes (create/update/delete, dirty-only, specific fields) for display in the Filament `ActivityLogPage`.
-- **No API layer**: there is no REST/JSON API, no SPA backend contract. All output is either full-page HTML (Blade) or XML (sitemap/RSS). Do not add API routes unless a real client needs them — keep the surface area minimal.
+- **API layer — exactly one, keep it that way**: the only API is the AI Import API (`routes/api.php`: `POST /api/ai-import` and `POST /api/ai-import/validate`), authenticated by first-party hashed bearer tokens (`api_tokens` table, managed in AI Studio → API Tokens; no Sanctum — deliberately dependency-light), rate-limited per token (`throttle:ai-import-api`). **API policy: it can never publish** — every import is forced to `draft` regardless of the payload's `publish_status`, and publishing happens only through the panel (Draft Queue → admin approval → existing workflow). `?queue=1` (or `"queue": true`) runs the import through the database queue via the `ImportAiArticle` job. Everything else on the site remains full-page HTML (Blade) or XML (sitemap/RSS) — do not add further API surface without a real client needing it.
 
 ## 4. Folder Structure
 
@@ -41,6 +41,7 @@ app/
     Resources/AiTemplates/                  Reusable JSON/Markdown skeletons loadable on the AI Import page
     Resources/AiPrompts/                    Prompt Library — saved AI instructions with one-click copy
     Resources/AiProfiles/                   AI Profiles — provider name + defaults that fill gaps in imported content
+    Resources/ApiTokens/                    API tokens for the AI Import API — create (shown once) / revoke, last-used tracking
     Pages/AiImport.php                       Paste-area importer for AI-generated articles (JSON/Markdown → validate → preview → import), with template/profile pickers
     Pages/DraftQueue.php                     Imported drafts awaiting review — edit / signed preview / publish-now
     Pages/EditorialCalendar.php              Drag-and-drop article scheduling calendar
@@ -56,6 +57,9 @@ app/
     NewsletterController.php                 Newsletter subscribe (AJAX) / verify / unsubscribe / resend — honeypot, time-gate, rate limit
     SeoController.php                        sitemap.xml, /feed, /tr/feed
     PreviewController.php                    Signed-URL preview of unpublished/scheduled articles
+    Api/AiImportController.php               AI Import API — validate + store (forced draft), thin over ArticleImportService
+  Http/Middleware/AuthenticateAiImportToken.php   Bearer-token auth for the AI Import API (sha256 lookup in api_tokens)
+  Jobs/ImportAiArticle.php                   Queued API import — calls the same ArticleImportService::import()
   Mail/
     NewsletterVerificationMail.php           Double-opt-in confirmation email (per-subscriber locale)
     NewsletterCampaignMail.php               Queued newsletter email — used by the admin bulk send, base for future campaigns
@@ -65,6 +69,7 @@ app/
     NewsletterSubscriber.php                 Newsletter subscriber — double opt-in (verified_at), per-row verify/unsubscribe tokens, locale
     ImportLog.php                            Audit row per AI-import/preview attempt (user, provider, format, result, counts, rollback info)
     AiTemplate.php / AiPrompt.php / AiProfile.php   AI Studio records: content skeletons, saved prompts, provider profiles with import defaults
+    ApiToken.php                             AI Import API token — sha256 hash stored, plaintext shown once at creation
     SiteSetting.php                          Generic key/value store — the ad hoc CMS backend for homepage/about-page/menu content
     Media.php                                 Metadata record for uploaded media (name/path/url/mime/size)
     User.php                                  Default Laravel auth user (admin login)
@@ -86,6 +91,7 @@ resources/
   css/app.css, js/app.js                      Vite entry points (Tailwind + minimal JS)
 routes/
   web.php                                     All public + admin-adjacent routes (see Security Rules — contains two routes that must be fixed)
+  api.php                                     AI Import API only (token-authenticated, forced-draft policy)
   console.php                                 Artisan closures + the schedule definition
 public/                                       index.php, favicon, robots.txt, compiled Filament vendor assets
 tests/
@@ -235,7 +241,7 @@ No CI/CD pipeline or deploy script exists in this repo today (no `.github/workfl
 5. `php artisan migrate --force` **run manually via the deploy process/SSH — never via a public route** (see Security Rules; this replaces the two routes that must eventually be removed).
 6. `php artisan config:cache && php artisan route:cache && php artisan view:cache` for production performance.
 7. Confirm the scheduler cron (`* * * * * php artisan schedule:run`) is present on the server so `articles:publish-due` actually fires every 5 minutes — this is invisible if missing (articles just silently never auto-publish).
-8. The admin "Send newsletter" bulk action queues its mails (`QUEUE_CONNECTION=database`) — a queue worker (`php artisan queue:work`, or `queue:run` via cron) must be running on the server or queued newsletters sit in the `jobs` table forever. Verification emails are sent synchronously and do not need the worker. A real `MAIL_MAILER` (SMTP etc.) must be configured in the server `.env` — the repo default is `log`, which writes emails to the log file instead of sending them.
+8. The admin "Send newsletter" bulk action queues its mails (`QUEUE_CONNECTION=database`) — a queue worker (`php artisan queue:work`, or `queue:run` via cron) must be running on the server or queued newsletters sit in the `jobs` table forever. Verification emails are sent synchronously and do not need the worker. A real `MAIL_MAILER` (SMTP etc.) must be configured in the server `.env` — the repo default is `log`, which writes emails to the log file instead of sending them. The AI Import API's `?queue=1` mode uses the same worker — without it, queued imports also wait in the `jobs` table (non-queued API imports run synchronously and are unaffected).
 Introducing a real CI/CD pipeline (even a minimal GitHub Actions workflow running Pint + `php artisan test` on push) is a recommended near-term improvement — see Future Development Guidelines.
 
 ## 19. SQLite Backup Strategy
@@ -276,7 +282,7 @@ Rules for any new image-handling work:
 
 ## 23. Testing Strategy
 
-**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access), `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource) `tests/Feature/AiImportTest.php` (AI import: JSON/Markdown parsing, validation errors, field mapping, scheduling/draft/published paths, image download into the media library, import logging, admin page access) and `tests/Feature/AiStudioTest.php` (preview history, rollback, profile defaults, draft queue scoping, AI Studio resource pages). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
+**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access), `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource) `tests/Feature/AiImportTest.php` (AI import: JSON/Markdown parsing, validation errors, field mapping, scheduling/draft/published paths, image download into the media library, import logging, admin page access), `tests/Feature/AiStudioTest.php` (preview history, rollback, profile defaults, draft queue scoping, AI Studio resource pages) and `tests/Feature/AiImportApiTest.php` (API auth, forced-draft policy, signed preview URL, dry-run validation, queueing, rate limiting, token resource). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
 
 Priority order for adding real tests (highest-value first):
 1. `Article::scopePublished()` — feed it draft/scheduled-future/scheduled-due/published rows and assert visibility; this is the single most important piece of business logic in the app and the easiest to silently break.
