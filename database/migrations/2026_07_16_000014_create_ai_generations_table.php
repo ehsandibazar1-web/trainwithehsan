@@ -12,11 +12,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->nullable()->constrained()->nullOnDelete();
             // مقاله/صفحه‌ای که این تولید برایش انجام شده — همان قرارداد رشته‌های کوتاه
-            // ('Article'/'Page') که در keywords/internal_link_suggestions هم استفاده می‌شود
-            $table->string('content_type');
+            // ('Article'/'Page') که در keywords/internal_link_suggestions هم استفاده می‌شود.
+            // طول ۵۰ عمدی است: این دو ستون بخشی از ایندکس ترکیبی زیرند و VARCHAR(255) پیش‌فرض
+            // با utf8mb4 روی MySQL از سقف طول کلید ایندکس رد می‌شود (خطای واقعی روی production)
+            $table->string('content_type', 50);
             $table->unsignedBigInteger('content_id');
             // کلید فیلد در App\Services\AiAssistant\ActionRegistry (seo_title, faq, tags, ...)
-            $table->string('field');
+            $table->string('field', 50);
             // generate | improve | rewrite | expand | shorten | simplify
             $table->string('mode');
             $table->string('provider')->nullable();
