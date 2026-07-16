@@ -370,8 +370,10 @@
     {{-- ============ دوره‌های آموزشی و محصولات ============ --}}
     <section class="counter">
         <div class="wrap">
-            <h2 class="title-counter reveal">{{ $v('courses_title', 'Courses & Products') }}</h2>
-            <div class="sun-counter reveal">{{ $v('courses_subtitle', 'Choose the format that fits you — in-person coaching in Istanbul, remote training through the app, or Brazilian Jiu-Jitsu classes.') }}</div>
+            <div class="reveal">
+                <h2 class="title-counter">{{ $v('courses_title', 'Courses & Products') }}</h2>
+                <div class="sun-counter">{{ $v('courses_subtitle', 'Choose the format that fits you — in-person coaching in Istanbul, remote training through the app, or Brazilian Jiu-Jitsu classes.') }}</div>
+            </div>
             @php($courseDefaults = [['In-Person', 'In-Person Coaching'], ['Remote', 'Remote Training (App)'], ['BJJ', 'Brazilian Jiu-Jitsu']])
             <div class="courses-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
@@ -393,9 +395,11 @@
     {{-- ============ مطالب آموزشی (داینامیک از دیتابیس) ============ --}}
     <section class="section-news">
         <div class="wrap">
-            <h3 class="title-section reveal">Training Articles</h3>
-            <div class="sub-title-section reveal">
-                <a href="{{ url('/blog') }}">View the full archive ⟶</a>
+            <div class="reveal">
+                <h3 class="title-section">Training Articles</h3>
+                <div class="sub-title-section">
+                    <a href="{{ url('/blog') }}">View the full archive ⟶</a>
+                </div>
             </div>
             <div class="articles-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>

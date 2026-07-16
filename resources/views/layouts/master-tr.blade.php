@@ -312,9 +312,9 @@
                 ['label' => 'Hakkımda', 'url' => '/tr/about'],
             ]],
         ])
-        <div class="footer-grid reveal-group">
+        <div class="footer-grid">
             @foreach($footerColumnsList as $col)
-            <div class="reveal">
+            <div>
                 <h4>{{ $col['title'] ?? '' }}</h4>
                 <ul>
                     @foreach($col['links'] ?? [] as $lnk)
@@ -324,7 +324,7 @@
             </div>
             @endforeach
         </div>
-        <div class="footer-brand reveal">
+        <div class="footer-brand">
             <img src="{{ asset('storage/' . $fv('logo', 'homepage/logo.header.png')) }}" alt="Ehsan Dibazar - Savunma Teknikleri" class="footer-logo-img">
             @if($fv('description'))
             <p class="footer-desc">{{ $fv('description') }}</p>

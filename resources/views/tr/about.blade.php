@@ -93,7 +93,7 @@ body{background:var(--dark)!important}
 .about-v5 .tl-wrap h2{text-align:center;font-size:24px;font-weight:800;margin-bottom:50px}
 .about-v5 .tl-wrap h2::after{content:"";display:block;width:60px;height:3px;background:var(--gold);margin:14px auto 0;border-radius:3px}
 .about-v5 .tl{position:relative;padding-left:26px;border-left:2px solid #2a2a2a;max-width:560px;margin:0 auto}
-.about-v5 .tl-item{position:relative;padding-bottom:38px;opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.about-v5 .tl-item{position:relative;padding-bottom:38px;opacity:0;transform:translateY(40px);transition:opacity .7s ease-out,transform .7s ease-out}
 .about-v5 .tl-item.show{opacity:1;transform:translateY(0)}
 .about-v5 .tl-item::before{content:"";position:absolute;left:-33px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(217,187,117,.2)}
 .about-v5 .tl-year{color:var(--gold);font-weight:800;font-size:17px}
@@ -108,6 +108,10 @@ body{background:var(--dark)!important}
 .about-v5 .cred{break-inside:avoid;margin-bottom:14px;position:relative;border-radius:14px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;aspect-ratio:4/3;background:linear-gradient(135deg,#2a2416,#8a6d1f)}
 .about-v5 .cred:hover{transform:translateY(-6px);box-shadow:0 20px 40px rgba(217,187,117,.25)}
 .about-v5 .cred .cap{position:absolute;bottom:0;right:0;left:0;background:linear-gradient(0deg,rgba(0,0,0,.9),transparent 80%);color:#fff;padding:20px 10px 8px;font-size:12px;font-weight:600}
+/* اسکرول‌ریویل روی کارت‌های مدرک/گالری: چون .cred خودش transition برای hover دارد،
+   با اختصاصیت برابر/بالاتر override می‌کنیم تا opacity هم انیمیت شود و افکت هاور سریع بماند */
+.about-v5 .cred.reveal{transition:opacity .7s ease-out,transform .7s ease-out,box-shadow .3s ease}
+.about-v5 .cred.reveal:hover{transition:transform .3s ease,box-shadow .3s ease}
 
 /* ===== CTA مگنتیک ===== */
 .about-v5 .cta{background:linear-gradient(135deg,#1a1a1a,#000);text-align:center;background-size:cover;background-position:center}
@@ -178,10 +182,10 @@ body{background:var(--dark)!important}
                 ['title' => "Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması"],
                 ['title' => 'Muay Boran online seminerine katılım, ABD'],
             ])
-            <div class="masonry" id="masonry">
+            <div class="masonry reveal-group" id="masonry">
                 @foreach($certList as $cert)
                 @php($capText = implode(' — ', array_filter([$cert['title'] ?? null, $cert['subtitle'] ?? null, $cert['description'] ?? null])))
-                <figure class="cred" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) style="background:url('{{ asset('storage/' . $cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
+                <figure class="cred reveal" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) style="background:url('{{ asset('storage/' . $cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
                 @endforeach
             </div>
         </div>
@@ -192,10 +196,10 @@ body{background:var(--dark)!important}
     <section class="gallery" aria-label="{{ $v('gallery_heading', 'Galeri') }}">
         <div class="container">
             <h2>{{ $v('gallery_heading', 'Galeri') }}</h2>
-            <div class="masonry">
+            <div class="masonry reveal-group">
                 @foreach($gallery as $img)
                 @continue(empty($img['image']))
-                <figure class="cred" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" style="background:url('{{ asset('storage/' . $img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
+                <figure class="cred reveal" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" style="background:url('{{ asset('storage/' . $img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
                 @endforeach
             </div>
         </div>
@@ -226,7 +230,7 @@ body{background:var(--dark)!important}
     </section>
 
     {{-- ============ CTA مگنتیک ============ --}}
-    <section class="cta" @if($v('cta_bg_image')) style="background-image:linear-gradient(135deg,rgba(26,26,26,.85),rgba(0,0,0,.85)),url('{{ asset('storage/' . $v('cta_bg_image')) }}')" @endif>
+    <section class="cta reveal" @if($v('cta_bg_image')) style="background-image:linear-gradient(135deg,rgba(26,26,26,.85),rgba(0,0,0,.85)),url('{{ asset('storage/' . $v('cta_bg_image')) }}')" @endif>
         @if($v('cta_title'))
         <h3>{{ $v('cta_title') }}</h3>
         @endif
