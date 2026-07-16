@@ -10,6 +10,7 @@ class Page extends Model
 {
     protected $fillable = [
         'locale', 'translation_of', 'title', 'slug', 'body',
+        'seo_title', 'meta_description', 'og_title', 'og_description',
         'image_path', 'status', 'published_at',
     ];
 

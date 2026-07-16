@@ -12,6 +12,7 @@ use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
 use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
@@ -60,6 +61,29 @@ class ArticleForm
                     ->rows(3)
                     ->nullable()
                     ->helperText('Short text shown on the article card in the blog list.'),
+
+                Section::make('SEO & social preview (optional)')
+                    ->description('Leave blank to keep using the title/excerpt automatically — only fill these in if you want different wording for Google or social shares. The AI Assistant (button at the top of this page once saved) can suggest all four.')
+                    ->collapsed()
+                    ->columnSpanFull()
+                    ->schema([
+                        TextInput::make('seo_title')
+                            ->label('SEO title')
+                            ->maxLength(70)
+                            ->nullable(),
+                        TextInput::make('meta_description')
+                            ->label('Meta description')
+                            ->maxLength(160)
+                            ->nullable(),
+                        TextInput::make('og_title')
+                            ->label('Social share title')
+                            ->maxLength(70)
+                            ->nullable(),
+                        TextInput::make('og_description')
+                            ->label('Social share description')
+                            ->maxLength(160)
+                            ->nullable(),
+                    ]),
 
                 Repeater::make('keywords')
                     ->relationship()

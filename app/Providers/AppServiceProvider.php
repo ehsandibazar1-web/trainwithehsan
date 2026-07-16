@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use App\Models\Article;
 use App\Models\Page;
+use App\Services\AiAssistant\Contracts\AiProvider;
+use App\Services\AiAssistant\Providers\AnthropicProvider;
+use App\Services\AiAssistant\Providers\NullProvider;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -17,7 +20,16 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // انتخاب ارائه‌دهنده‌ی هوش مصنوعی — افزودن ارائه‌دهنده‌ی جدید فقط یک شاخه‌ی دیگر اینجا می‌خواهد
+        $this->app->bind(AiProvider::class, function () {
+            if (blank(config('services.anthropic.key'))) {
+                return new NullProvider;
+            }
+
+            return match (config('services.anthropic.driver', 'anthropic')) {
+                default => new AnthropicProvider,
+            };
+        });
     }
 
     /**

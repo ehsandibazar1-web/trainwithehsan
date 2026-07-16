@@ -3,9 +3,11 @@
 {{-- فقط پرسش‌های کامل (سؤال و پاسخِ هر دو پرشده) — هم برای نمایش، هم برای JSON-LD --}}
 @php($faqs = collect($article->faqs ?? [])->filter(fn ($f) => filled($f['question'] ?? null) && filled($f['answer'] ?? null))->values())
 
-@section('title', $article->title . ' — Ehsan Dibazar')
-@section('meta_description', $article->excerpt ?? Str::limit(strip_tags($article->body), 150))
+@section('title', ($article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
+@section('meta_description', $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
 @section('canonical', url('/tr/blog/' . $article->slug))
+@section('og_title', ($article->og_title ?: $article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
+@section('og_description', $article->og_description ?: $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
 
 @section('json-ld')
 <script type="application/ld+json">

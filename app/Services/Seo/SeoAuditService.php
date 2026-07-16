@@ -90,24 +90,15 @@ class SeoAuditService
             return [];
         }
 
-        $urls = $targets->pluck('url')->all();
-
-        $responses = Http::pool(fn ($pool) => collect($urls)->map(
-            fn (string $url) => $pool->as($url)->timeout(6)->connectTimeout(4)->head($url)
-        )->all());
+        $broken = $this->checkUrls($targets->pluck('url')->all());
 
         $findings = [];
         foreach ($targets as $target) {
-            $response = $responses[$target['url']] ?? null;
-            $broken = $response === null
-                || $response instanceof \Throwable
-                || ! $response->successful();
+            $status = $broken[$target['url']]['status'] ?? null;
 
-            if (! $broken) {
+            if (! ($broken[$target['url']]['broken'] ?? false)) {
                 continue;
             }
-
-            $status = ($response && ! ($response instanceof \Throwable)) ? $response->status() : null;
 
             foreach ($target['sources'] as $source) {
                 $findings[] = [
@@ -124,6 +115,38 @@ class SeoAuditService
         }
 
         return $findings;
+    }
+
+    /**
+     * بررسی HTTP واقعیِ یک فهرست دلخواه از URL — استخراج‌شده از checkExternalLinks() تا
+     * App\Filament\Pages\AiContentAssistant هم بتواند URLهای پیشنهادیِ هوش مصنوعی را قبل از
+     * نمایش به همین شکل بررسی کند، بدون تکرار منطق Http::pool.
+     *
+     * @param  string[]  $urls
+     * @return array<string, array{broken: bool, status: ?int}>
+     */
+    public function checkUrls(array $urls): array
+    {
+        if ($urls === []) {
+            return [];
+        }
+
+        $responses = Http::pool(fn ($pool) => collect($urls)->map(
+            fn (string $url) => $pool->as($url)->timeout(6)->connectTimeout(4)->head($url)
+        )->all());
+
+        $result = [];
+        foreach ($urls as $url) {
+            $response = $responses[$url] ?? null;
+            $broken = $response === null || $response instanceof \Throwable || ! $response->successful();
+
+            $result[$url] = [
+                'broken' => $broken,
+                'status' => ($response && ! ($response instanceof \Throwable)) ? $response->status() : null,
+            ];
+        }
+
+        return $result;
     }
 
     /**
@@ -148,7 +171,9 @@ class SeoAuditService
                 'status' => $article->status,
                 'title' => $article->title,
                 'category' => $article->category,
-                'raw_description' => filled($article->excerpt) ? $article->excerpt : strip_tags($article->body ?? ''),
+                // اولویت: meta_description دستی/هوش‌مصنوعی > excerpt > بدنه — دقیقاً همان اولویتی
+                // که blog-post.blade.php برای @section('meta_description', ...) واقعی استفاده می‌کند
+                'raw_description' => $article->meta_description ?: (filled($article->excerpt) ? $article->excerpt : strip_tags($article->body ?? '')),
                 'body' => $article->body,
                 'path' => $article->path(),
                 'edit_url' => ArticleResource::getUrl('edit', ['record' => $article->id]),
@@ -164,7 +189,7 @@ class SeoAuditService
                 'status' => $page->status,
                 'title' => $page->title,
                 'category' => null, // Page مدل «دسته» ندارد
-                'raw_description' => strip_tags($page->body ?? ''),
+                'raw_description' => $page->meta_description ?: strip_tags($page->body ?? ''),
                 'body' => $page->body,
                 'path' => $page->path(),
                 'edit_url' => PageResource::getUrl('edit', ['record' => $page->id]),

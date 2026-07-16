@@ -14,7 +14,7 @@ class InternalLinkSuggestion extends Model
 {
     protected $fillable = [
         'source_type', 'source_id', 'target_type', 'target_id', 'locale',
-        'confidence_score', 'recommended_anchor_text', 'reason', 'status', 'approved_at',
+        'confidence_score', 'recommended_anchor_text', 'reason', 'status', 'origin', 'approved_at',
     ];
 
     protected $casts = [
