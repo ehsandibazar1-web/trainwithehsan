@@ -360,9 +360,9 @@
             </div>
         </div>
         @if($v('app_image'))
-            <img src="{{ asset('storage/' . $v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img">
+            <img src="{{ asset('storage/' . $v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img reveal">
         @else
-            <div class="img-about-box"><span>Uygulama</span></div>
+            <div class="img-about-box reveal"><span>Uygulama</span></div>
         @endif
     </section>
 
