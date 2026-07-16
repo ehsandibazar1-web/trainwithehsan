@@ -174,6 +174,7 @@ class ArticleImportService
                 'slug' => $payload['slug'],
                 'category' => $payload['category'] ?? null,
                 'excerpt' => $payload['excerpt'] ?? null,
+                'seo_title' => $payload['seo_title'] ?? null,
                 'body' => $payload['body'],
                 'faqs' => $payload['faqs'] ?? null,
                 'image_path' => $payload['image_path'] ?? null,
@@ -349,8 +350,13 @@ class ArticleImportService
             $warnings[] = 'No excerpt or SEO description given — the meta description will be derived from the first part of the content.';
         }
 
-        if (isset($seo['title'])) {
-            $mapping['skipped']['seo.title'] = 'Page titles are always built from the article title on this site.';
+        // ----- عنوان سئوی اختصاصی (اختیاری) — اگر ندهید، همچنان از عنوان مقاله ساخته می‌شود
+        $seoTitle = trim((string) ($seo['title'] ?? ''));
+        if ($seoTitle !== '') {
+            $mapping['mapped']['seo.title'] = 'SEO title (overrides the default title-based page title)';
+            if (mb_strlen($seoTitle) > 70) {
+                $warnings[] = 'The SEO title is longer than the recommended 70 characters and may be truncated by Google.';
+            }
         }
 
         // ----- فیلدهایی که سیستم سئوی موجود خودش به‌طور خودکار می‌سازد
@@ -492,6 +498,7 @@ class ArticleImportService
             'title' => $title,
             'slug' => $slug,
             'excerpt' => $excerpt !== '' ? $excerpt : null,
+            'seo_title' => $seoTitle !== '' ? $seoTitle : null,
             'body' => $body,
             'category' => $category !== '' ? $category : null,
             'faqs' => $faqs,
