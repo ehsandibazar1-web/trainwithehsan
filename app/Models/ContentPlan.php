@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Notifications\PublishingCompleted;
+use App\Notifications\ReviewRequested;
+use App\Notifications\WorkflowStageChanged;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -35,7 +38,7 @@ class ContentPlan extends Model
     protected $fillable = [
         'title', 'locale', 'content_type', 'contentable_type', 'contentable_id',
         'category', 'workflow_stage_id', 'priority', 'author_id', 'assigned_to',
-        'planned_publish_at', 'due_at', 'checklist_state', 'notes',
+        'planned_publish_at', 'due_at', 'deadline_notified_at', 'checklist_state', 'notes',
     ];
 
     protected function casts(): array
@@ -43,8 +46,19 @@ class ContentPlan extends Model
         return [
             'planned_publish_at' => 'datetime',
             'due_at' => 'datetime',
+            'deadline_notified_at' => 'datetime',
             'checklist_state' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        // مهلت جدید = هشدار جدید — اگر ادمین due_at را عوض کند، اعلانِ قبلی دیگر معتبر نیست
+        static::saving(function (ContentPlan $plan) {
+            if ($plan->isDirty('due_at')) {
+                $plan->deadline_notified_at = null;
+            }
+        });
     }
 
     public function workflowStage(): BelongsTo
@@ -91,8 +105,8 @@ class ContentPlan extends Model
 
     /**
      * تغییر مرحله + ثبت تاریخچه (برای آمار داشبورد) + مادیت‌بخشیِ خودکار (materialize) هنگام
-     * رسیدن به AI Draft. هیچ اعلانی اینجا مستقیم فرستاده نمی‌شود — App\Observers یا فراخوان
-     * بالادست مسئول آن است (نگاه کنید به CLAUDE.md، بخش سیستم اعلان).
+     * رسیدن به AI Draft + اعلان به مسئول کارت (assignee، وگرنه author). اعلان‌ها بعد از commit
+     * تراکنش فرستاده می‌شوند تا اگر خودِ تغییر مرحله شکست بخورد هرگز اعلان بی‌مورد نرود.
      */
     public function moveToStage(WorkflowStage $stage, ?User $actor = null): void
     {
@@ -101,6 +115,7 @@ class ContentPlan extends Model
         }
 
         $fromStageId = $this->workflow_stage_id;
+        $fromStageLabel = WorkflowStage::find($fromStageId)?->label ?? '—';
 
         DB::transaction(function () use ($stage, $actor, $fromStageId) {
             $this->update(['workflow_stage_id' => $stage->id]);
@@ -116,6 +131,27 @@ class ContentPlan extends Model
                 $this->materializeContent();
             }
         });
+
+        $this->notifyStageChange($stage, $fromStageLabel);
+    }
+
+    private function notifyStageChange(WorkflowStage $stage, string $fromStageLabel): void
+    {
+        $recipient = $this->assignee ?: $this->author;
+
+        if (! $recipient) {
+            return;
+        }
+
+        $recipient->notify(new WorkflowStageChanged($this, $fromStageLabel, $stage->label));
+
+        if (in_array($stage->slug, [WorkflowStage::STAGE_HUMAN_REVIEW, WorkflowStage::STAGE_SEO_REVIEW], true)) {
+            $recipient->notify(new ReviewRequested($this, $stage->label));
+        }
+
+        if ($stage->slug === WorkflowStage::STAGE_PUBLISHED) {
+            $recipient->notify(new PublishingCompleted($this));
+        }
     }
 
     /**

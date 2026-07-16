@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // انتشار خودکار مقالات زمان‌بندی‌شده — هر ۵ دقیقه بررسی می‌شود
 Schedule::command('articles:publish-due')->everyFiveMinutes();
+
+// اعلان مهلت‌های نزدیک برنامه‌ریز محتوا — هر ساعت کافی است (بر خلاف انتشار، دقتِ دقیقه‌ای لازم نیست)
+Schedule::command('content-plans:notify-deadlines')->hourly();

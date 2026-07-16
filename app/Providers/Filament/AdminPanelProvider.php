@@ -31,6 +31,10 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Amber,
             ])
+            // زنگولهٔ اعلان‌ها — App\Notifications\* روی کانال database می‌نویسند، این فقط
+            // خواندن/نمایش همان اعلان‌ها را در پنل فعال می‌کند
+            ->databaseNotifications()
+            ->databaseNotificationsPolling('30s')
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\Filament\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
