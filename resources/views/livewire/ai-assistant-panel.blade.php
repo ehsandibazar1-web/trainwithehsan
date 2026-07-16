@@ -30,6 +30,8 @@
         .ai-ca-history{font-size:.72rem;color:#9ca3af}
         .ai-ca-history-item{display:flex;justify-content:space-between;align-items:center;padding:.2rem 0;border-top:1px solid rgb(243 244 246)}
 
+        .ai-ca-knowledge{font-size:.7rem;color:#6b7280;background:#f9fafb;border:1px solid rgb(243 244 246);border-radius:.4rem;padding:.3rem .5rem;margin-bottom:.5rem}
+
         .ai-ca-tabs{display:flex;gap:.4rem;margin-bottom:1rem;border-bottom:1px solid rgb(229 231 235)}
         .ai-ca-tab-btn{padding:.5rem .9rem;font-size:.82rem;color:#6b7280;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer}
         .ai-ca-tab-btn.active{color:#111827;font-weight:600;border-bottom-color:#d9bb75}
@@ -101,6 +103,7 @@
         :root.dark .ai-ca-score-cat{border-color:#374151}
         :root.dark .ai-ca-score-cat .name{color:#9ca3af}
         :root.dark .ai-ca-history-item{border-color:#374151}
+        :root.dark .ai-ca-knowledge{background:#111827;border-color:#374151;color:#9ca3af}
         :root.dark .ai-ca-chat{background:#1f2937;border-color:#374151}
         :root.dark .ai-ca-chat-msg.assistant .bubble{background:#111827;color:#e5e7eb}
         :root.dark .ai-ca-chat-msg.user .bubble{color:#111827}
@@ -214,6 +217,9 @@
                             · {{ ucfirst($past->mode) }} · {{ $past->created_at->diffForHumans() }}
                             @if ($past->applied_at) — applied {{ $past->applied_at->diffForHumans() }} @endif
                             @if ($past->restored_at) — restored {{ $past->restored_at->diffForHumans() }} @endif
+                            @if ($past->knowledgeEntries->isNotEmpty())
+                                <br><span style="color:#6b7280">📚 {{ $past->knowledgeEntries->pluck('title')->implode(', ') }}</span>
+                            @endif
                         </span>
                         @php($isAppliable = \App\Services\AiAssistant\ActionRegistry::exists($past->field) ? (\App\Services\AiAssistant\ActionRegistry::for($past->field)['appliable'] ?? true) : false)
                         @if ($past->isCancellable())
@@ -326,6 +332,10 @@
                                         {{ $latest->result }}
                                     @endif
                                 </div>
+                            @endif
+
+                            @if ($latest->knowledgeEntries->isNotEmpty())
+                                <div class="ai-ca-knowledge">📚 Knowledge used: {{ $latest->knowledgeEntries->pluck('title')->implode(', ') }}</div>
                             @endif
 
                             @if ($latest->applied_at)

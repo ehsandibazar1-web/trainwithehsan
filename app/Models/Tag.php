@@ -33,4 +33,9 @@ class Tag extends Model
     {
         return $this->morphedByMany(Page::class, 'taggable');
     }
+
+    public function knowledgeEntries(): MorphToMany
+    {
+        return $this->morphedByMany(KnowledgeEntry::class, 'taggable');
+    }
 }

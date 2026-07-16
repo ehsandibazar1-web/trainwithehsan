@@ -65,6 +65,7 @@ app/
     Pages/BrandMemory.php                    Central brand knowledge every AI Studio prompt reads automatically — grouped sections, EN/TR/FA value tabs, version history, Preview Prompt — see Section 26
     Resources/AiProviderConfigs/             AiProviderConfigResource — List/Edit only (5 rows seeded, slug-bound to ProviderManager::DRIVERS, so no Create/Delete): encrypted API key (blank = keep unchanged), base URL/model/tokens/temperature/timeout, admin-maintained model-catalog repeater, Test Connection + Set as Default row actions — see Section 24
     Resources/AiUsageLogs/                   AiUsageLogResource — fully read-only (canCreate/canEdit/canDelete all false), filters (provider/status/action/user/date), per-row error detail modal, Export CSV bulk action — see Section 24
+    Resources/KnowledgeEntries/               KnowledgeEntryResource (nav "Knowledge Entries", its own "Knowledge Base" nav group) — full CRUD: title/category (free text with a suggested-category datalist)/locale/content/source/status/priority/pinning/expiry/tags + document attachments, see Section 27
     Pages/SystemMaintenance.php              Admin-auth-gated "run pending migrations" / "clear cache" buttons — replaces the old public unauthenticated maintenance routes, see Security Rules
     Widgets/ArticleStatsOverview.php         Dashboard stats widget
   Http/Controllers/
@@ -78,7 +79,7 @@ app/
   Livewire/AiAssistantPanel.php              This project's first plain Livewire component (not a Filament Page) — all AI Assistant generate/apply/restore/chat/translate/cancel logic; mounted both inside the Article/Page editor's embedded sidebar and by the standalone AiContentAssistant page — see Section 23
   Jobs/ImportAiArticle.php                   Queued API import — calls the same ArticleImportService::import()
   Jobs/GenerateInternalLinkSuggestions.php   Queued — calls SuggestionEngine::generateAndPersist() (O(n²) scoring, kept off the request cycle)
-  Jobs/RunAiContentGeneration.php            Queued — thin dispatch wrapper over ContentAssistantService::generate(), $tries=1, with two cancellation checkpoints — see Section 23
+  Jobs/RunAiContentGeneration.php            Queued — thin dispatch wrapper over ContentAssistantService::generate(), $tries=1, with two cancellation checkpoints — see Section 23; on success also syncs generate()'s returned knowledge_entry_ids onto the AiGeneration via the ai_generation_knowledge_entry pivot — see Section 27
   Jobs/ProcessAiChatMessage.php              Queued — classifies a chat message's intent (ContentAssistantService::classifyIntent) and routes it to RunAiContentGeneration, TranslateArticleDraft, or a plain reply — see Section 23
   Jobs/TranslateArticleDraft.php             Queued — builds a real translated draft Article (via ArticleImportService::import()) or Page (direct Eloquent create), always status=draft — see Section 23
   Notifications/WorkflowStageChanged.php, ReviewRequested.php, PublishingCompleted.php, DeadlineApproaching.php   Channel-agnostic (`via()` filtered through NotificationPreference), in-app-only today via `toDatabase()` → `Filament\Notifications\Notification`, see Section 25
@@ -97,14 +98,14 @@ app/
     MediaFolder.php                          Nested media folder (self-referential `parent_id`); a folder can only be deleted while empty (checked in the app layer, not just the DB)
     Keyword.php                              Target-keyword for an Article/Page (polymorphic `keywordable`) — see Section 22
     InternalLinkSuggestion.php               A persisted "source should link to target" suggestion — pending/approved/dismissed, `origin` rule_based|ai — see Sections 22 and 23
-    AiGeneration.php                          One AI Content Assistant run for one field — status/result/input_snapshot for restore, status can also be `cancelled` — see Section 23
+    AiGeneration.php                          One AI Content Assistant run for one field — status/result/input_snapshot for restore, status can also be `cancelled` — see Section 23; also `knowledgeEntries(): BelongsToMany` (`ai_generation_knowledge_entry` pivot) recording which KnowledgeEntry rows were used for this run, see Section 27
     AiChatMessage.php                         One message in a record's AI Assistant chat thread — user|assistant, optionally linked to the AiGeneration it triggered — see Section 23
     AiProviderConfig.php                      One vendor's connection settings — encrypted `api_key`, `is_usable` computed accessor (enabled AND has a key) — see Section 24
     AiProviderModel.php                       Admin-maintained model catalog per provider (label/model ID/optional per-million-token pricing) — see Section 24
     AiActionOverride.php                      Per-ActionRegistry-field provider/model override — unique on `action_key`; no row for a field means "use the default provider" — see Section 24
     AiUsageLog.php                             One row per ProviderManager::respond() call, success or failure — denormalized provider_slug/model (no FK) so deleting a config never breaks usage history — see Section 24
     AiProviderSetting.php                     Singleton settings row (default/failover/fallback provider) — `current()` is the only read path — see Section 24
-    Tag.php                                   Content-organization tag (auto-slug), `MorphToMany` on Article/Page via `taggables` — deliberately separate from Keyword, see Section 25
+    Tag.php                                   Content-organization tag (auto-slug), `MorphToMany` on Article/Page (and, since Section 27, KnowledgeEntry) via `taggables` — deliberately separate from Keyword, see Section 25
     WorkflowStage.php                         Configurable pipeline stage (label/slug/sort_order/color/is_default/is_terminal/checklist_items JSON) — see Section 25
     ContentPlan.php                           The planner card — can exist with no Article/Page yet, `moveToStage()`/`materializeContent()`, see Section 25
     ContentTask.php                           Per-plan task (title/status/due_at/assigned_to/notes/sort_order) — see Section 25
@@ -112,6 +113,8 @@ app/
     NotificationPreference.php                Per-user/event/channel opt-out row — no row means enabled — see Section 25
     BrandMemorySection.php                    A labeled slot of brand knowledge (Mission, Forbidden Words, ...) — 25 seeded (is_system=true, undeletable) + admin-addable custom ones — see Section 26
     BrandMemoryValue.php                      One section's content in one language (en/tr/fa — fa is value-only, not a site locale); LogsActivity for version history — see Section 26
+    KnowledgeEntry.php                        One retrievable fact/document about the brand (title/category/locale/content/source/status/priority/pinning/expiry), one-row-per-language like Article — not Brand Memory's per-field-per-locale shape; LogsActivity for version history (surfaced in the existing ActivityLogPage, no bespoke history UI) — see Section 27
+    KnowledgeEntryAttachment.php              A PDF/document attached to a KnowledgeEntry — plain file storage, deliberately bypasses MediaProcessor (image-only pipeline) — see Section 27
     User.php                                  Default Laravel auth user (admin login)
   Services/ArticleImport/ArticleImportService.php   UI-independent import pipeline (parse → validate → map → import) — the AiImport page calls it today; a future secure API must reuse it unchanged
   Services/Media/MediaProcessor.php          Image pipeline used by every upload path (Media Library, Article/Page featured image): stores the original untouched, generates WebP + thumbnail + responsive WebP variants; `replace()` overwrites content at the *same* disk_path so existing references never break
@@ -128,14 +131,15 @@ app/
   Services/AiAssistant/Providers/OpenAiCompatibleProvider.php   Abstract base for the three OpenAI-Chat-Completions-shaped vendors — see Section 24
   Services/AiAssistant/ProviderManager.php   Orchestration layer every AI feature calls instead of an AiProvider directly — resolution (override → default → legacy .env), retry, failover, usage logging, cost estimation, testConnection() — see Section 24
   Services/AiAssistant/ActionRegistry.php    Every generatable field: label, applicable model(s), allowed modes, response shape, prompt instruction — see Section 23
-  Services/AiAssistant/ContentAssistantService.php   Builds prompts (each system-prompt builder appends BrandMemoryService::buildContext() via a shared withBrandMemory() helper), calls ProviderManager::respond(actionKey: $field), parses the response — never writes to a record — see Sections 23, 24, and 26
+  Services/AiAssistant/ContentAssistantService.php   Builds prompts (each system-prompt builder appends BrandMemoryService::buildContext() via a shared withBrandMemory() helper), calls ProviderManager::respond(actionKey: $field), parses the response — never writes to a record — see Sections 23, 24, and 26. generate() additionally pulls relevant KnowledgeEntry rows via KnowledgeBaseService (skipped for content_review_summary and non-en/tr locales) and returns which entry IDs were used — see Section 27
   Services/AiAssistant/ContentReviewService.php    Deterministic (non-AI) per-record content audit + scoreCard() (AI Health Report, six category scores) — see Section 23
   Services/BrandMemory/BrandMemoryService.php      buildContext(locale): composes every enabled BrandMemorySection into one grouped text block, English fallback per section, empty string when nothing is configured — see Section 26
   Services/AiAssistant/DiffService.php       Self-built, zero-dependency word-level (LCS) diff — red/green preview before any AI suggestion is applied — see Section 23
+  Services/KnowledgeBase/KnowledgeBaseService.php   retrieveRelevant(query, locale, limit): pinned entries always included, then a keyword/tag/priority pre-filter shortlists candidates for App\Services\AiAssistant\ProviderManager to rank by true relevance (falling back to the keyword ranking alone if no provider is available or the call fails) — no vector database, see Section 27
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services incl. `anthropic`, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications (`notifiable_type` explicitly `varchar(100)`, not `morphs()`'s default 255 — same MySQL/utf8mb4 index-key-length lesson as `ai_generations`/`taggables`) + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}), a fix-up migration for the `notifications` index on installs that hit the key-length error before this fix (2026_07_16_000033) — see Section 25, brand_memory_sections + brand_memory_values + a seed migration inserting the 25 default sections (2026_07_16_00003{4-6}) — see Section 26
+  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications (`notifiable_type` explicitly `varchar(100)`, not `morphs()`'s default 255 — same MySQL/utf8mb4 index-key-length lesson as `ai_generations`/`taggables`) + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}), a fix-up migration for the `notifications` index on installs that hit the key-length error before this fix (2026_07_16_000033) — see Section 25, brand_memory_sections + brand_memory_values + a seed migration inserting the 25 default sections (2026_07_16_00003{4-6}) — see Section 26, knowledge_entries + knowledge_entry_attachments + ai_generation_knowledge_entry (2026_07_16_00003{7-9}) — see Section 27
 lang/
   en/newsletter.php, tr/newsletter.php       ALL user-facing newsletter strings (form messages, result pages, emails) — the only lang files in the project
   factories/, seeders/
@@ -161,6 +165,7 @@ tests/
   Feature/TagsTest.php, ContentPlanTest.php, EditorialNotificationsTest.php, WorkflowStageResourceTest.php, ContentPlanResourceTest.php, ContentPlannerKanbanTest.php, ContentPlannerCalendarTest.php, ContentPlannerTableDashboardTest.php, ContentPlannerAiIntegrationTest.php   Editorial Workflow & Content Planner coverage — see Section 25
   Feature/AdminPanelResilienceTest.php      Asserts the admin panel (incl. System Maintenance) stays reachable even before this feature's migrations have run — see Section 25's `databaseNotifications()` guard
   Feature/BrandMemoryTest.php, BrandMemoryPageTest.php   Brand Memory coverage — see Section 26
+  Feature/KnowledgeBaseTest.php, KnowledgeBaseRetrievalTest.php, KnowledgeBaseGenerationIntegrationTest.php, KnowledgeEntryResourceTest.php   Knowledge Base coverage — see Section 27
 ```
 
 Key duplication to be aware of: **every public-facing view and its Turkish counterpart are separate files** (`home.blade.php` / `tr/home.blade.php`, etc.), and `routes/web.php` registers separate controller methods per locale (`home`/`homeTr`, `index`/`indexTr`, `show`/`showTr`). This is a deliberate current structure, not an oversight in progress — see "Important Project Decisions" before attempting to collapse it.
@@ -185,6 +190,7 @@ Key duplication to be aware of: **every public-facing view and its Turkish count
 - **Internal Linking Center** (`InternalLinkingCenter` page, nav item "Internal Linking"): a third custom Livewire screen, one step more complex than SEO Center — three tabs (`$activeTab`: dashboard/suggestions/graph) inside a single page rather than three separate nav items, following the same "don't proliferate nav items for one feature" instinct as grouping AI Studio's screens. The dashboard tab is a near-exact copy of SEO Center's sidebar-categories-plus-table layout (same `ilc-*` CSS class names mirroring SEO Center's `seo-*` ones) — reuse that structure for any future audit-style page rather than inventing a fourth variant. See Section 22 for what each tab actually does and which parts reuse `SeoAuditService`.
 - **AI Content Assistant** — the AI generate/improve/review/chat/translate logic lives in `App\Livewire\AiAssistantPanel`, this project's **first plain Livewire component** (`extends \Livewire\Component`, not a `Filament\Pages\Page`). It's mounted in two places with the same component class and Blade view (`resources/views/livewire/ai-assistant-panel.blade.php`): (1) embedded directly in `EditArticle`/`EditPage` via a custom `$view` override (`resources/views/filament/resources/articles/pages/edit-article.blade.php` and the `pages/pages/edit-page.blade.php` equivalent) that wraps `{{ $this->content }}` in a two-column layout — a collapsible right sidebar on desktop, a bottom drawer below `1024px`, Alpine.js state persisted to `localStorage`, toggled by a header `Action::make('aiAssistant')` that dispatches a `toggle-ai-sidebar` browser event (`$this->dispatch(...)`) rather than navigating away; (2) the thin `App\Filament\Pages\AiContentAssistant` page (`mount()` reads `?article=ID`/`?page=ID`, 404s if neither resolves) kept live as a standalone fallback/deep link, passing `standalone=true` so its "Back to editing" button and full-width layout render. Same `ai-ca-*`-prefixed inline `<style>`-in-Blade convention as the other custom screens, now with `:root.dark` overrides (Filament's actual dark-mode toggle mechanism — **not** `prefers-color-scheme`, which doesn't track it) since this is the first AI Studio screen styled for dark mode. Uses `$activeTab` (generate/review/history) and this project's first conditional `wire:poll` (rendered while any generation is queued/processing, or a chat reply is pending). See Section 23 for the full feature — sidebar embedding, AI Chat, diff preview, health score card, Quick Actions, Translate, and cancellation.
 - **Content Planner** (nav group): `TagResource` (nav "Tags"), `WorkflowStageResource` (nav "Workflow Stages"), `ContentPlanResource` (routable Create/Edit only, `shouldRegisterNavigation() => false`), and `ContentPlanner` (nav "Planner") — the group's actual entry point, one Page with four switchable views (Kanban/Calendar/Table/Dashboard) following the same "one Page, several tabs" precedent as SEO Center/Internal Linking Center/AI Content Assistant. `EditorialCalendar` still exists (its old URL must keep working) but is `shouldRegisterNavigation() => false` and does nothing but redirect into this group's Calendar view. See Section 25 for the full feature.
+- **Knowledge Base** (its own nav group, deliberately not nested under "AI Studio"): a single ordinary CRUD resource, `KnowledgeEntryResource` (nav "Knowledge Entries") — unlike Media Library/SEO Center/Internal Linking Center/Content Planner, this needed no custom Livewire page; a standard `Schemas/{Name}Form.php` + `Tables/{Name}sTable.php` + `Pages/` layout (mirroring `TagResource` exactly) was enough. See Section 27 for the full feature and why it's read automatically by every AI generation call rather than needing its own "use this" button.
 - `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, and `FooterSettings` manually decode/encode JSON and normalize Filament's `FileUpload` return shape (e.g. `array_values(array_filter($value))[0] ?? null`) in `mount()`/`save()`. This is brittle by nature (tied to Filament's current return shape) — if a Filament upgrade changes `FileUpload`'s value shape, check these files first.
 - Layout-level CMS data (header menu `menu.{locale}.items`, footer `footer.{locale}.*`) is loaded **inline in the master layouts** via `@php` + `SiteSetting` (the footer block sits before the `<style>` tag because the background image is used inside the CSS) — not via controllers or view composers. Follow that in-layout pattern for any future layout-level content.
 - Repeater items that need manual ordering (e.g. `AboutPageSettings`'s `certificates`/`gallery`/`timeline`) get an explicit numeric `sort_order` field alongside Filament's built-in `->reorderable()` drag handle, and the consuming controller sorts by it (`BlogController::sortBySortOrder()`) before passing data to the view. Reuse this pattern — plain numeric field + a small `usort` in the controller — rather than relying on array order alone, since admins may want to reorder without dragging.
@@ -703,14 +709,137 @@ place every one of them already funnels through.
   system-section delete guard, view/close history, restore-writes-back-and-logs-a-new-version, and
   Preview Prompt).
 
-## 27. Performance Rules
+## 27. Knowledge Base for AI Content Generation
+
+A structured library of standalone facts/documents about the brand/business that every AI Content
+Assistant generation call (Section 23) automatically searches and pulls relevant entries from
+before writing — reusing Brand Memory's provider layer and injection pattern, but solving a
+different problem: Brand Memory is one fixed block always appended in full (mission, tone, forbidden
+words, ...); Knowledge Base is a growing, filterable set of individual facts (a location's address,
+one course's curriculum, a specific policy) where only the ones relevant to *this specific
+generation* should be used — appending all of it, unfiltered, would flood the prompt and dilute
+relevance as the library grows. Nothing about `ActionRegistry`, `ProviderManager`, Brand Memory, or
+any of the three AI jobs was rebuilt to add this — it is purely additive, injected at one new point
+inside `ContentAssistantService::generate()`.
+
+- **`App\Models\KnowledgeEntry`** is one retrievable fact or document — `title`, `category` (free
+  text with a suggested-category datalist in the admin form: Biography, Services, Policies, Courses,
+  Martial Arts, Locations, FAQs, Products, Business Information, Contact Information, Training
+  Methods — not a closed enum, admins can type anything, matching `Article.category`'s existing
+  free-text convention), `locale` (**`en`/`tr` only** — deliberately narrower than Brand Memory's
+  `en`/`tr`/`fa`, because Knowledge Base content feeds directly into generated site content, which
+  is only ever en/tr, unlike Brand Memory's `fa` carve-out which is reference-only and never
+  retrieval-scored, see Section 26), `content` (the actual fact text), `source` (optional, admin's
+  own reference — where this came from), `status` (`draft`/`active`/`archived` — only `active` is
+  ever retrieved), `priority` (`low`/`medium`/`high`/`critical` — a scoring input, see below),
+  `is_pinned` (bypasses relevance scoring entirely, see below), `expires_at` (optional — an expired
+  entry is excluded automatically, no cron needed since expiry is just a `where` clause evaluated at
+  retrieval time). **One row per language**, mirroring `Article`'s two-row-per-translation model
+  (Multilingual Architecture) — deliberately **not** Brand Memory's newer per-field-per-locale
+  substructure (`BrandMemorySection` + `BrandMemoryValue`); each `KnowledgeEntry` is a single-language
+  document, which is simpler and fits the "individual fact" shape better than Brand Memory's
+  "one labeled slot translated into several languages" shape. Version history reuses
+  `spatie/laravel-activitylog` (`LogsActivity`, same trait `Article`/`BrandMemoryValue` use) but
+  surfaces in the **existing, generic** `ActivityLogPage` — unlike Brand Memory's bespoke
+  per-section history panel, `KnowledgeEntry` needed no new history UI at all, since
+  `ActivityLogPage`'s `Activity::query()` table already works for any subject with a `title`
+  attribute.
+- **`App\Models\KnowledgeEntryAttachment`** — a PDF/document attached to an entry (`disk_path`,
+  `original_filename`, `mime_type`, `size`), plain `hasMany`, cascade-deleted with its parent.
+  **Deliberately bypasses `MediaProcessor`** (Section 21) — that pipeline is image-only
+  (WebP/thumbnail/responsive variants via `intervention/image`), the wrong tool for a PDF or Word
+  document; attachments here are just stored as-is on the `public` disk under `knowledge-base/`,
+  uploaded via a plain `FileUpload` field (not through the DAM), then converted into
+  `KnowledgeEntryAttachment` rows by `KnowledgeEntryAttachment::createManyFromDiskPaths()` (called
+  from both `CreateKnowledgeEntry::afterCreate()` and `EditKnowledgeEntry::afterSave()` so this
+  conversion logic exists once, not duplicated per page). Attachments are for admin/AI *reference*
+  only — nothing currently parses a PDF's contents into the AI prompt; `content` is what the AI
+  actually reads.
+- **Tags are the exact same `Tag` model/`taggables` pivot Article/Page/ContentPlan already use** —
+  `KnowledgeEntry::tags(): MorphToMany` / `Tag::knowledgeEntries(): MorphToMany`, no new tagging
+  system, matching Section 25's "don't build a second tagging mechanism" precedent.
+- **`App\Services\KnowledgeBase\KnowledgeBaseService::retrieveRelevant(query, locale, limit = 5)`**
+  is the only retrieval entry point, and this is where "no vector database" was solved without
+  reinventing search from scratch:
+  1. **Pinned entries for that locale are always included first**, regardless of relevance — for
+     must-know facts (business name, core policy) that should never depend on a scoring heuristic
+     guessing right.
+  2. If pinned entries alone don't fill `limit`, the remaining `active`, non-expired, non-pinned
+     entries in that locale are **cheaply pre-filtered** by a hand-rolled keyword-overlap score
+     (significant-word intersection between the query and the entry's title/category/content, plus a
+     tag-match bonus and a priority weight — the same small, self-built scoring style as
+     `SuggestionEngine`'s Jaccard-style internal-link scoring, Section 22 — not extracted/shared from
+     it, since it's a genuinely different scoring problem; a new, independent implementation was
+     simpler and more honest than forcing reuse of private methods built for link suggestions). This
+     shortlist is capped at 15 candidates.
+  3. That shortlist (never the whole table) is handed to the **existing**
+     `App\Services\AiAssistant\ProviderManager` — the same abstraction every other AI feature already
+     goes through (Section 24) — with a small system prompt asking it to return only the genuinely
+     relevant entry IDs as JSON, most relevant first. **This is what "semantic retrieval" means in
+     this codebase**: the already-configured AI provider judges relevance over a cheap pre-filtered
+     list, instead of adding a vector-embedding pipeline and a new dependency — directly consistent
+     with this project's established anti-dependency stance (`DiffService`'s hand-rolled diff,
+     `SuggestionEngine`'s hand-rolled scoring, Section 13's "no dependency for something a few lines
+     of code can do").
+  4. **If no AI provider is configured, or the call fails or returns unparseable output, retrieval
+     silently falls back to the keyword-only shortlist** — content generation must never be blocked
+     or degraded by a Knowledge Base retrieval failure. The AI explicitly returning an empty array
+     (genuinely "nothing here is relevant") is honored as a real, deliberate zero-result and is
+     **not** treated as a failure that triggers the fallback — the two cases are kept distinct on
+     purpose (see the two dedicated tests in `KnowledgeBaseRetrievalTest.php`).
+- **Injection point: `ContentAssistantService::generate()`, and only there** — not `classifyIntent()`
+  (the AI Chat router, Section 23) and not `buildTranslationPayload()`/`buildTranslateSystemPrompt()`
+  (translation must preserve the *source* content's facts exactly, not have new fact candidates from
+  a different retrieval pass mixed in). A private `relevantKnowledgeFor()` builds the retrieval query
+  from the record's title + the field's label (e.g. "Guard Passing Basics — SEO Title"), skips
+  retrieval entirely for `content_review_summary` (it only summarizes existing findings, it isn't
+  writing new content that needs supporting facts) and for any locale outside `en`/`tr`. A private
+  `withKnowledgeContext()` appends a `## Relevant Knowledge Base Facts` block to the system prompt
+  only when entries were actually found — an install with an empty Knowledge Base produces a
+  byte-identical prompt to before this feature, the same backward-compatibility posture Brand Memory
+  established in Section 26. `generate()`'s return shape gained one new key,
+  `knowledge_entry_ids: int[]`, alongside the existing `result`/`warnings`.
+- **"Which knowledge was used" is tracked per generation, not just logged.** A new pivot table,
+  `ai_generation_knowledge_entry` (mirrors `taggables`'s own shape: plain `id` + two FKs + timestamps
+  + a unique constraint on the pair), backs
+  `AiGeneration::knowledgeEntries(): BelongsToMany` / `KnowledgeEntry::generations(): BelongsToMany`.
+  `App\Jobs\RunAiContentGeneration` syncs `generate()`'s returned `knowledge_entry_ids` onto the
+  `AiGeneration` via this pivot immediately after a successful completion (never on failure/
+  cancellation) — a small, additive step in the same job, not a second poller. `AiAssistantPanel`'s
+  Generate-tab field cards and the History tab both render a "📚 Knowledge used: ..." line whenever
+  a generation's `knowledgeEntries` relation is non-empty, so an admin can always see *why* the AI
+  wrote what it wrote, not just the output — this was an explicit requirement ("display which
+  knowledge entries were used for every AI generation"), not a nice-to-have.
+- **`App\Filament\Resources\KnowledgeEntries\KnowledgeEntryResource`** (nav "Knowledge Entries", its
+  own "Knowledge Base" nav group — deliberately not nested under "AI Studio", since this is a content
+  library an admin curates directly, not an AI Studio pipeline screen) — an ordinary CRUD resource
+  following `TagResource`'s exact file layout (`Schemas/KnowledgeEntryForm.php`,
+  `Tables/KnowledgeEntriesTable.php`, `Pages/{List,Create,Edit}KnowledgeEntry.php`), the first feature
+  in this project's Knowledge/AI Studio family that needed **no** custom Livewire page — a standard
+  Filament Resource was sufficient. Table filters: locale, category (dynamic, built from distinct
+  values actually in use — same pattern as `ContentPlanTable`'s category filter), status, priority,
+  tag, and a pinned `TernaryFilter`.
+- **Testing**: `tests/Feature/KnowledgeBaseTest.php` (model behavior — defaults, the `available`
+  scope, `isExpired()`, the `Tag`/attachment relations, activity-log version history, the
+  `AiGeneration` pivot), `tests/Feature/KnowledgeBaseRetrievalTest.php`
+  (`KnowledgeBaseService::retrieveRelevant()` directly — pinned-always-included, expired/inactive
+  exclusion, locale scoping, the keyword fallback, AI ranking via `Http::fake()`, the
+  empty-array-vs-failure distinction, limit handling across pinned+ranked entries),
+  `tests/Feature/KnowledgeBaseGenerationIntegrationTest.php` (`ContentAssistantService::generate()`
+  actually injecting relevant knowledge into the outbound prompt and returning the right
+  `knowledge_entry_ids`, the `content_review_summary`/cross-locale exclusions,
+  `RunAiContentGeneration` persisting — or correctly not persisting — the usage pivot), and
+  `tests/Feature/KnowledgeEntryResourceTest.php` (the Filament resource: list/create/edit/delete,
+  attachment upload registering a real `KnowledgeEntryAttachment` row, the locale filter).
+
+## 28. Performance Rules
 
 - Database: SQLite with session/cache/queue all on the same database connection (`database` driver for all three). This is fine at current traffic; if concurrent write load grows (many simultaneous sessions + queued jobs + cache writes), moving cache/session to Redis and/or the DB to MySQL/Postgres is the first lever to pull — do not attempt in-place SQLite tuning workarounds instead.
 - No caching layer sits in front of `SiteSetting` reads or the homepage/blog article queries today — each page load queries fresh. At current content volume this is not a measured problem; if you add caching here, invalidate it from the same places that already clear cache today (`PublishDueArticles`, the Filament save hooks) rather than introducing a second, parallel cache-invalidation path.
 - The two maintenance routes (`system-cache-flush-*`, `system-migrate-*`) are also, incidentally, a performance/availability risk since anyone can trigger a full cache clear at will — another reason they must be fixed (see Security Rules).
 - Keep `composer install --no-dev --optimize-autoloader` and `artisan config:cache`/`route:cache`/`view:cache` as standard for any production deploy (see Deployment Workflow) — these are the main have-you-done-this-yet performance checks for a Laravel app of this shape.
 
-## 28. Testing Strategy
+## 29. Testing Strategy
 
 **Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access), `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource) `tests/Feature/AiImportTest.php` (AI import: JSON/Markdown parsing, validation errors, field mapping, scheduling/draft/published paths, image download into the media library, import logging, admin page access), `tests/Feature/AiStudioTest.php` (preview history, rollback, profile defaults, draft queue scoping, AI Studio resource pages), `tests/Feature/AiImportApiTest.php` (API auth, forced-draft policy, signed preview URL, dry-run validation, queueing, rate limiting, token resource), `tests/Feature/MediaLibraryTest.php` (`MediaProcessor` store/replace/delete — original kept, WebP/thumbnail/responsive derivatives generated and cleaned up, replace preserves `disk_path`; `MediaFolder` nesting + empty-only deletion; `MediaUsageScanner` against Article/Page/SiteSetting; `Media::warnings()` thresholds — all against the services directly, not the Livewire page, matching this project's existing pattern of testing the service layer rather than the Filament UI), `tests/Feature/SeoAuditTest.php` (`SeoAuditService::run()` — each of the 9 fast categories, including the always-empty missing-canonicals check and the Article-vs-Page split on missing-schema; `checkExternalLinks()` against `Http::fake()`), `tests/Feature/InternalLinkingTest.php` (`InternalLinkResolver::parseInternalPath()` including the external-URL guard; `LinkGraphService` inbound/outbound counting, dedup of repeated links to the same target, draft-inclusive no-inbound/no-outbound vs. published-only weak-linking, the always-empty redirect-chains check; `SuggestionEngine` keyword/category scoring, locale isolation, already-linked exclusion, and `generateAndPersist()`'s upsert + approved/dismissed preservation + stale-pending cleanup; the `Keyword` morphMany relation on both `Article` and `Page`), and `tests/Feature/AiContentAssistantTest.php` (`ActionRegistry` model-scoping; `NullProvider`/`AnthropicProvider` against `Http::fake()`, including the container binding switching on `services.anthropic.key`; `ContentAssistantService::generate()`'s prompt-building and response-parsing for every response shape — text/list/qa_pairs/internal_link_suggestions/external_link_suggestions, including malformed-JSON and markdown-fenced-JSON handling; `RunAiContentGeneration`'s queued→completed/failed transitions; apply/restore snapshot round-trips including the `alt_text`→`Media` special case; `AiAssistantPanel::applyInternalLinkSuggestions()` creating `origin=ai` pending rows; `ContentReviewService`'s checks against fixture HTML; `SeoAuditService::checkUrls()`), and `tests/Feature/AiAssistantPanelTest.php` (the AI Assistant sidebar redesign, Section 23: `DiffService::diffWords()`; `ContentReviewService::scoreCard()`'s six categories; the `body` field's `html` response shape; Quick Actions/`optimizeEntireArticle()` queuing the right field set; `ContentAssistantService::classifyIntent()`'s action/translate/chat routing and validation fallbacks; `ProcessAiChatMessage`; `buildTranslationPayload()` and `TranslateArticleDraft` for both Article and Page, including the `faqs: null` validation-error fix; `AiGeneration::isCancellable()`/cancellation checkpoints in both jobs; `AiGeneration::scopeForRecord()` and the History tab). The Editorial Workflow & Content Planner (Section 25) is covered by `tests/Feature/TagsTest.php`, `ContentPlanTest.php`, `EditorialNotificationsTest.php`, `WorkflowStageResourceTest.php`, `ContentPlanResourceTest.php`, `ContentPlannerKanbanTest.php`, `ContentPlannerCalendarTest.php`, `ContentPlannerTableDashboardTest.php`, `ContentPlannerAiIntegrationTest.php`, and `AdminPanelResilienceTest.php` (the admin panel, including `SystemMaintenance`, stays reachable even before this feature's migrations have run). Brand Memory (Section 26) is covered by `tests/Feature/BrandMemoryTest.php` (`BrandMemorySection`/`BrandMemoryValue` model behavior, `BrandMemoryService::buildContext()`'s grouping/locale-fallback/disabled-section exclusion, and that `ContentAssistantService::generate()`'s outbound request both includes configured content and stays byte-identical to before this feature when nothing is configured) and `tests/Feature/BrandMemoryPageTest.php` (the Filament page: load, save incl. the no-op-blank-value case, add/delete custom section incl. the system-section delete guard, view/close history, restore, Preview Prompt) — including `PublishDueArticles`' new `ContentPlan`-sync addition specifically, though the command's own core flip-to-published logic remains covered only by this addition's tests, not a dedicated test of the pre-existing behavior (see priority list below, still open). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`'s own core due-article flip (only its new `ContentPlan` sync side effect is tested), the Article Filament resource, or the `MediaLibrary`/`SeoCenter`/`InternalLinkingCenter`/`ContentPlanner`'s own Livewire interactions beyond what's listed above (folder CRUD, upload wiring, filters, CSV download, bulk suggestion approval, graph rendering) — the latter were verified manually in a browser during development (see git history) but have no automated coverage. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
 
@@ -723,7 +852,7 @@ Priority order for adding real tests (highest-value first):
 
 Run tests with `php artisan test` (or `composer test`, which clears config cache first). Use `laravel/pint` for style, not a separate linter. Do not adopt Pest unless the user asks — the project is on plain PHPUnit today (`phpunit/phpunit` ^12.5) with no Pest dependency installed.
 
-## 29. Important Project Decisions
+## 30. Important Project Decisions
 
 These are decisions already made — do not silently reverse them:
 - **Pixel-parity with `ehsandibazar.com` is a deliberate, ongoing goal**, not an accident of a rushed build — a large fraction of commit history is dedicated to matching exact CSS values, image positioning, and layout from that reference site (see Brand Identity). When touching public-site visuals, check whether the current behavior was arrived at through this matching process before "fixing" it — it may be intentionally unusual to match the reference.
@@ -745,8 +874,11 @@ These are decisions already made — do not silently reverse them:
 - **`fa` (Persian) support in Brand Memory (Section 26) is a confirmed, deliberately narrow scope decision** — "Brand Memory values only," not a first step toward a third site content locale. Do not add `/fa` routes, `Article`/`Page` Persian support, or a `translate` target of `fa` as a side effect of this feature; that is a separate, much larger, explicitly-scoped decision the user has not made.
 - **`BrandMemorySection` is deliberately separate from `AiProfile`, confirmed by design, not a naming collision** — `AiProfile` fills blank *import-time* fields on a manually-pasted article (language/status/category/author), it is opt-in per import and never touches a live AI prompt; `BrandMemory` is read automatically by every live generation call. Do not merge them or let one page manage the other's data.
 - **Building a newsletter/social-media AI-generation feature was explicitly out of scope for Brand Memory (Section 26)** — `newsletter_tone`/`social_media_tone` are reserved sections only, ready for whenever such a feature is built, by the user's own confirmed choice ("just reserve the section"). Do not add a newsletter/social AI-assist action as a side effect of an unrelated task; that is a separate, explicitly-scoped feature.
+- **`KnowledgeEntry` (Section 27) is deliberately separate from `BrandMemorySection`/`BrandMemoryValue`, not a duplicate feature** — Brand Memory is one fixed block of brand-identity knowledge always appended in full; Knowledge Base is a growing, filterable library of individual facts that only some of are relevant to any one generation, retrieved on demand. Do not merge the two models or their Filament screens.
+- **Knowledge Base retrieval ("semantic retrieval") is AI-ranking over a keyword pre-filtered shortlist via the existing `ProviderManager` — not a vector database, and no vector database should be added for it** — this was a deliberate reuse of already-configured infrastructure, consistent with this project's dependency-light stance (see Coding Standards). If retrieval quality ever becomes a real, measured problem at a much larger content volume, that would be a separate, explicitly-scoped decision, not a default upgrade path.
+- **`KnowledgeEntry.locale` is restricted to `en`/`tr`, deliberately narrower than Brand Memory's `en`/`tr`/`fa`** — Knowledge Base content is retrieved directly into generated site content (only ever en/tr), unlike Brand Memory's `fa` carve-out, which is reference-only and never retrieval-scored. Do not widen Knowledge Base's locale set to include `fa` as a side effect of an unrelated task.
 
-## 30. Things That Must Never Be Changed
+## 31. Things That Must Never Be Changed
 
 - Do not change the `articles` table's two-row-per-translation model (`locale` + `translation_of`) without an explicit request and a data migration plan — every controller, scope, and Filament form assumes this shape.
 - Do not remove the `scopePublished()` time-based fallback for `scheduled` articles — it is a deliberate resilience mechanism against scheduler downtime, not redundant logic.
@@ -774,8 +906,11 @@ These are decisions already made — do not silently reverse them:
 - Do not delete a `BrandMemorySection` where `is_system = true` — the delete guard is enforced both in the Filament UI (the Select only lists non-system sections) and inside `BrandMemory::getHeaderActions()`'s `deleteSection` action body itself (`->where('is_system', false)`) — keep both; do not rely on the UI-level filter alone (see Section 26).
 - Do not write to `BrandMemoryValue.content` via the query builder (e.g. `BrandMemoryValue::whereKey(...)->update(...)`) — always go through the Eloquent model instance so `LogsActivity` fires and version history stays complete, including for restores (`restoreVersion()` itself must remain a logged, undoable write, not a silent overwrite) (see Section 26).
 - Do not build a live newsletter/social-media AI-generation feature as a side effect of touching Brand Memory's reserved `newsletter_tone`/`social_media_tone` sections — that was explicitly deferred (see Important Project Decisions).
+- Do not make `ContentAssistantService::classifyIntent()` or `buildTranslationPayload()`/`buildTranslateSystemPrompt()` pull from the Knowledge Base — retrieval only happens inside `generate()` (see Section 27); chat-intent classification doesn't need supporting facts, and translation must preserve only the source content's own facts, not have new candidates mixed in from a fresh retrieval pass.
+- Do not let a failed or unconfigured Knowledge Base retrieval ever block, delay, or degrade content generation — `KnowledgeBaseService::retrieveRelevant()`'s fallback to keyword-only ranking (see Section 27) must stay; do not make the AI-ranking step a hard dependency.
+- Do not let `KnowledgeEntryAttachment` uploads go through `App\Services\Media\MediaProcessor` — that pipeline is image-only (WebP/thumbnail/responsive generation); Knowledge Base attachments are plain documents stored as-is (see Section 27 and Image Optimization Rules).
 
-## 31. Future Development Guidelines
+## 32. Future Development Guidelines
 
 Ordered roughly by impact:
 1. **Confirm/establish a real SQLite backup mechanism on the production server** — see SQLite Backup Strategy; this is currently unverified/likely missing and is a data-loss risk.
@@ -799,10 +934,12 @@ Ordered roughly by impact:
 19. **Enable additional notification channels (mail/Slack/Telegram/push) once needed** — the four `App\Notifications\*` classes (Section 25) were built channel-agnostic on purpose (`via()` filtered through `NotificationPreference`); adding a channel is purely additive (one `toMail()`/`toSlack()` method + extending `AVAILABLE_CHANNELS`), no call-site changes required.
 20. **Build a real newsletter/social-media AI-assist feature** on top of Brand Memory's reserved `newsletter_tone`/`social_media_tone` sections (Section 26) once wanted — a new `ActionRegistry` field plus a compose-screen AI-assist button would automatically inherit the full Brand Memory context through the same `ContentAssistantService` path every other field already uses; no new composition logic needed, just a new caller.
 21. **`fa` (Persian) as a full third site content locale** is a legitimate future feature but a much larger, separate decision than Brand Memory's value-only Persian support (Section 26) — would touch routes, `Article`/`Page` locale columns, the `translate` target list, and every EN/TR-duplicated view. Revisit only alongside (or after) the EN/TR duplication question in item 8 above, with explicit sign-off — don't infer it from `BrandMemory::LOCALES` already listing `fa`.
+22. **Knowledge Base attachment content isn't parsed into the AI prompt yet** (Section 27) — an uploaded PDF/document is stored for admin/AI *reference* only; the AI never reads its contents, only the entry's own `content` text field. Extracting text from attachments (and feeding it into retrieval/generation) is a legitimate future enhancement, but a genuinely separate piece of work (PDF/document parsing) from what shipped here — don't build it as a side effect of an unrelated task.
+23. **A dedicated "Knowledge used" filter/report on top of `ai_generation_knowledge_entry`** (Section 27) — e.g. "which entries are never used" or "which generations relied most on Knowledge Base facts" — would be a natural read-only dashboard addition once real usage volume exists, mirroring `AiUsageLogResource`'s read-only shape (Section 24). Speculative today; don't build it preemptively.
 
-When in doubt about whether a change fits this project's grain, re-read sections 2, 14, 29, and 30 above before proceeding.
+When in doubt about whether a change fits this project's grain, re-read sections 2, 14, 30, and 31 above before proceeding.
 
-## 32. Keeping CLAUDE.md Updated
+## 33. Keeping CLAUDE.md Updated
 
 This file is the **single source of truth** for future Claude Code sessions working on this repository — it exists so a new session can be productive immediately without re-exploring the entire codebase from scratch.
 

@@ -3,9 +3,13 @@
 namespace App\Services\AiAssistant;
 
 use App\Models\Article;
+use App\Models\KnowledgeEntry;
 use App\Models\Page;
 use App\Services\BrandMemory\BrandMemoryService;
+use App\Services\KnowledgeBase\KnowledgeBaseService;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 
 /**
  * ساخت پرامپت برای یک فیلد/حالت مشخص، فراخوانی ProviderManager (که بر اساس action_key تصمیم
@@ -24,6 +28,7 @@ class ContentAssistantService
         private readonly ProviderManager $providerManager,
         private readonly ContentReviewService $reviewService,
         private readonly BrandMemoryService $brandMemory,
+        private readonly KnowledgeBaseService $knowledgeBase,
     ) {}
 
     /**
@@ -46,7 +51,7 @@ class ContentAssistantService
     }
 
     /**
-     * @return array{result: mixed, warnings: string[]}
+     * @return array{result: mixed, warnings: string[], knowledge_entry_ids: int[]}
      */
     public function generate(Model $record, string $field, string $mode, array $options = []): array
     {
@@ -61,8 +66,11 @@ class ContentAssistantService
             throw new \InvalidArgumentException("Mode '{$mode}' is not supported for the '{$field}' field.");
         }
 
+        $locale = $record->locale ?? 'en';
+        $knowledgeEntries = $this->relevantKnowledgeFor($record, $field, $definition, $locale);
+
         $raw = $this->providerManager->respond(
-            $this->buildSystemPrompt($definition, $mode, $record->locale ?? 'en'),
+            $this->withKnowledgeContext($this->buildSystemPrompt($definition, $mode, $locale), $knowledgeEntries),
             $this->buildUserPrompt($record, $field, $definition),
             $this->imagesFor($record, $field),
             array_merge(['max_tokens' => $definition['max_tokens'] ?? 2048], $options),
@@ -71,7 +79,44 @@ class ContentAssistantService
             contentId: $record->id,
         );
 
-        return $this->parseResponse($raw, $definition['response_shape']);
+        $result = $this->parseResponse($raw, $definition['response_shape']);
+        $result['knowledge_entry_ids'] = $knowledgeEntries->pluck('id')->all();
+
+        return $result;
+    }
+
+    /**
+     * قبل از تولید هر فیلد، فقط ورودی‌های واقعاً مرتبطِ حافظه‌ی دانش را (نه یک بلوک ثابت مثل
+     * Brand Memory) از App\Services\KnowledgeBase\KnowledgeBaseService می‌گیرد — «content review
+     * summary» صرفاً یافته‌های موجود را خلاصه می‌کند و به دانش زمینه‌ای نیاز ندارد، پس معاف است.
+     *
+     * @return Collection<int, KnowledgeEntry>
+     */
+    private function relevantKnowledgeFor(Model $record, string $field, array $definition, string $locale): Collection
+    {
+        if ($field === 'content_review_summary' || ! in_array($locale, ['en', 'tr'], true)) {
+            return collect();
+        }
+
+        $query = trim(($record->title ?? '').' — '.$definition['label']);
+
+        return $this->knowledgeBase->retrieveRelevant($query, $locale);
+    }
+
+    /**
+     * @param  Collection<int, KnowledgeEntry>  $entries
+     */
+    private function withKnowledgeContext(string $prompt, Collection $entries): string
+    {
+        if ($entries->isEmpty()) {
+            return $prompt;
+        }
+
+        $block = $entries
+            ->map(fn (KnowledgeEntry $entry) => '- ['.$entry->category.'] '.$entry->title.': '.Str::limit(strip_tags($entry->content), 500))
+            ->implode("\n");
+
+        return "{$prompt}\n\n## Relevant Knowledge Base Facts\nUse only the facts below where genuinely relevant — never fabricate details not present here or elsewhere in this prompt.\n{$block}";
     }
 
     /**
