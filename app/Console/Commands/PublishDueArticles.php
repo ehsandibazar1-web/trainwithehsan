@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Article;
+use App\Models\WorkflowStage;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 
@@ -19,9 +20,18 @@ class PublishDueArticles extends Command
             ->where('published_at', '<=', now())
             ->get();
 
+        $publishedStage = WorkflowStage::findBySlug(WorkflowStage::STAGE_PUBLISHED);
+
         foreach ($due as $article) {
             $article->update(['status' => 'published']);
             $this->info("Published: [{$article->locale}] {$article->title}");
+
+            // اگر این مقاله از یک کارت برنامه‌ریز مادیت پیدا کرده باشد، مرحله‌ی آن کارت را هم
+            // همگام می‌کنیم — بدون این، کارت در Kanban برای همیشه در «Scheduled» باقی می‌ماند
+            // حتی بعد از انتشار خودکار توسط این دستور
+            if ($publishedStage) {
+                optional($article->contentPlan)->moveToStage($publishedStage);
+            }
         }
 
         if ($due->isNotEmpty()) {

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 
@@ -40,6 +41,12 @@ class Page extends Model
     public function tags(): MorphToMany
     {
         return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    // کارت برنامه‌ریزِ متناظر (اگر این صفحه از یک Idea مادیت پیدا کرده باشد)
+    public function contentPlan(): MorphOne
+    {
+        return $this->morphOne(ContentPlan::class, 'contentable');
     }
 
     // مسیر عمومی صفحه بر اساس زبان — صفحات مستقل در ریشه‌ی سایت هستند، نه زیر /blog

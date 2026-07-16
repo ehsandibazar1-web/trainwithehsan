@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Illuminate\Support\Str;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
@@ -46,6 +47,13 @@ class Article extends Model
     public function tags(): MorphToMany
     {
         return $this->morphToMany(Tag::class, 'taggable');
+    }
+
+    // کارت برنامه‌ریزِ متناظر (اگر این مقاله از یک Idea مادیت پیدا کرده باشد) — برای همگام‌سازی
+    // خودکار مرحله هنگام انتشار خودکار، نگاه کنید به App\Console\Commands\PublishDueArticles
+    public function contentPlan(): MorphOne
+    {
+        return $this->morphOne(ContentPlan::class, 'contentable');
     }
 
     // مسیر عمومی مقاله بر اساس زبان
