@@ -102,6 +102,34 @@
         .cpcal-chip.content{background:#2563eb}
         .cpcal-chip.planned{background:#9ca3af}
         .cpcal-chip.deadline{background:#dc2626}
+
+        .cp-table{width:100%;border-collapse:collapse;font-size:.8rem}
+        .cp-table th{text-align:left;padding:.5rem .6rem;background:#f9fafb;border-bottom:1px solid rgb(229 231 235);font-weight:600;color:#374151;white-space:nowrap}
+        .cp-table td{padding:.5rem .6rem;border-bottom:1px solid rgb(243 244 246);vertical-align:top}
+        :root.dark .cp-table th{background:#111827;border-color:#374151;color:#e5e7eb}
+        :root.dark .cp-table td{border-color:#1f2937;color:#e5e7eb}
+        .cp-table a{color:#2563eb;text-decoration:none}
+        :root.dark .cp-table a{color:#93c5fd}
+
+        .cp-stats{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:1.5rem}
+        .cp-stat{
+            flex:1 1 140px;border:1px solid rgb(229 231 235);border-radius:.75rem;padding:.9rem 1rem;
+            display:flex;flex-direction:column;gap:.15rem;background:#fff;
+        }
+        :root.dark .cp-stat{background:#1f2937;border-color:#374151}
+        .cp-stat-value{font-size:1.5rem;font-weight:700}
+        .cp-stat-label{font-size:.75rem;color:#6b7280}
+        :root.dark .cp-stat-label{color:#9ca3af}
+
+        .cp-chart-card{border:1px solid rgb(229 231 235);border-radius:.75rem;padding:1rem}
+        :root.dark .cp-chart-card{border-color:#374151}
+        .cp-chart-card h3{font-size:.9rem;font-weight:700;margin-bottom:1rem}
+        .cp-bars{display:flex;align-items:flex-end;gap:1rem;height:140px}
+        .cp-bar-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:.25rem;flex:1}
+        .cp-bar{width:100%;max-width:40px;background:#2563eb;border-radius:.3rem .3rem 0 0}
+        .cp-bar-count{font-size:.75rem;font-weight:600}
+        .cp-bar-label{font-size:.7rem;color:#6b7280}
+        :root.dark .cp-bar-label{color:#9ca3af}
     </style>
 
     <div class="cp-tabs">
@@ -290,9 +318,79 @@
             @endforeach
         </div>
     @elseif($activeView === 'table')
-        <p class="cp-placeholder">Table view — coming in the next phase.</p>
+        <div style="overflow-x:auto">
+            <table class="cp-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Lang</th>
+                        <th>Category</th>
+                        <th>Tags</th>
+                        <th>Author</th>
+                        <th>Assigned to</th>
+                        <th>Stage</th>
+                        <th>Priority</th>
+                        <th>SEO</th>
+                        <th>AI</th>
+                        <th>Read.</th>
+                        <th>Publish date</th>
+                        <th>Last updated</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($this->tablePlans as $plan)
+                        @php($score = $this->scoreCardFor($plan))
+                        <tr>
+                            <td>{{ $plan->title }}</td>
+                            <td><span class="cp-badge">{{ strtoupper($plan->locale) }}</span></td>
+                            <td>{{ $plan->category ?? '—' }}</td>
+                            <td>
+                                @foreach($plan->tags as $tag)
+                                    <span class="cp-badge">{{ $tag->name }}</span>
+                                @endforeach
+                            </td>
+                            <td>{{ $plan->author?->name ?? '—' }}</td>
+                            <td>{{ $plan->assignee?->name ?? '—' }}</td>
+                            <td><span class="cp-badge" style="background:{{ $plan->workflowStage?->color ?? '#9ca3af' }};color:#fff">{{ $plan->workflowStage?->label }}</span></td>
+                            <td><span class="cp-badge cp-priority-{{ $plan->priority }}">{{ ucfirst($plan->priority) }}</span></td>
+                            <td>{{ $score['categories']['seo']['score'] ?? '—' }}</td>
+                            <td>{{ $score['overall'] ?? '—' }}</td>
+                            <td>{{ $score['categories']['readability']['score'] ?? '—' }}</td>
+                            <td>{{ optional($plan->effectivePublishDate())->format('Y-m-d') ?? '—' }}</td>
+                            <td>{{ $plan->updated_at->diffForHumans() }}</td>
+                            <td><a href="{{ $this->editUrlFor($plan) }}" wire:navigate>Edit →</a></td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="14" class="cp-empty">No content plans match these filters.</td></tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     @elseif($activeView === 'dashboard')
-        <p class="cp-placeholder">Dashboard — coming in the next phase.</p>
+        <div class="cp-stats">
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['ideas'] }}</span><span class="cp-stat-label">Ideas</span></div>
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['drafts'] }}</span><span class="cp-stat-label">Drafts</span></div>
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['reviews'] }}</span><span class="cp-stat-label">In Review</span></div>
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['scheduled'] }}</span><span class="cp-stat-label">Scheduled</span></div>
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['published'] }}</span><span class="cp-stat-label">Published</span></div>
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['avg_publishing_days'] ?? '—' }}</span><span class="cp-stat-label">Avg. days to publish</span></div>
+            <div class="cp-stat"><span class="cp-stat-value">{{ $this->dashboardStats['avg_review_days'] ?? '—' }}</span><span class="cp-stat-label">Avg. days in review</span></div>
+        </div>
+
+        <div class="cp-chart-card">
+            <h3>Content production per month</h3>
+            @php($maxCount = max(1, collect($this->productionPerMonth)->max('count')))
+            <div class="cp-bars">
+                @foreach($this->productionPerMonth as $month)
+                    <div class="cp-bar-col">
+                        <div class="cp-bar" style="height:{{ $month['count'] > 0 ? max(6, round(($month['count'] / $maxCount) * 100)) : 2 }}px" title="{{ $month['count'] }} published"></div>
+                        <span class="cp-bar-count">{{ $month['count'] }}</span>
+                        <span class="cp-bar-label">{{ $month['label'] }}</span>
+                    </div>
+                @endforeach
+            </div>
+        </div>
     @endif
 
     <script>

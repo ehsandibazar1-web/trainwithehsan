@@ -7,6 +7,7 @@ use App\Filament\Resources\ContentPlans\ContentPlanResource;
 use App\Filament\Resources\Pages\PageResource;
 use App\Models\Article;
 use App\Models\ContentPlan;
+use App\Models\ContentPlanStageTransition;
 use App\Models\Page as PageModel;
 use App\Models\Tag;
 use App\Models\User;
@@ -116,6 +117,12 @@ class ContentPlanner extends Page
     public function getFilteredPlansProperty(): Collection
     {
         return $this->baseQuery()->get();
+    }
+
+    // نمای Table از همین filteredPlans استفاده می‌کند (بدون کوئری دوم) — فقط ترتیب متفاوت
+    public function getTablePlansProperty(): Collection
+    {
+        return $this->filteredPlans->sortByDesc('updated_at')->values();
     }
 
     public function getPlansByStageProperty(): Collection
@@ -389,5 +396,113 @@ class ContentPlanner extends Page
         $plan->update(['due_at' => Carbon::parse($newDate.' '.$time)]);
 
         Notification::make()->success()->title('Deadline moved to '.$newDate)->send();
+    }
+
+    // ============ Dashboard — همه از content_plans/content_plan_stage_transitions موجود، بدون جدول تازه ============
+
+    /** @return array<string, int|float|null> */
+    public function getDashboardStatsProperty(): array
+    {
+        $counts = ContentPlan::query()
+            ->selectRaw('workflow_stage_id, count(*) as aggregate')
+            ->groupBy('workflow_stage_id')
+            ->pluck('aggregate', 'workflow_stage_id');
+
+        $stageId = fn (string $slug): ?int => WorkflowStage::findBySlug($slug)?->id;
+        $reviewStageIds = array_filter([$stageId(WorkflowStage::STAGE_HUMAN_REVIEW), $stageId(WorkflowStage::STAGE_SEO_REVIEW)]);
+
+        return [
+            'ideas' => (int) $counts->get($stageId(WorkflowStage::STAGE_IDEA), 0),
+            'drafts' => (int) $counts->get($stageId(WorkflowStage::STAGE_AI_DRAFT), 0),
+            'reviews' => (int) collect($reviewStageIds)->sum(fn ($id) => $counts->get($id, 0)),
+            'scheduled' => (int) $counts->get($stageId(WorkflowStage::STAGE_SCHEDULED), 0),
+            'published' => (int) $counts->get($stageId(WorkflowStage::STAGE_PUBLISHED), 0),
+            'total' => (int) $counts->sum(),
+            'avg_publishing_days' => $this->averagePublishingTimeDays(),
+            'avg_review_days' => $this->averageStageDurationDays([WorkflowStage::STAGE_HUMAN_REVIEW, WorkflowStage::STAGE_SEO_REVIEW]),
+        ];
+    }
+
+    /** @return array<int, array{label: string, count: int}> */
+    public function getProductionPerMonthProperty(): array
+    {
+        $publishedStageId = WorkflowStage::findBySlug(WorkflowStage::STAGE_PUBLISHED)?->id;
+
+        if (! $publishedStageId) {
+            return [];
+        }
+
+        $months = 6;
+        $since = now()->subMonths($months - 1)->startOfMonth();
+
+        $byMonth = ContentPlanStageTransition::where('to_stage_id', $publishedStageId)
+            ->where('created_at', '>=', $since)
+            ->get()
+            ->groupBy(fn (ContentPlanStageTransition $t) => $t->created_at->format('Y-m'));
+
+        $result = [];
+        for ($i = $months - 1; $i >= 0; $i--) {
+            $moment = now()->subMonths($i);
+            $result[] = [
+                'label' => $moment->translatedFormat('M Y'),
+                'count' => $byMonth->get($moment->format('Y-m'), collect())->count(),
+            ];
+        }
+
+        return $result;
+    }
+
+    // میانگین زمان از ساخت کارت تا رسیدن به Published (روز) — فقط اولین ورود به این مرحله به‌ازای هر کارت
+    private function averagePublishingTimeDays(): ?float
+    {
+        $publishedStageId = WorkflowStage::findBySlug(WorkflowStage::STAGE_PUBLISHED)?->id;
+
+        if (! $publishedStageId) {
+            return null;
+        }
+
+        $durations = ContentPlanStageTransition::where('to_stage_id', $publishedStageId)
+            ->with('contentPlan')
+            ->orderBy('created_at')
+            ->get()
+            ->unique('content_plan_id')
+            ->filter(fn (ContentPlanStageTransition $t) => $t->contentPlan !== null)
+            ->map(fn (ContentPlanStageTransition $t) => $t->contentPlan->created_at->diffInHours($t->created_at) / 24);
+
+        return $durations->isNotEmpty() ? round($durations->avg(), 1) : null;
+    }
+
+    // میانگین زمان توقف در مرحله(های) داده‌شده (روز) — فقط بازدیدهایی که به مرحله‌ی بعدی رسیده‌اند
+    // (نه بازدیدهای هنوز جاری) در میانگین حساب می‌شوند
+    private function averageStageDurationDays(array $stageSlugs): ?float
+    {
+        $stageIds = WorkflowStage::whereIn('slug', $stageSlugs)->pluck('id')->all();
+
+        if ($stageIds === []) {
+            return null;
+        }
+
+        $durations = collect();
+
+        ContentPlanStageTransition::orderBy('content_plan_id')->orderBy('created_at')->orderBy('id')
+            ->get()
+            ->groupBy('content_plan_id')
+            ->each(function (Collection|SupportCollection $transitions) use ($stageIds, $durations) {
+                $ordered = $transitions->values();
+
+                foreach ($ordered as $i => $transition) {
+                    if (! in_array($transition->to_stage_id, $stageIds, true)) {
+                        continue;
+                    }
+
+                    $next = $ordered->get($i + 1);
+
+                    if ($next) {
+                        $durations->push($transition->created_at->diffInHours($next->created_at) / 24);
+                    }
+                }
+            });
+
+        return $durations->isNotEmpty() ? round($durations->avg(), 1) : null;
     }
 }
