@@ -4,13 +4,14 @@ namespace App\Services\AiAssistant;
 
 use App\Models\Article;
 use App\Models\Page;
-use App\Services\AiAssistant\Contracts\AiProvider;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * ساخت پرامپت برای یک فیلد/حالت مشخص، فراخوانی ارائه‌دهنده‌ی هوش مصنوعی، و تبدیل پاسخ خام به
- * شکل موردانتظار (متن ساده / لیست / جفت پرسش‌وپاسخ). هرگز روی رکورد نمی‌نویسد — فقط نتیجه را
- * برمی‌گرداند؛ نوشتن روی رکورد فقط با کلیک صریح ادمین روی «Apply» در صفحه‌ی دستیار انجام می‌شود.
+ * ساخت پرامپت برای یک فیلد/حالت مشخص، فراخوانی ProviderManager (که بر اساس action_key تصمیم
+ * می‌گیرد کدام ارائه‌دهنده/مدل واقعاً استفاده شود — نگاه کنید به Section 23 در CLAUDE.md)، و
+ * تبدیل پاسخ خام به شکل موردانتظار (متن ساده / لیست / جفت پرسش‌وپاسخ). هرگز روی رکورد
+ * نمی‌نویسد — فقط نتیجه را برمی‌گرداند؛ نوشتن روی رکورد فقط با کلیک صریح ادمین روی «Apply» در
+ * صفحه‌ی دستیار انجام می‌شود.
  */
 class ContentAssistantService
 {
@@ -19,7 +20,7 @@ class ContentAssistantService
     private const MAX_BODY_HTML_CHARS = 12000;
 
     public function __construct(
-        private readonly AiProvider $provider,
+        private readonly ProviderManager $providerManager,
         private readonly ContentReviewService $reviewService,
     ) {}
 
@@ -39,11 +40,14 @@ class ContentAssistantService
             throw new \InvalidArgumentException("Mode '{$mode}' is not supported for the '{$field}' field.");
         }
 
-        $raw = $this->provider->respond(
+        $raw = $this->providerManager->respond(
             $this->buildSystemPrompt($definition, $mode),
             $this->buildUserPrompt($record, $field, $definition),
             $this->imagesFor($record, $field),
             array_merge(['max_tokens' => $definition['max_tokens'] ?? 2048], $options),
+            actionKey: $field,
+            contentType: $record->getMorphClass(),
+            contentId: $record->id,
         );
 
         return $this->parseResponse($raw, $definition['response_shape']);
@@ -62,11 +66,14 @@ class ContentAssistantService
     {
         $modelType = $record instanceof Article ? 'Article' : 'Page';
 
-        $raw = $this->provider->respond(
+        $raw = $this->providerManager->respond(
             $this->buildIntentSystemPrompt($modelType),
             $this->buildIntentUserPrompt($record, $message),
             [],
             ['max_tokens' => 400],
+            actionKey: 'chat.classify',
+            contentType: $record->getMorphClass(),
+            contentId: $record->id,
         );
 
         return $this->parseIntentResponse($raw, $modelType);
@@ -175,11 +182,14 @@ class ContentAssistantService
         $modelType = $record instanceof Article ? 'Article' : 'Page';
         $languageName = $targetLocale === 'tr' ? 'Turkish' : 'English';
 
-        $raw = $this->provider->respond(
+        $raw = $this->providerManager->respond(
             $this->buildTranslateSystemPrompt($languageName, $modelType),
             $this->buildTranslateUserPrompt($record),
             [],
             ['max_tokens' => 6000],
+            actionKey: 'translate',
+            contentType: $record->getMorphClass(),
+            contentId: $record->id,
         );
 
         return $this->parseTranslationResponse($raw, $modelType);

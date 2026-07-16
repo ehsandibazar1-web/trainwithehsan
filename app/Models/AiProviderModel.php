@@ -27,6 +27,6 @@ class AiProviderModel extends Model
 
     public function providerConfig(): BelongsTo
     {
-        return $this->belongsTo(AiProviderConfig::class);
+        return $this->belongsTo(AiProviderConfig::class, 'ai_provider_config_id');
     }
 }
