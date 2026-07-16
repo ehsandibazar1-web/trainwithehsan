@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Articles\Schemas;
 
 use App\Models\Article;
+use App\Services\Media\MediaProcessor;
+use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -12,6 +14,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
+use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ArticleForm
 {
@@ -88,9 +91,14 @@ class ArticleForm
 
                 FileUpload::make('image_path')
                     ->label('Featured image')
+                    ->helperText('Automatically added to the Media Library (WebP + thumbnail + responsive sizes generated).')
                     ->image()
                     ->disk('public')
                     ->directory('articles')
+                    // ثبت خودکار در کتابخانه‌ی رسانه (DAM) + تولید WebP/تامبنیل/سایزهای واکنش‌گرا در همان لحظه‌ی آپلود
+                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file) => app(MediaProcessor::class)
+                        ->store($file, $component->getDirectory(), $component->getDiskName())
+                        ->disk_path)
                     ->nullable(),
 
                 TextInput::make('author_name')

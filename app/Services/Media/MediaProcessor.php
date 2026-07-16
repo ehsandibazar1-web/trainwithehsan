@@ -1,0 +1,186 @@
+<?php
+
+namespace App\Services\Media;
+
+use App\Models\Media;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Intervention\Image\ImageManager;
+use Throwable;
+
+/**
+ * ذخیره‌سازی فایل اصلی + تولید خودکار مشتقات (WebP / تامبنیل / اندازه‌های واکنش‌گرا).
+ * فایل اصلی هرگز حذف یا جایگزین نمی‌شود مگر در replace() — طبق درخواست «Keep original files».
+ */
+class MediaProcessor
+{
+    // از بزرگ‌ترین به کوچک‌ترین؛ هرکدام فقط اگر از عرض تصویر اصلی کوچک‌تر باشد ساخته می‌شود
+    private const RESPONSIVE_WIDTHS = [1600, 1200, 800, 480];
+
+    private const THUMBNAIL_WIDTH = 320;
+
+    public function store(UploadedFile $file, string $directory, string $disk = 'public', ?int $folderId = null): Media
+    {
+        $extension = strtolower($file->getClientOriginalExtension() ?: ($file->extension() ?: 'jpg'));
+        $filename = (string) Str::ulid().'.'.$extension;
+        $storedPath = $file->storeAs($directory, $filename, $disk);
+
+        Storage::disk($disk)->setVisibility($storedPath, 'public');
+
+        $mimeType = $file->getMimeType();
+
+        $media = Media::create([
+            'original_name' => $file->getClientOriginalName(),
+            'disk' => $disk,
+            'disk_path' => $storedPath,
+            'url' => Storage::disk($disk)->url($storedPath),
+            'type' => $this->isProcessableImage($mimeType) ? 'image' : 'other',
+            'mime_type' => $mimeType,
+            'size' => $file->getSize(),
+            'folder_id' => $folderId,
+        ]);
+
+        $this->generateDerivatives($media);
+
+        return $media;
+    }
+
+    /**
+     * ثبت فایلی که از قبل روی دیسک هست (بدون کپی/جابه‌جایی) در کتابخانه‌ی رسانه — برای بازیابی رسانه‌های قدیمی.
+     */
+    public function adopt(string $path, string $disk = 'public', ?int $folderId = null): Media
+    {
+        $mimeType = Storage::disk($disk)->mimeType($path) ?: null;
+
+        $media = Media::create([
+            'original_name' => basename($path),
+            'disk' => $disk,
+            'disk_path' => $path,
+            'url' => Storage::disk($disk)->url($path),
+            'type' => $this->isProcessableImage($mimeType) ? 'image' : 'other',
+            'mime_type' => $mimeType,
+            'size' => Storage::disk($disk)->size($path),
+            'folder_id' => $folderId,
+        ]);
+
+        $this->generateDerivatives($media);
+
+        return $media;
+    }
+
+    /**
+     * جایگزینی محتوای فایل — مسیر اصلی (disk_path) دست‌نخورده می‌ماند تا لینک‌های موجود در
+     * مقاله‌ها/صفحات/تنظیمات سایت که این مسیر را به‌صورت رشته‌ی خام ذخیره کرده‌اند نشکنند.
+     */
+    public function replace(Media $media, UploadedFile $file): Media
+    {
+        Storage::disk($media->disk)->put($media->disk_path, file_get_contents($file->getRealPath()));
+        Storage::disk($media->disk)->setVisibility($media->disk_path, 'public');
+
+        $this->deleteDerivatives($media);
+
+        $mimeType = $file->getMimeType();
+
+        $media->update([
+            'original_name' => $file->getClientOriginalName(),
+            'mime_type' => $mimeType,
+            'size' => $file->getSize(),
+            'type' => $this->isProcessableImage($mimeType) ? 'image' : 'other',
+            'width' => null,
+            'height' => null,
+            'webp_path' => null,
+            'thumbnail_path' => null,
+            'responsive_paths' => null,
+        ]);
+
+        $this->generateDerivatives($media->fresh());
+
+        return $media->fresh();
+    }
+
+    public function delete(Media $media): void
+    {
+        $this->deleteDerivatives($media);
+        Storage::disk($media->disk)->delete($media->disk_path);
+        $media->delete();
+    }
+
+    private function generateDerivatives(Media $media): void
+    {
+        if ($media->type !== 'image') {
+            return;
+        }
+
+        $disk = Storage::disk($media->disk);
+        $absolutePath = $disk->path($media->disk_path);
+
+        $dimensions = @getimagesize($absolutePath);
+        if ($dimensions === false) {
+            // فایلی که به‌صورت تصویر آپلود شده ولی خوانده نمی‌شود (مثلا SVG یا فایل خراب) —
+            // رکورد بدون مشتقات باقی می‌ماند، فایل اصلی هرگز حذف نمی‌شود
+            return;
+        }
+        [$width, $height] = $dimensions;
+
+        try {
+            $manager = ImageManager::gd();
+        } catch (Throwable $e) {
+            return;
+        }
+
+        $webpPath = $this->siblingPath($media->disk_path, '.webp');
+        $manager->read($absolutePath)->toWebp(quality: 82)->save($disk->path($webpPath));
+        $disk->setVisibility($webpPath, 'public');
+
+        $thumbPath = $this->siblingPath($media->disk_path, '-thumb.webp');
+        $manager->read($absolutePath)->scaleDown(width: self::THUMBNAIL_WIDTH)->toWebp(quality: 75)->save($disk->path($thumbPath));
+        $disk->setVisibility($thumbPath, 'public');
+
+        $responsivePaths = [];
+        foreach (self::RESPONSIVE_WIDTHS as $targetWidth) {
+            if ($targetWidth >= $width) {
+                continue;
+            }
+
+            $variantPath = $this->siblingPath($media->disk_path, "-{$targetWidth}w.webp");
+            $manager->read($absolutePath)->scaleDown(width: $targetWidth)->toWebp(quality: 80)->save($disk->path($variantPath));
+            $disk->setVisibility($variantPath, 'public');
+            $responsivePaths[$targetWidth] = $variantPath;
+        }
+
+        $media->update([
+            'width' => $width,
+            'height' => $height,
+            'webp_path' => $webpPath,
+            'thumbnail_path' => $thumbPath,
+            'responsive_paths' => $responsivePaths ?: null,
+        ]);
+    }
+
+    private function deleteDerivatives(Media $media): void
+    {
+        $disk = Storage::disk($media->disk);
+
+        foreach (array_filter([$media->webp_path, $media->thumbnail_path]) as $path) {
+            $disk->delete($path);
+        }
+
+        foreach ((array) $media->responsive_paths as $path) {
+            $disk->delete($path);
+        }
+    }
+
+    private function siblingPath(string $originalPath, string $suffix): string
+    {
+        $directory = dirname($originalPath);
+        $base = pathinfo($originalPath, PATHINFO_FILENAME);
+
+        return ($directory === '.' ? '' : $directory.'/').$base.$suffix;
+    }
+
+    private function isProcessableImage(?string $mimeType): bool
+    {
+        return in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'], true);
+    }
+}
