@@ -1,5 +1,8 @@
 @extends('layouts.master')
 
+{{-- فقط پرسش‌های کامل (سؤال و پاسخِ هر دو پرشده) — هم برای نمایش، هم برای JSON-LD --}}
+@php($faqs = collect($article->faqs ?? [])->filter(fn ($f) => filled($f['question'] ?? null) && filled($f['answer'] ?? null))->values())
+
 @section('title', $article->title . ' — Ehsan Dibazar')
 @section('meta_description', $article->excerpt ?? Str::limit(strip_tags($article->body), 150))
 @section('canonical', url('/blog/' . $article->slug))
@@ -16,6 +19,23 @@
   "publisher": {"@@id": "https://trainwithehsan.com/#organization"}
 }
 </script>
+@if($faqs->isNotEmpty())
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "FAQPage",
+  "mainEntity": [
+    @foreach($faqs as $faq)
+    {
+      "@@type": "Question",
+      "name": @json($faq['question']),
+      "acceptedAnswer": {"@@type": "Answer", "text": @json($faq['answer'])}
+    }@unless($loop->last),@endunless
+    @endforeach
+  ]
+}
+</script>
+@endif
 @endsection
 
 @section('page-css')
@@ -63,6 +83,19 @@
     .hoosh-avatar{width:60px;height:60px;border-radius:50%;flex-shrink:0;border:2px solid var(--gold);background:linear-gradient(135deg,#2a2416,var(--gold-dark));display:flex;align-items:center;justify-content:center;font-weight:800;color:#111}
     .hoosh-btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:#1a1a1a;font-size:14px;font-weight:700;padding:11px 22px;border-radius:8px;margin-top:8px;transition:.2s}
     .hoosh-btn:hover{background:#c9a227;color:#1a1a1a;transform:translateY(-2px)}
+    /* عکس نویسنده (هیرو صفحه‌ی درباره) — برش طبیعی داخل دایره بدون کشیدگی */
+    .hoosh-avatar--photo{background-size:cover;background-position:center;background-repeat:no-repeat}
+
+    /* ===== پرسش‌های متداول — آکاردئون نیتیو (details/summary): دسترس‌پذیر، بدون JS ===== */
+    .faq-section{margin:1.8rem 0}
+    .faq-section h2{font-size:20px;font-weight:700;color:#222;margin-bottom:1rem}
+    .faq-item{border:1px solid #e8e3d5;border-radius:10px;margin-bottom:10px;background:#fff;overflow:hidden}
+    .faq-item summary{cursor:pointer;padding:14px 18px;font-weight:600;font-size:15px;color:#2a2a2a;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .faq-item summary::-webkit-details-marker{display:none}
+    .faq-item summary::after{content:"+";font-size:20px;line-height:1;color:var(--gold-dark,#c09d4c);flex-shrink:0;transition:transform .2s}
+    .faq-item[open] summary::after{content:"\2212"}
+    .faq-item summary:hover{color:var(--gold-dark,#c09d4c)}
+    .faq-answer{padding:0 18px 16px;font-size:14px;line-height:1.9;color:#555;white-space:pre-line}
 
     .related-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px}
     @@media (max-width:820px){.related-grid{grid-template-columns:1fr}}
@@ -115,6 +148,18 @@
                     {!! $article->body !!}
                 </div>
 
+                @if($faqs->isNotEmpty())
+                <section class="faq-section reveal" aria-label="Frequently Asked Questions">
+                    <h2>Frequently Asked Questions</h2>
+                    @foreach($faqs as $faq)
+                    <details class="faq-item">
+                        <summary>{{ $faq['question'] }}</summary>
+                        <div class="faq-answer">{{ $faq['answer'] }}</div>
+                    </details>
+                    @endforeach
+                </section>
+                @endif
+
                 <div class="share-box reveal">
                     <h3>Share this article</h3>
                     <div class="share-buttons">
@@ -126,15 +171,23 @@
 
                 <div class="hoosh-box reveal">
                     <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
-                        <div class="hoosh-avatar">ED</div>
+                        <div class="hoosh-avatar @if($authorPhoto) hoosh-avatar--photo @endif"
+                             @if($authorPhoto) style="background-image:url('{{ asset('storage/' . $authorPhoto) }}')" @endif
+                             role="img" aria-label="Ehsan Dibazar">{{ $authorPhoto ? '' : 'ED' }}</div>
                         <div>
                             <div style="font-size:16px;font-weight:800;color:#fff">Hi, I'm Ehsan Dibazar</div>
                             <div style="font-size:12px;color:var(--gold);margin-top:3px">Martial Arts &amp; Self-Defense Instructor · MSc in Sport Science</div>
                         </div>
                     </div>
                     <p>
-                        I've spent years connecting my life to martial arts — but what has always
-                        mattered to me more than medals or certificates is watching people grow.
+                        For years, martial arts have been a central part of my life. But more than
+                        medals, certificates, or competitions, what has always mattered most to me is
+                        helping people grow.
+                    </p>
+                    <p>
+                        I believe martial arts are about far more than fighting. When taught correctly,
+                        they build confidence, improve decision-making, develop composure under
+                        pressure, and help people perform better in difficult situations.
                     </p>
                     <a href="{{ url('/about') }}" class="hoosh-btn">Learn more about Ehsan Dibazar</a>
                 </div>

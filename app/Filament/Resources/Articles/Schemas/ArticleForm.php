@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Articles\Schemas;
 use App\Models\Article;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -62,6 +63,27 @@ class ArticleForm
                     ->required()
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('articles/inline')
+                    ->columnSpanFull(),
+
+                Repeater::make('faqs')
+                    ->label('Frequently Asked Questions (optional)')
+                    ->helperText('Add question-and-answer pairs shown at the bottom of the article. Leave empty to hide the FAQ section. These also help this article appear in Google as a rich FAQ result. Each language is edited separately, on that language\'s article.')
+                    ->schema([
+                        TextInput::make('question')
+                            ->label('Question')
+                            ->required(),
+                        Textarea::make('answer')
+                            ->label('Answer')
+                            ->rows(3)
+                            ->required(),
+                    ])
+                    ->addActionLabel('Add question')
+                    ->reorderable()
+                    ->collapsible()
+                    ->cloneable()
+                    ->itemLabel(fn (array $state): ?string => $state['question'] ?? null)
+                    ->defaultItems(0)
+                    ->nullable()
                     ->columnSpanFull(),
 
                 FileUpload::make('image_path')

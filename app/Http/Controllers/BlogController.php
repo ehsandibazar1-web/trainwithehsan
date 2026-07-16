@@ -210,6 +210,11 @@ class BlogController extends Controller
         $translation = $article->translation
             ?? $article->translations()->first();
 
-        return view($view, compact('article', 'related', 'latest', 'translation'));
+        // عکس نویسنده در باکس پایان مقاله = همان عکس هیرو صفحه‌ی درباره ما
+        // (یک منبع واحد برای پروفایل؛ اگر برای این زبان تنظیم نشده باشد، به نسخه‌ی انگلیسی برمی‌گردیم)
+        $authorPhoto = SiteSetting::get("about.$locale.hero_image")
+            ?? SiteSetting::get('about.en.hero_image');
+
+        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto'));
     }
 }

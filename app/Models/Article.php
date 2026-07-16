@@ -4,8 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 
 class Article extends Model
 {
@@ -13,12 +13,13 @@ class Article extends Model
 
     protected $fillable = [
         'locale', 'translation_of', 'title', 'slug', 'category', 'excerpt', 'body',
-        'image_path', 'author_name', 'reading_time', 'views',
+        'faqs', 'image_path', 'author_name', 'reading_time', 'views',
         'status', 'published_at',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'faqs' => 'array',
     ];
 
     // نسخه‌ی هم‌زبان دیگه (لینک بین انگلیسی و ترکی)
@@ -36,7 +37,8 @@ class Article extends Model
     public function path(): string
     {
         $prefix = $this->locale === 'tr' ? '/tr/blog/' : '/blog/';
-        return $prefix . $this->slug;
+
+        return $prefix.$this->slug;
     }
 
     // ساخت خودکار اسلاگ از عنوان (در صورت خالی بودن)
