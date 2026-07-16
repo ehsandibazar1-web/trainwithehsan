@@ -170,6 +170,46 @@ class ProviderManager
         return $candidates;
     }
 
+    /**
+     * ارائه‌دهنده را مستقیماً از این یک ردیف config می‌سازد (بدون عبور از resolveCandidates —
+     * یعنی وضعیت is_enabled/is_default/override هیچ‌کدام دخیل نیستند)، یک تماس آزمایشی کوتاه
+     * می‌زند و نتیجه (وضعیت/تأخیر/مدل/خطای پاک‌سازی‌شده) را هم برمی‌گرداند و هم روی همان ردیف
+     * ai_provider_configs ذخیره می‌کند. عمداً چیزی در ai_usage_logs ثبت نمی‌کند — این یک تماس
+     * تولید محتوای واقعی نیست.
+     *
+     * @return array{status: string, latency_ms: ?int, model: ?string, error: ?string}
+     */
+    public function testConnection(AiProviderConfig $config): array
+    {
+        if (! filled($config->api_key)) {
+            return ['status' => 'failed', 'latency_ms' => null, 'model' => $config->default_model, 'error' => 'No API key is set for this provider yet.'];
+        }
+
+        if (! isset(self::DRIVERS[$config->slug])) {
+            return ['status' => 'failed', 'latency_ms' => null, 'model' => $config->default_model, 'error' => "No provider implementation is registered for \"{$config->slug}\"."];
+        }
+
+        $provider = $this->buildProvider($config);
+        $start = microtime(true);
+
+        try {
+            $provider->respond('You are a connection test.', 'Reply with exactly one word: OK', [], ['max_tokens' => 10]);
+            $result = ['status' => 'success', 'latency_ms' => (int) round((microtime(true) - $start) * 1000), 'model' => $config->default_model, 'error' => null];
+        } catch (Throwable $e) {
+            $result = ['status' => 'failed', 'latency_ms' => (int) round((microtime(true) - $start) * 1000), 'model' => $config->default_model, 'error' => $this->sanitizeError($e)];
+        }
+
+        $config->forceFill([
+            'last_tested_at' => now(),
+            'last_test_status' => $result['status'],
+            'last_test_latency_ms' => $result['latency_ms'],
+            'last_test_model' => $result['model'],
+            'last_test_error' => $result['error'],
+        ])->save();
+
+        return $result;
+    }
+
     private function buildProvider(AiProviderConfig $config, ?string $modelOverride = null): AiProvider
     {
         $class = self::DRIVERS[$config->slug] ?? null;
