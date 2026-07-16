@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SeoController;
@@ -28,6 +29,15 @@ Route::get('/preview/article/{article}', [PreviewController::class, 'show'])
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap']);
 Route::get('/feed', [SeoController::class, 'feed']);
 Route::get('/tr/feed', [SeoController::class, 'feedTr']);
+
+// خبرنامه — ثبت‌نام AJAX از فوتر (CSRF از میدلور پیش‌فرض web + محدودیت نرخ named limiter)
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe'])
+    ->middleware('throttle:newsletter');
+Route::post('/newsletter/resend', [NewsletterController::class, 'resend'])
+    ->middleware('throttle:newsletter');
+// تأیید و لغو اشتراک با توکن ۶۴کاراکتری اختصاصی هر مشترک — بدون نیاز به لاگین
+Route::get('/newsletter/verify/{token}', [NewsletterController::class, 'verify']);
+Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe']);
 
 Route::get('/system-cache-flush-7k2p9x', function () {
     Artisan::call('view:clear');
