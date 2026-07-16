@@ -50,7 +50,7 @@ class ArticleStatsOverview extends StatsOverviewWidget
                 $nextScheduled ? Str::limit($nextScheduled->title, 28) : '—'
             )->description(
                 $nextScheduled
-                    ? $nextScheduled->published_at->format('Y-m-d H:i') . ' · ' . strtoupper($nextScheduled->locale)
+                    ? $nextScheduled->published_at->format('Y-m-d H:i').' · '.strtoupper($nextScheduled->locale)
                     : 'هیچ مقاله‌ی زمان‌بندی‌شده‌ای در انتظار نیست'
             )->color('info'),
         ];

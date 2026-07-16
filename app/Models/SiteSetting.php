@@ -12,6 +12,7 @@ class SiteSetting extends Model
     public static function get(string $key, $default = null)
     {
         $row = self::where('key', $key)->first();
+
         return $row ? $row->value : $default;
     }
 
@@ -19,8 +20,11 @@ class SiteSetting extends Model
     public static function getJson(string $key, array $default = [])
     {
         $row = self::where('key', $key)->first();
-        if (!$row || !$row->value) return $default;
+        if (! $row || ! $row->value) {
+            return $default;
+        }
         $decoded = json_decode($row->value, true);
+
         return is_array($decoded) ? $decoded : $default;
     }
 

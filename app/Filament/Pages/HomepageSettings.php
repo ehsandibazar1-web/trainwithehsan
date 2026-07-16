@@ -131,6 +131,7 @@ class HomepageSettings extends Page implements HasForms
                 ->directory('homepage/hero')
                 ->nullable();
         }
+
         return $fields;
     }
 
@@ -156,6 +157,7 @@ class HomepageSettings extends Page implements HasForms
                 ->maxSize(131072)
                 ->nullable();
         }
+
         return $fields;
     }
 
@@ -190,6 +192,7 @@ class HomepageSettings extends Page implements HasForms
                 ->directory('homepage/courses')
                 ->nullable();
         }
+
         return $fields;
     }
 
