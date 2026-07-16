@@ -12,6 +12,7 @@ use App\Models\Media;
 use App\Models\Page as PageModel;
 use App\Services\AiAssistant\ActionRegistry;
 use App\Services\AiAssistant\ContentReviewService;
+use App\Services\AiAssistant\DiffService;
 use App\Services\Seo\SeoAuditService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
@@ -112,6 +113,23 @@ class AiAssistantPanel extends Component
     public function getReviewFindingsProperty(): array
     {
         return app(ContentReviewService::class)->review($this->record);
+    }
+
+    public function getScoreCardProperty(): array
+    {
+        return app(ContentReviewService::class)->scoreCard($this->record);
+    }
+
+    // پیش‌نمایش دیف قرمز/سبز قبل از Apply — فقط برای مقادیر متنی ساده معنی دارد (عنوان/توضیحات/...)؛
+    // برای مقادیر آرایه‌ای (FAQ، برچسب‌ها، پیشنهادهای لینک و ...) null برمی‌گرداند تا نمای فعلیِ
+    // فهرستی/QA همان‌طور که بود نمایش داده شود
+    public function diffFor(mixed $currentValue, mixed $result): ?array
+    {
+        if (is_array($result) || is_array($currentValue)) {
+            return null;
+        }
+
+        return app(DiffService::class)->diffWords((string) $currentValue, (string) $result);
     }
 
     public function getReviewSummaryProperty(): ?AiGeneration

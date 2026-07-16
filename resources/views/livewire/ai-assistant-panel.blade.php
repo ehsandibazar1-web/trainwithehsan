@@ -40,6 +40,24 @@
         .ai-ca-finding .badge.warning{background:#fee2e2;color:#b91c1c}
         .ai-ca-finding .badge.notice{background:#fef3c7;color:#92400e}
         .ai-ca-findings-empty{padding:1.5rem;text-align:center;color:#9ca3af;font-size:.85rem}
+
+        .ai-ca-diff{font-size:.8rem;line-height:1.5;background:#fff;border:1px solid rgb(229 231 235);border-radius:.5rem;padding:.5rem .6rem;margin-bottom:.5rem;max-height:8rem;overflow-y:auto}
+        .ai-ca-diff del{background:#fee2e2;color:#991b1b;text-decoration:line-through}
+        .ai-ca-diff ins{background:#dcfce7;color:#166534;text-decoration:none}
+
+        .ai-ca-score{border:1px solid rgb(229 231 235);border-radius:.75rem;background:#fff;padding:1rem;margin-bottom:1rem}
+        .ai-ca-score-head{display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem}
+        .ai-ca-score-overall{font-size:1.6rem;font-weight:700;color:#111827;flex-shrink:0}
+        .ai-ca-score-overall .max{font-size:.9rem;font-weight:400;color:#9ca3af}
+        .ai-ca-score-label{font-size:.78rem;color:#6b7280}
+        .ai-ca-score-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.5rem}
+        .ai-ca-score-cat{border:1px solid rgb(243 244 246);border-radius:.5rem;padding:.5rem .6rem}
+        .ai-ca-score-cat .name{font-size:.72rem;color:#6b7280;margin-bottom:.15rem}
+        .ai-ca-score-cat .num{font-size:1.1rem;font-weight:600}
+        .ai-ca-score-cat .num.good{color:#166534}
+        .ai-ca-score-cat .num.mid{color:#92400e}
+        .ai-ca-score-cat .num.bad{color:#b91c1c}
+        .ai-ca-score-cat .issues{margin:.3rem 0 0 1rem;padding:0;font-size:.68rem;color:#9ca3af}
     </style>
 
     <div @if ($this->isPolling) wire:poll.3s="$refresh" @endif>
@@ -55,6 +73,30 @@
         @if ($this->isPolling)
             <div class="ai-ca-status processing" style="margin-bottom:1rem">Generating… this page refreshes automatically.</div>
         @endif
+
+        @php($scoreCard = $this->scoreCard)
+        <div class="ai-ca-score">
+            <div class="ai-ca-score-head">
+                <div class="ai-ca-score-overall">{{ $scoreCard['overall'] }}<span class="max">/100</span></div>
+                <div class="ai-ca-score-label">AI Health Report — overall score is the average of the six categories below. Hover a category for what's missing.</div>
+            </div>
+            <div class="ai-ca-score-grid">
+                @foreach ($scoreCard['categories'] as $category)
+                    @php($tier = $category['score'] >= 80 ? 'good' : ($category['score'] >= 50 ? 'mid' : 'bad'))
+                    <div class="ai-ca-score-cat">
+                        <div class="name">{{ $category['label'] }}</div>
+                        <div class="num {{ $tier }}">{{ $category['score'] }}</div>
+                        @if ($category['issues'])
+                            <ul class="issues">
+                                @foreach ($category['issues'] as $issue)
+                                    <li>{{ $issue }}</li>
+                                @endforeach
+                            </ul>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </div>
 
         <div class="ai-ca-tabs">
             <button type="button" class="ai-ca-tab-btn {{ $activeTab === 'generate' ? 'active' : '' }}" wire:click="setTab('generate')">Generate</button>
@@ -121,21 +163,37 @@
                         @elseif ($latest->status === 'failed')
                             <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
                         @elseif ($latest->status === 'completed')
-                            <div class="ai-ca-preview">
-                                @if (is_array($latest->result) && isset($latest->result[0]['question']))
-                                    @foreach ($latest->result as $qa)
-                                        <div class="qa"><strong>{{ $qa['question'] }}</strong>{{ $qa['answer'] }}</div>
+                            @php($diff = $latest->applied_at ? null : $this->diffFor($field['current_value'], $latest->result))
+
+                            @if ($diff)
+                                <div class="ai-ca-diff">
+                                    @foreach ($diff as $op)
+                                        @if ($op['type'] === 'del')
+                                            <del>{{ $op['text'] }}</del>
+                                        @elseif ($op['type'] === 'add')
+                                            <ins>{{ $op['text'] }}</ins>
+                                        @else
+                                            {{ $op['text'] }}
+                                        @endif
                                     @endforeach
-                                @elseif (is_array($latest->result))
-                                    <ul>
-                                        @foreach ($latest->result as $item)
-                                            <li>{{ $item }}</li>
+                                </div>
+                            @else
+                                <div class="ai-ca-preview">
+                                    @if (is_array($latest->result) && isset($latest->result[0]['question']))
+                                        @foreach ($latest->result as $qa)
+                                            <div class="qa"><strong>{{ $qa['question'] }}</strong>{{ $qa['answer'] }}</div>
                                         @endforeach
-                                    </ul>
-                                @else
-                                    {{ $latest->result }}
-                                @endif
-                            </div>
+                                    @elseif (is_array($latest->result))
+                                        <ul>
+                                            @foreach ($latest->result as $item)
+                                                <li>{{ $item }}</li>
+                                            @endforeach
+                                        </ul>
+                                    @else
+                                        {{ $latest->result }}
+                                    @endif
+                                </div>
+                            @endif
 
                             @if ($latest->applied_at)
                                 <div class="ai-ca-status">Applied {{ $latest->applied_at->diffForHumans() }}</div>
