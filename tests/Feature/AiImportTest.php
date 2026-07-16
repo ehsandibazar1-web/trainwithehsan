@@ -299,6 +299,59 @@ class AiImportTest extends TestCase
         $this->assertSame('From SEO field.', $result['article']->meta_description);
     }
 
+    public function test_meta_description_column_is_populated_from_excerpt(): void
+    {
+        $result = $this->service()->import($this->validJson());
+
+        $this->assertSame([], $result['errors']);
+        $this->assertSame('A standalone excerpt.', $result['article']->excerpt);
+        $this->assertSame('A standalone excerpt.', $result['article']->meta_description);
+    }
+
+    public function test_missing_excerpt_and_seo_description_leaves_meta_description_null(): void
+    {
+        $json = json_decode($this->validJson(), true);
+        unset($json['excerpt']);
+
+        $result = $this->service()->import(json_encode($json));
+
+        $this->assertSame([], $result['errors']);
+        $this->assertNull($result['article']->meta_description);
+    }
+
+    public function test_seo_title_is_saved_on_the_article(): void
+    {
+        $result = $this->service()->import($this->validJson([
+            'seo' => ['title' => 'A Custom SEO Title'],
+        ]));
+
+        $this->assertSame([], $result['errors']);
+        $this->assertSame('A Custom SEO Title', $result['article']->seo_title);
+    }
+
+    public function test_missing_seo_title_leaves_the_column_null(): void
+    {
+        $result = $this->service()->import($this->validJson());
+
+        $this->assertSame([], $result['errors']);
+        $this->assertNull($result['article']->seo_title);
+    }
+
+    public function test_long_seo_title_warns_but_still_saves(): void
+    {
+        $long = str_repeat('x', 80);
+
+        $analysis = $this->service()->analyze($this->validJson([
+            'seo' => ['title' => $long],
+        ]));
+
+        $this->assertSame($long, $analysis['payload']['seo_title']);
+        $this->assertNotEmpty(array_filter(
+            $analysis['warnings'],
+            fn (string $w) => str_contains($w, 'SEO title is longer than')
+        ));
+    }
+
     public function test_failed_validation_import_writes_failed_log(): void
     {
         $result = $this->service()->import('{"language": "en"}');

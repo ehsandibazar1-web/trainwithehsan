@@ -239,9 +239,9 @@ class ArticleImportService
                 'slug' => $payload['slug'],
                 'category' => $payload['category'] ?? null,
                 'excerpt' => $payload['excerpt'] ?? null,
-                'body' => $payload['body'],
                 'seo_title' => $payload['seo_title'] ?? null,
                 'meta_description' => $payload['meta_description'] ?? null,
+                'body' => $payload['body'],
                 'og_title' => $payload['og_title'] ?? null,
                 'og_description' => $payload['og_description'] ?? null,
                 'faqs' => $payload['faqs'] ?? null,
@@ -713,6 +713,9 @@ class ArticleImportService
         $seoTitle = trim((string) ($data['seo_title'] ?? $seo['title'] ?? ''));
         if ($seoTitle !== '') {
             $mapping['mapped']['seo.title'] = 'SEO title (overrides the article title in search results)';
+            if (mb_strlen($seoTitle) > 70) {
+                $warnings[] = 'The SEO title is longer than the recommended 70 characters and may be truncated by Google.';
+            }
         }
         if ($seoDescription !== '') {
             $mapping['mapped']['seo.meta_description'] = 'Meta description (overrides the excerpt in search results)';
@@ -960,9 +963,12 @@ class ArticleImportService
             'title' => $title,
             'slug' => $slug,
             'excerpt' => $excerpt !== '' ? $excerpt : null,
-            'body' => $body,
             'seo_title' => $seoTitle !== '' ? $seoTitle : null,
-            'meta_description' => $seoDescription !== '' ? $seoDescription : null,
+            // اگر توضیح سئوی مستقلی داده شده باشد همان استفاده می‌شود؛ در غیر این صورت این CMS از
+            // excerpt به‌عنوان توضیحات متا هم استفاده می‌کند — تا پنل ادمین و هر ابزار سئویی که
+            // مستقیم این ستون را می‌خواند خالی نبیند، حتی وقتی فقط excerpt داده شده
+            'meta_description' => $seoDescription !== '' ? $seoDescription : ($excerpt !== '' ? $excerpt : null),
+            'body' => $body,
             'og_title' => $ogTitle !== '' ? $ogTitle : null,
             'og_description' => $ogDescription !== '' ? $ogDescription : null,
             'category' => $category !== '' ? $category : null,
