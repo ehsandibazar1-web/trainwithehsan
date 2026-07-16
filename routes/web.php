@@ -5,7 +5,6 @@ use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PreviewController;
 use App\Http\Controllers\SeoController;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [BlogController::class, 'home']);
@@ -38,20 +37,6 @@ Route::post('/newsletter/resend', [NewsletterController::class, 'resend'])
 // تأیید و لغو اشتراک با توکن ۶۴کاراکتری اختصاصی هر مشترک — بدون نیاز به لاگین
 Route::get('/newsletter/verify/{token}', [NewsletterController::class, 'verify']);
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe']);
-
-Route::get('/system-cache-flush-7k2p9x', function () {
-    Artisan::call('view:clear');
-    Artisan::call('cache:clear');
-    Artisan::call('config:clear');
-    Artisan::call('route:clear');
-
-    return '<pre>Cache cleared successfully.</pre>';
-});
-Route::get('/system-migrate-9x4kq2', function () {
-    Artisan::call('migrate', ['--force' => true]);
-
-    return '<pre>'.Artisan::output().'</pre>';
-});
 
 // صفحات مستقل (Privacy, Terms, FAQ, ...) — این دو مسیر باید همیشه آخرِ فایل بمانند تا
 // مسیرهای بالاتر (که زودتر ثبت می‌شوند) اول match شوند. lookahead هم به‌عنوان لایه‌ی دوم
