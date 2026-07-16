@@ -69,6 +69,39 @@
 
         .cp-empty{color:#9ca3af;font-size:.8rem;text-align:center;padding:1rem 0}
         .cp-placeholder{padding:2rem;text-align:center;color:#9ca3af;font-size:.9rem}
+
+        .cpcal-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem}
+        .cpcal-nav{display:flex;align-items:center;gap:.5rem}
+        .cpcal-nav button{border:1px solid rgb(209 213 219);border-radius:.5rem;padding:.4rem .8rem;background:#fff;cursor:pointer;font-size:.85rem}
+        :root.dark .cpcal-nav button{background:#1f2937;color:#e5e7eb;border-color:#4b5563}
+        .cpcal-title{font-size:1.1rem;font-weight:700}
+        .cpcal-legend{display:flex;gap:1rem;font-size:.8rem;color:#6b7280}
+        .cpcal-legend span{display:inline-flex;align-items:center;gap:.35rem}
+        .cpcal-dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+        .cpcal-dot.content{background:#2563eb}
+        .cpcal-dot.planned{background:#9ca3af}
+        .cpcal-dot.deadline{background:#dc2626}
+
+        .cpcal-grid{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid rgb(229 231 235);border-radius:.75rem;overflow:hidden}
+        .cpcal-headcell{background:#f9fafb;padding:.5rem;text-align:center;font-size:.75rem;font-weight:600;color:#6b7280;border-bottom:1px solid rgb(229 231 235)}
+        :root.dark .cpcal-headcell{background:#111827;color:#9ca3af;border-color:#374151}
+        .cpcal-day{min-height:110px;border-right:1px solid rgb(229 231 235);border-bottom:1px solid rgb(229 231 235);padding:.35rem;display:flex;flex-direction:column;gap:.25rem;transition:background .15s}
+        :root.dark .cpcal-day{border-color:#374151}
+        .cpcal-day:nth-child(7n){border-right:none}
+        .cpcal-day.out{background:#fafafa;color:#c0c4cc}
+        :root.dark .cpcal-day.out{background:#0b1220}
+        .cpcal-day.today{background:#fffbeb}
+        :root.dark .cpcal-day.today{background:#3a2f10}
+        .cpcal-day.dragover{background:#eef2ff}
+        :root.dark .cpcal-day.dragover{background:#1e2a4a}
+        .cpcal-daynum{font-size:.75rem;font-weight:600;color:#4b5563}
+        :root.dark .cpcal-daynum{color:#9ca3af}
+        .cpcal-day.out .cpcal-daynum{color:#c0c4cc}
+        .cpcal-chip{display:block;font-size:.7rem;line-height:1.3;padding:.25rem .4rem;border-radius:.4rem;color:#fff;text-decoration:none;cursor:grab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .cpcal-chip:active{cursor:grabbing}
+        .cpcal-chip.content{background:#2563eb}
+        .cpcal-chip.planned{background:#9ca3af}
+        .cpcal-chip.deadline{background:#dc2626}
     </style>
 
     <div class="cp-tabs">
@@ -213,7 +246,49 @@
             </div>
         @endif
     @elseif($activeView === 'calendar')
-        <p class="cp-placeholder">Calendar view — coming in the next phase.</p>
+        <div class="cpcal-toolbar">
+            <div class="cpcal-nav">
+                <button type="button" wire:click="previousMonth">← Prev</button>
+                <button type="button" wire:click="goToday">Today</button>
+                <button type="button" wire:click="nextMonth">Next →</button>
+                <span class="cpcal-title">{{ $this->monthLabel }}</span>
+            </div>
+            <div class="cpcal-legend">
+                <span><i class="cpcal-dot content"></i> Article/Page</span>
+                <span><i class="cpcal-dot planned"></i> Planned idea</span>
+                <span><i class="cpcal-dot deadline"></i> Draft deadline</span>
+            </div>
+        </div>
+
+        <div class="cpcal-grid" id="contentPlannerCalendar" wire:loading.class="opacity-50">
+            @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $d)
+                <div class="cpcal-headcell">{{ $d }}</div>
+            @endforeach
+
+            @foreach($this->calendarWeeks as $week)
+                @foreach($week as $day)
+                    <div class="cpcal-day @if(! $day['inMonth']) out @endif @if($day['isToday']) today @endif" data-date="{{ $day['date']->format('Y-m-d') }}">
+                        <div class="cpcal-daynum">{{ $day['date']->format('j') }}</div>
+
+                        @foreach($day['articles'] as $article)
+                            <a href="{{ $this->contentEditUrl('Article', $article->id) }}" wire:navigate class="cpcal-chip content" draggable="true" data-kind="content" data-type="Article" data-id="{{ $article->id }}" title="{{ $article->title }}">{{ \Illuminate\Support\Str::limit($article->title, 20) }}</a>
+                        @endforeach
+
+                        @foreach($day['pages'] as $page)
+                            <a href="{{ $this->contentEditUrl('Page', $page->id) }}" wire:navigate class="cpcal-chip content" draggable="true" data-kind="content" data-type="Page" data-id="{{ $page->id }}" title="{{ $page->title }}">{{ \Illuminate\Support\Str::limit($page->title, 20) }}</a>
+                        @endforeach
+
+                        @foreach($day['planned'] as $plan)
+                            <a href="{{ $this->editUrlFor($plan) }}" wire:navigate class="cpcal-chip planned" draggable="true" data-kind="planned" data-id="{{ $plan->id }}" title="{{ $plan->title }}">{{ \Illuminate\Support\Str::limit($plan->title, 20) }}</a>
+                        @endforeach
+
+                        @foreach($day['deadlines'] as $plan)
+                            <a href="{{ $this->editUrlFor($plan) }}" wire:navigate class="cpcal-chip deadline" draggable="true" data-kind="deadline" data-id="{{ $plan->id }}" title="{{ $plan->title }}">{{ \Illuminate\Support\Str::limit($plan->title, 20) }}</a>
+                        @endforeach
+                    </div>
+                @endforeach
+            @endforeach
+        </div>
     @elseif($activeView === 'table')
         <p class="cp-placeholder">Table view — coming in the next phase.</p>
     @elseif($activeView === 'dashboard')
@@ -256,6 +331,49 @@
             document.addEventListener('livewire:navigated', wireUp);
             Livewire.hook('morph.updated', ({ el }) => {
                 if (el === board || board.contains(el)) wireUp();
+            });
+        })();
+
+        (function () {
+            const grid = document.getElementById('contentPlannerCalendar');
+            if (!grid) return;
+
+            function wireUp() {
+                grid.querySelectorAll('.cpcal-chip').forEach(function (chip) {
+                    chip.addEventListener('dragstart', function (e) {
+                        e.dataTransfer.setData('text/plain', JSON.stringify({
+                            kind: chip.dataset.kind,
+                            type: chip.dataset.type || '',
+                            id: chip.dataset.id,
+                        }));
+                        e.dataTransfer.effectAllowed = 'move';
+                    });
+                });
+
+                grid.querySelectorAll('.cpcal-day').forEach(function (cell) {
+                    cell.addEventListener('dragover', function (e) {
+                        e.preventDefault();
+                        cell.classList.add('dragover');
+                    });
+                    cell.addEventListener('dragleave', function () {
+                        cell.classList.remove('dragover');
+                    });
+                    cell.addEventListener('drop', function (e) {
+                        e.preventDefault();
+                        cell.classList.remove('dragover');
+                        var raw = e.dataTransfer.getData('text/plain');
+                        var newDate = cell.dataset.date;
+                        if (!raw || !newDate) return;
+                        var payload = JSON.parse(raw);
+                        @this.call('rescheduleItem', payload.kind, payload.type, parseInt(payload.id, 10), newDate);
+                    });
+                });
+            }
+
+            wireUp();
+            document.addEventListener('livewire:navigated', wireUp);
+            Livewire.hook('morph.updated', ({ el }) => {
+                if (el === grid || grid.contains(el)) wireUp();
             });
         })();
     </script>
