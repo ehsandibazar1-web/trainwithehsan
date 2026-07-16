@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    // App\Services\AiAssistant — AI Content Assistant's live LLM provider (App\Providers\AppServiceProvider
+    // binds App\Services\AiAssistant\Contracts\AiProvider to NullProvider when 'key' is empty)
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-sonnet-4-5'),
+        'driver' => env('AI_ASSISTANT_DRIVER', 'anthropic'),
+    ],
+
 ];

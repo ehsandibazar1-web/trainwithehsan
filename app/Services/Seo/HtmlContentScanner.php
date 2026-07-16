@@ -53,9 +53,59 @@ class HtmlContentScanner
     }
 
     /**
+     * @return array<int, array{level: int, text: string}>
+     */
+    public function headings(?string $html): array
+    {
+        if (blank($html)) {
+            return [];
+        }
+
+        $xpath = new \DOMXPath($this->loadDocument($html));
+        $headings = [];
+
+        foreach ($xpath->query('//h1 | //h2 | //h3 | //h4 | //h5 | //h6') as $node) {
+            $headings[] = ['level' => (int) substr($node->nodeName, 1), 'text' => trim($node->textContent)];
+        }
+
+        return $headings;
+    }
+
+    /**
+     * @return array<int, array{text: string, word_count: int}>
+     */
+    public function paragraphs(?string $html): array
+    {
+        if (blank($html)) {
+            return [];
+        }
+
+        $paragraphs = [];
+        foreach ($this->queryElements($html, 'p') as $node) {
+            $text = trim($node->textContent);
+            if ($text === '') {
+                continue;
+            }
+
+            // شمارش کلمات با split روی فاصله (نه str_word_count) چون آن تابع کاراکترهای
+            // ویژه‌ی ترکی (ç ğ ı ö ş ü) را کلمه‌ی جدا حساب نمی‌کند و شمارش را به‌هم می‌ریزد
+            $wordCount = count(preg_split('/\s+/u', $text, -1, PREG_SPLIT_NO_EMPTY));
+
+            $paragraphs[] = ['text' => $text, 'word_count' => $wordCount];
+        }
+
+        return $paragraphs;
+    }
+
+    /**
      * @return \DOMNodeList<\DOMElement>
      */
     private function queryElements(string $html, string $tag): \DOMNodeList
+    {
+        return $this->loadDocument($html)->getElementsByTagName($tag);
+    }
+
+    private function loadDocument(string $html): \DOMDocument
     {
         $dom = new \DOMDocument;
 
@@ -66,6 +116,6 @@ class HtmlContentScanner
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        return $dom->getElementsByTagName($tag);
+        return $dom;
     }
 }

@@ -14,6 +14,7 @@ class Article extends Model
 
     protected $fillable = [
         'locale', 'translation_of', 'title', 'slug', 'category', 'excerpt', 'body',
+        'seo_title', 'meta_description', 'og_title', 'og_description',
         'faqs', 'image_path', 'author_name', 'reading_time', 'views',
         'status', 'published_at',
     ];

@@ -1,10 +1,10 @@
 @extends('layouts.master')
 
-@section('title', $page->title . ' — Ehsan Dibazar')
-@section('meta_description', Str::limit(trim(strip_tags($page->body)), 150))
+@section('title', ($page->seo_title ?: $page->title) . ' — Ehsan Dibazar')
+@section('meta_description', $page->meta_description ?: Str::limit(trim(strip_tags($page->body)), 150))
 @section('canonical', url('/' . $page->slug))
-@section('og_title', $page->title . ' — Ehsan Dibazar')
-@section('og_description', Str::limit(trim(strip_tags($page->body)), 150))
+@section('og_title', ($page->og_title ?: $page->seo_title ?: $page->title) . ' — Ehsan Dibazar')
+@section('og_description', $page->og_description ?: $page->meta_description ?: Str::limit(trim(strip_tags($page->body)), 150))
 @section('og_image', $page->image_path ? asset('storage/' . $page->image_path) : '')
 
 @section('page-css')
