@@ -209,7 +209,22 @@
         .footer-contact a{color:#ebebeb}
         .footer-contact a:hover{color:var(--gold);transition:.5s linear}
         .footer-contact span{margin:0 8px}
+
+        /* ===== انیمیشن ورود هنگام اسکرول (fade-in-up) — سراسر سایت؛ فقط opacity/transform (GPU)، یک‌بار با IntersectionObserver ===== */
+        .reveal{opacity:0;transform:translateY(40px);transition:opacity .7s ease-out,transform .7s ease-out;will-change:transform,opacity}
+        .reveal.is-visible{opacity:1;transform:translateY(0)}
+        .reveal-group>.reveal:nth-child(1){transition-delay:0ms}
+        .reveal-group>.reveal:nth-child(2){transition-delay:90ms}
+        .reveal-group>.reveal:nth-child(3){transition-delay:180ms}
+        .reveal-group>.reveal:nth-child(4){transition-delay:270ms}
+        .reveal-group>.reveal:nth-child(5){transition-delay:360ms}
+        .reveal-group>.reveal:nth-child(6){transition-delay:450ms}
+        .reveal-group>.reveal:nth-child(7){transition-delay:540ms}
+        .reveal-group>.reveal:nth-child(8){transition-delay:630ms}
+        @@media (prefers-reduced-motion: reduce){.reveal{opacity:1!important;transform:none!important}}
     </style>
+    {{-- بدون جاوااسکریپت: محتوا هرگز نباید مخفی بماند --}}
+    <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
     @yield('page-css')
 </head>
 <body>
@@ -257,7 +272,7 @@
 </main>
 
 {{-- خبرنامه طلایی — مطابق فوتر سایت فارسی --}}
-<div class="newsletter">
+<div class="newsletter reveal">
     <div class="wrap newsletter-row">
         <div>
             <h3>{{ $fv('newsletter_title', 'Son makaleleri alın') }}</h3>
@@ -297,9 +312,9 @@
                 ['label' => 'Hakkımda', 'url' => '/tr/about'],
             ]],
         ])
-        <div class="footer-grid">
+        <div class="footer-grid reveal-group">
             @foreach($footerColumnsList as $col)
-            <div>
+            <div class="reveal">
                 <h4>{{ $col['title'] ?? '' }}</h4>
                 <ul>
                     @foreach($col['links'] ?? [] as $lnk)
@@ -309,7 +324,7 @@
             </div>
             @endforeach
         </div>
-        <div class="footer-brand">
+        <div class="footer-brand reveal">
             <img src="{{ asset('storage/' . $fv('logo', 'homepage/logo.header.png')) }}" alt="Ehsan Dibazar - Savunma Teknikleri" class="footer-logo-img">
             @if($fv('description'))
             <p class="footer-desc">{{ $fv('description') }}</p>
@@ -409,6 +424,26 @@
                 });
             });
         });
+    })();
+
+    // ===== انیمیشن ورود هنگام اسکرول (fade-in-up) — یک‌بار، مدرن (IntersectionObserver، نه scroll listener)، با احترام به prefers-reduced-motion =====
+    (function () {
+        var items = document.querySelectorAll('.reveal');
+        if (!items.length) return;
+        var reduceMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (reduceMotion || typeof IntersectionObserver === 'undefined') {
+            items.forEach(function (el) { el.classList.add('is-visible'); });
+            return;
+        }
+        var io = new IntersectionObserver(function (entries, obs) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+        items.forEach(function (el) { io.observe(el); });
     })();
 </script>
 @yield('page-js')

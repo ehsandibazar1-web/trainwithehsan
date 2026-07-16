@@ -74,7 +74,7 @@
                 {{-- ============ سایدبار ============ --}}
                 <aside>
                     @if($categories->isNotEmpty())
-                    <div class="site-blog__sidebar__item">
+                    <div class="site-blog__sidebar__item reveal">
                         <div class="site-blog__sidebar__item__header">
                             <fieldset><legend>Kategoriler</legend></fieldset>
                         </div>
@@ -90,7 +90,7 @@
                     @endif
 
                     @if($popular->isNotEmpty())
-                    <div class="site-blog__sidebar__item">
+                    <div class="site-blog__sidebar__item reveal">
                         <div class="site-blog__sidebar__item__header">
                             <fieldset><legend>En Popüler</legend></fieldset>
                         </div>
@@ -111,9 +111,9 @@
                     <div class="site-blog__sidebar__item__header">
                         <fieldset><legend>Son Makaleler</legend></fieldset>
                     </div>
-                    <div class="posts-grid">
+                    <div class="posts-grid reveal-group">
                         @forelse($articles as $article)
-                        <article class="post-item">
+                        <article class="post-item reveal">
                             <a href="{{ url('/tr/blog/' . $article->slug) }}" class="post-item__image">
                                 <div class="thumb" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}')" @endif>
                                     @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless

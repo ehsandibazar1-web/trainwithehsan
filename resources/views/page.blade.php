@@ -60,7 +60,7 @@
             </div>
             @endif
 
-            <div class="page-body">
+            <div class="page-body reveal">
                 {!! $page->body !!}
             </div>
         </div>
