@@ -75,6 +75,7 @@ class AiAssistantPanel extends Component
 
         return collect($fields)->map(function (array $definition, string $key) {
             $history = AiGeneration::forField($this->recordType, $this->record->id, $key)
+                ->with('knowledgeEntries')
                 ->latest()
                 ->take(5)
                 ->get();
@@ -312,6 +313,7 @@ class AiAssistantPanel extends Component
     public function getHistoryProperty(): Collection
     {
         return AiGeneration::forRecord($this->recordType, $this->record->id)
+            ->with('knowledgeEntries')
             ->latest()
             ->take(30)
             ->get();

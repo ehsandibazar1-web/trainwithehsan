@@ -52,6 +52,10 @@ class RunAiContentGeneration implements ShouldQueue
                 'status' => 'completed',
                 'result' => $outcome['result'],
             ]);
+
+            if (! empty($outcome['knowledge_entry_ids'])) {
+                $generation->knowledgeEntries()->sync($outcome['knowledge_entry_ids']);
+            }
         } catch (\Throwable $e) {
             if ($generation->fresh()->status === 'cancelled') {
                 return;
