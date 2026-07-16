@@ -14,7 +14,12 @@ return new class extends Migration
         Schema::create('notifications', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('type');
-            $table->morphs('notifiable');
+            // به‌جای morphs() پیش‌فرض (VARCHAR(255)): همان درسِ ai_generations/taggables — این دو
+            // ستون بخشی از ایندکس ترکیبی زیرند و VARCHAR(255) با utf8mb4 روی MySQL از سقف طول
+            // کلید ایندکس رد می‌شود («Specified key was too long» — خطای واقعی روی production)
+            $table->string('notifiable_type', 100);
+            $table->unsignedBigInteger('notifiable_id');
+            $table->index(['notifiable_type', 'notifiable_id']);
             $table->text('data');
             $table->timestamp('read_at')->nullable();
             $table->timestamps();
