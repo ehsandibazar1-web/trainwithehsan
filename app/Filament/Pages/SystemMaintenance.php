@@ -6,7 +6,9 @@ use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Filament\Support\Icons\Heroicon;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Throwable;
 
 // جایگزین امنِ دو route عمومیِ system-cache-flush / system-migrate در routes/web.php —
@@ -27,8 +29,36 @@ class SystemMaintenance extends Page
     public function runMigrations(): void
     {
         try {
-            Artisan::call('migrate', ['--force' => true]);
-            $this->lastOutput = Artisan::output();
+            $log = [];
+
+            // این حلقه برای شرایطی است که هاست بدون SSH و با محدودیت زمان اجرا، وسط یک
+            // migration قبلی قطع شده باشد: جدول واقعاً ساخته شده ولی در جدول migrations
+            // ثبت نشده، پس دفعه‌ی بعد migrate با خطای «already exists» گیر می‌کند. به‌جای
+            // گیر کردن، همان migration را «قبلاً اجراشده» علامت می‌زنیم و بقیه را ادامه می‌دهیم.
+            $maxAttempts = count(glob(database_path('migrations/*.php'))) + 1;
+
+            for ($attempt = 0; $attempt < $maxAttempts; $attempt++) {
+                try {
+                    Artisan::call('migrate', ['--force' => true]);
+                    $log[] = Artisan::output();
+                    break;
+                } catch (QueryException $e) {
+                    $migrationName = $this->resolveAlreadyExistingMigration($e);
+
+                    if (! $migrationName) {
+                        throw $e;
+                    }
+
+                    DB::table('migrations')->insert([
+                        'migration' => $migrationName,
+                        'batch' => (int) (DB::table('migrations')->max('batch') ?? 0) + 1,
+                    ]);
+
+                    $log[] = "Table from '{$migrationName}' already existed on the server — marked as already migrated.";
+                }
+            }
+
+            $this->lastOutput = implode("\n", array_filter($log));
 
             Notification::make()->success()->title('Migrations ran successfully')->send();
         } catch (Throwable $e) {
@@ -36,6 +66,32 @@ class SystemMaintenance extends Page
 
             Notification::make()->danger()->title('Migration failed')->body($e->getMessage())->send();
         }
+    }
+
+    // خطای «already exists» را به نام فایل migration ای که هنوز در جدول migrations
+    // ثبت نشده وصل می‌کند — فقط برای همین یک نوع خطا؛ خطاهای دیگر دست‌نخورده throw می‌شوند
+    private function resolveAlreadyExistingMigration(QueryException $e): ?string
+    {
+        if (! str_contains($e->getMessage(), 'already exists')) {
+            return null;
+        }
+
+        if (! preg_match('/table [`"]?(\w+)[`"]?/i', $e->getSql() ?? '', $matches)) {
+            return null;
+        }
+
+        $table = $matches[1];
+        $ran = DB::table('migrations')->pluck('migration')->all();
+
+        foreach (glob(database_path('migrations/*.php')) as $path) {
+            $name = basename($path, '.php');
+
+            if (! in_array($name, $ran, true) && str_contains($name, "create_{$table}_table")) {
+                return $name;
+            }
+        }
+
+        return null;
     }
 
     public function clearCache(): void
