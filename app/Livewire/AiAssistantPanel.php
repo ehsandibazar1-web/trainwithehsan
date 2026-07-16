@@ -288,6 +288,35 @@ class AiAssistantPanel extends Component
             ->get();
     }
 
+    // ============ Cancellation ============
+
+    // این سقفِ واقعیِ چیزی است که روی صف database ممکن است — نمی‌شود یک تماس HTTP در حال اجرا را
+    // واقعاً کشت. اگر هنوز queued است، هرگز اجرا نمی‌شود (چک‌پوینت اول در خودِ جاب). اگر
+    // processing است، جاب هنوز تا انتهای تماس فعلی ادامه می‌دهد ولی نتیجه‌اش را نمی‌نویسد
+    // (چک‌پوینت دوم) — یعنی «کنسل» یعنی «نتیجه‌اش را نادیده بگیر»، نه «همین الان متوقفش کن».
+    public function cancelGeneration(int $id): void
+    {
+        $generation = AiGeneration::find($id);
+
+        if (! $generation || ! $generation->isCancellable()) {
+            return;
+        }
+
+        $generation->update(['status' => 'cancelled']);
+
+        Notification::make()->success()->title('Generation cancelled')->send();
+    }
+
+    // ============ History — همه‌ی تولیدهای این رکورد در همه‌ی فیلدها، نه فقط ۴ تای آخرِ هر فیلد ============
+
+    public function getHistoryProperty(): Collection
+    {
+        return AiGeneration::forRecord($this->recordType, $this->record->id)
+            ->latest()
+            ->take(30)
+            ->get();
+    }
+
     private function queueGeneration(string $field, string $mode): void
     {
         // ALT روی رکورد Article/Page ذخیره نمی‌شود، روی Media متناظر — پس مقدار فعلی هم باید از آنجا خوانده شود

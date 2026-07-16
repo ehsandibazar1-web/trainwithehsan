@@ -15,9 +15,10 @@
         .ai-ca-mode-btn{font-size:.72rem;padding:.3rem .55rem;border-radius:9999px;border:1px solid rgb(209 213 219);background:#fff;color:#374151;cursor:pointer}
         .ai-ca-mode-btn:hover{background:#f3f4f6}
 
-        .ai-ca-status{font-size:.75rem;color:#6b7280;margin-bottom:.5rem}
+        .ai-ca-status{font-size:.75rem;color:#6b7280;margin-bottom:.5rem;display:flex;align-items:center;gap:.4rem}
         .ai-ca-status.processing{color:#b45309}
         .ai-ca-status.failed{color:#b91c1c}
+        .ai-ca-cancel{color:#b91c1c;background:none;border:none;cursor:pointer;font-size:.7rem;text-decoration:underline;padding:0}
 
         .ai-ca-preview{background:#eff6ff;border:1px solid #bfdbfe;border-radius:.5rem;padding:.6rem .7rem;font-size:.8rem;color:#1e3a8a;margin-bottom:.5rem;white-space:pre-line}
         .ai-ca-preview ul{margin:.25rem 0 0 1.1rem;padding:0}
@@ -200,9 +201,36 @@
         <div class="ai-ca-tabs">
             <button type="button" class="ai-ca-tab-btn {{ $activeTab === 'generate' ? 'active' : '' }}" wire:click="setTab('generate')">Generate</button>
             <button type="button" class="ai-ca-tab-btn {{ $activeTab === 'review' ? 'active' : '' }}" wire:click="setTab('review')">Content Review</button>
+            <button type="button" class="ai-ca-tab-btn {{ $activeTab === 'history' ? 'active' : '' }}" wire:click="setTab('history')">History</button>
         </div>
 
-        @if ($activeTab === 'review')
+        @if ($activeTab === 'history')
+            <div class="ai-ca-findings">
+                @forelse ($this->history as $past)
+                    <div class="ai-ca-finding" style="align-items:center">
+                        <span class="badge {{ $past->status === 'failed' ? 'warning' : 'notice' }}">{{ $past->status }}</span>
+                        <span style="flex:1">
+                            {{ \App\Services\AiAssistant\ActionRegistry::exists($past->field) ? \App\Services\AiAssistant\ActionRegistry::for($past->field)['label'] : ucfirst($past->field) }}
+                            · {{ ucfirst($past->mode) }} · {{ $past->created_at->diffForHumans() }}
+                            @if ($past->applied_at) — applied {{ $past->applied_at->diffForHumans() }} @endif
+                            @if ($past->restored_at) — restored {{ $past->restored_at->diffForHumans() }} @endif
+                        </span>
+                        @php($isAppliable = \App\Services\AiAssistant\ActionRegistry::exists($past->field) ? (\App\Services\AiAssistant\ActionRegistry::for($past->field)['appliable'] ?? true) : false)
+                        @if ($past->isCancellable())
+                            <button type="button" wire:click="cancelGeneration({{ $past->id }})" wire:confirm="Cancel this generation?" style="color:#b91c1c;background:none;border:none;cursor:pointer;font-size:.72rem">Cancel</button>
+                        @elseif ($past->canRestore())
+                            <button type="button" wire:click="restoreGeneration({{ $past->id }})" wire:confirm="Restore the value from before this generation ran?" style="color:#2563eb;background:none;border:none;cursor:pointer;font-size:.72rem">Restore</button>
+                        @elseif ($past->field === 'internal_links' && $past->canApply() && ! $past->applied_at)
+                            <button type="button" wire:click="applyInternalLinkSuggestions({{ $past->id }})" wire:confirm="Add these as pending suggestions in the Internal Linking Center?" style="color:#2563eb;background:none;border:none;cursor:pointer;font-size:.72rem">Add suggestions</button>
+                        @elseif ($isAppliable && $past->canApply() && ! $past->applied_at)
+                            <button type="button" wire:click="applyGeneration({{ $past->id }})" wire:confirm="Replace the current value with this suggestion?" style="color:#2563eb;background:none;border:none;cursor:pointer;font-size:.72rem">Apply</button>
+                        @endif
+                    </div>
+                @empty
+                    <div class="ai-ca-findings-empty">No AI generations for this {{ strtolower($recordType) }} yet.</div>
+                @endforelse
+            </div>
+        @elseif ($activeTab === 'review')
             <div class="ai-ca-findings">
                 @forelse ($this->reviewFindings as $finding)
                     <div class="ai-ca-finding">
@@ -222,7 +250,10 @@
 
                 @if ($this->reviewSummary)
                     @if (in_array($this->reviewSummary->status, ['queued', 'processing']))
-                        <div class="ai-ca-status processing" style="margin-top:.5rem">{{ ucfirst($this->reviewSummary->status) }}…</div>
+                        <div class="ai-ca-status processing" style="margin-top:.5rem">
+                            {{ ucfirst($this->reviewSummary->status) }}…
+                            <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $this->reviewSummary->id }})" wire:confirm="Cancel this generation?">Cancel</button>
+                        </div>
                     @elseif ($this->reviewSummary->status === 'failed')
                         <div class="ai-ca-status failed" style="margin-top:.5rem">Failed: {{ $this->reviewSummary->error }}</div>
                     @elseif ($this->reviewSummary->status === 'completed')
@@ -258,7 +289,10 @@
                         @php($latest = $field['latest'])
 
                         @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">{{ ucfirst($latest->status) }}…</div>
+                            <div class="ai-ca-status processing">
+                                {{ ucfirst($latest->status) }}…
+                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
+                            </div>
                         @elseif ($latest->status === 'failed')
                             <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
                         @elseif ($latest->status === 'completed')
@@ -336,7 +370,10 @@
                     @if ($internalLinksField['latest'])
                         @php($latest = $internalLinksField['latest'])
                         @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">{{ ucfirst($latest->status) }}…</div>
+                            <div class="ai-ca-status processing">
+                                {{ ucfirst($latest->status) }}…
+                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
+                            </div>
                         @elseif ($latest->status === 'failed')
                             <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
                         @elseif ($latest->status === 'completed')
@@ -367,7 +404,10 @@
                     @php($latest = $this->suggestionFields['external_links']['latest'])
                     @if ($latest)
                         @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">{{ ucfirst($latest->status) }}…</div>
+                            <div class="ai-ca-status processing">
+                                {{ ucfirst($latest->status) }}…
+                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
+                            </div>
                         @elseif ($latest->status === 'failed')
                             <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
                         @elseif ($latest->status === 'completed')
@@ -395,7 +435,10 @@
                     @php($latest = $this->suggestionFields['schema']['latest'])
                     @if ($latest)
                         @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">{{ ucfirst($latest->status) }}…</div>
+                            <div class="ai-ca-status processing">
+                                {{ ucfirst($latest->status) }}…
+                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
+                            </div>
                         @elseif ($latest->status === 'failed')
                             <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
                         @elseif ($latest->status === 'completed')
@@ -416,7 +459,10 @@
                     @php($latest = $this->suggestionFields['caption']['latest'])
                     @if ($latest)
                         @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">{{ ucfirst($latest->status) }}…</div>
+                            <div class="ai-ca-status processing">
+                                {{ ucfirst($latest->status) }}…
+                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
+                            </div>
                         @elseif ($latest->status === 'failed')
                             <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
                         @elseif ($latest->status === 'completed')
@@ -442,6 +488,7 @@
                     <div class="ai-ca-history-item">
                         @if (in_array($translation->status, ['queued', 'processing']))
                             <span>{{ strtoupper($translation->mode) }} draft — {{ $translation->status }}…</span>
+                            <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $translation->id }})" wire:confirm="Cancel this translation?">Cancel</button>
                         @elseif ($translation->status === 'failed')
                             <span style="color:#b91c1c">{{ strtoupper($translation->mode) }} draft failed: {{ $translation->error }}</span>
                         @elseif ($translation->status === 'completed')

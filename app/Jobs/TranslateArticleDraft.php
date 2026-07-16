@@ -45,7 +45,7 @@ class TranslateArticleDraft implements ShouldQueue
     {
         $generation = AiGeneration::find($this->generationId);
 
-        if (! $generation) {
+        if (! $generation || $generation->status === 'cancelled') {
             return;
         }
 
@@ -61,6 +61,12 @@ class TranslateArticleDraft implements ShouldQueue
 
         try {
             $translated = $service->buildTranslationPayload($record, $this->targetLocale);
+
+            // اگر بین شروع تماس API و اینجا کنسل شده باشد، دیگر ادامه نمی‌دهیم — هنوز هیچ
+            // Article/Page‌ای ساخته نشده، پس کنسل کردن اینجا واقعاً چیزی نیم‌کاره باقی نمی‌گذارد
+            if ($generation->fresh()->status === 'cancelled') {
+                return;
+            }
 
             $newRecord = $this->contentType === 'Article'
                 ? $this->createTranslatedArticle($importService, $record, $translated)
@@ -78,6 +84,10 @@ class TranslateArticleDraft implements ShouldQueue
                 ],
             ]);
         } catch (Throwable $e) {
+            if ($generation->fresh()->status === 'cancelled') {
+                return;
+            }
+
             $generation->update(['status' => 'failed', 'error' => $e->getMessage()]);
         }
     }

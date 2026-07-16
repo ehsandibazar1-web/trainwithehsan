@@ -676,4 +676,103 @@ class AiAssistantPanelTest extends TestCase
 
         Bus::assertDispatched(TranslateArticleDraft::class);
     }
+
+    // ============ Cancellation (Phase R6) ============
+
+    public function test_is_cancellable_is_true_only_while_queued_or_processing(): void
+    {
+        $queued = AiGeneration::create(['content_type' => 'Article', 'content_id' => 1, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'queued']);
+        $processing = AiGeneration::create(['content_type' => 'Article', 'content_id' => 1, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'processing']);
+        $completed = AiGeneration::create(['content_type' => 'Article', 'content_id' => 1, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'completed']);
+
+        $this->assertTrue($queued->isCancellable());
+        $this->assertTrue($processing->isCancellable());
+        $this->assertFalse($completed->isCancellable());
+    }
+
+    public function test_cancel_generation_flags_a_queued_generation_as_cancelled(): void
+    {
+        $article = $this->makeArticle();
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'queued',
+        ]);
+
+        $this->makePanel($article)->cancelGeneration($generation->id);
+
+        $this->assertSame('cancelled', $generation->fresh()->status);
+    }
+
+    public function test_cancel_generation_does_nothing_to_an_already_completed_generation(): void
+    {
+        $article = $this->makeArticle();
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'seo_title', 'mode' => 'generate',
+            'status' => 'completed', 'result' => 'Some title',
+        ]);
+
+        $this->makePanel($article)->cancelGeneration($generation->id);
+
+        $this->assertSame('completed', $generation->fresh()->status);
+    }
+
+    public function test_run_ai_content_generation_skips_a_generation_that_was_cancelled_before_it_started(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText('A title that should never be written');
+
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'cancelled',
+        ]);
+
+        (new RunAiContentGeneration($generation->id))->handle(app(ContentAssistantService::class));
+
+        $generation->refresh();
+        $this->assertSame('cancelled', $generation->status);
+        $this->assertNull($generation->result);
+    }
+
+    public function test_translate_article_draft_skips_a_generation_that_was_cancelled_before_it_started(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode(['title' => 'Should not be created', 'body' => '<p>x</p>']));
+
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'translate', 'mode' => 'tr', 'status' => 'cancelled',
+        ]);
+
+        (new TranslateArticleDraft('Article', $article->id, 'tr', $generation->id))
+            ->handle(app(ContentAssistantService::class), app(ArticleImportService::class));
+
+        $generation->refresh();
+        $this->assertSame('cancelled', $generation->status);
+        $this->assertSame(1, Article::count());
+    }
+
+    // ============ History tab (Phase R6) ============
+
+    public function test_ai_generation_scope_for_record_returns_generations_across_every_field(): void
+    {
+        $article = $this->makeArticle();
+        AiGeneration::create(['content_type' => 'Article', 'content_id' => $article->id, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'completed']);
+        AiGeneration::create(['content_type' => 'Article', 'content_id' => $article->id, 'field' => 'faq', 'mode' => 'generate', 'status' => 'completed']);
+        AiGeneration::create(['content_type' => 'Article', 'content_id' => 999999, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'completed']);
+
+        $history = AiGeneration::forRecord('Article', $article->id)->get();
+
+        $this->assertCount(2, $history);
+        $this->assertEqualsCanonicalizing(['seo_title', 'faq'], $history->pluck('field')->all());
+    }
+
+    public function test_panel_history_property_returns_the_latest_generations_for_this_record_only(): void
+    {
+        $article = $this->makeArticle();
+        $other = $this->makeArticle();
+        AiGeneration::create(['content_type' => 'Article', 'content_id' => $article->id, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'completed']);
+        AiGeneration::create(['content_type' => 'Article', 'content_id' => $other->id, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'completed']);
+
+        $history = $this->makePanel($article)->history;
+
+        $this->assertCount(1, $history);
+        $this->assertSame($article->id, $history->first()->content_id);
+    }
 }
