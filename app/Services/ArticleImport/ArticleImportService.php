@@ -174,6 +174,7 @@ class ArticleImportService
                 'slug' => $payload['slug'],
                 'category' => $payload['category'] ?? null,
                 'excerpt' => $payload['excerpt'] ?? null,
+                'meta_description' => $payload['meta_description'] ?? null,
                 'seo_title' => $payload['seo_title'] ?? null,
                 'body' => $payload['body'],
                 'faqs' => $payload['faqs'] ?? null,
@@ -498,6 +499,9 @@ class ArticleImportService
             'title' => $title,
             'slug' => $slug,
             'excerpt' => $excerpt !== '' ? $excerpt : null,
+            // این CMS از excerpt به‌عنوان توضیحات متا استفاده می‌کند؛ در ستون meta_description هم
+            // ذخیره می‌شود تا پنل ادمین و هر ابزار سئویی که مستقیم این ستون را می‌خواند خالی نبیند
+            'meta_description' => $excerpt !== '' ? $excerpt : null,
             'seo_title' => $seoTitle !== '' ? $seoTitle : null,
             'body' => $body,
             'category' => $category !== '' ? $category : null,

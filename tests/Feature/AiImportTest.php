@@ -293,6 +293,27 @@ class AiImportTest extends TestCase
         $result = $this->service()->import(json_encode($json));
 
         $this->assertSame('From SEO field.', $result['article']->excerpt);
+        $this->assertSame('From SEO field.', $result['article']->meta_description);
+    }
+
+    public function test_meta_description_column_is_populated_from_excerpt(): void
+    {
+        $result = $this->service()->import($this->validJson());
+
+        $this->assertSame([], $result['errors']);
+        $this->assertSame('A standalone excerpt.', $result['article']->excerpt);
+        $this->assertSame('A standalone excerpt.', $result['article']->meta_description);
+    }
+
+    public function test_missing_excerpt_and_seo_description_leaves_meta_description_null(): void
+    {
+        $json = json_decode($this->validJson(), true);
+        unset($json['excerpt']);
+
+        $result = $this->service()->import(json_encode($json));
+
+        $this->assertSame([], $result['errors']);
+        $this->assertNull($result['article']->meta_description);
     }
 
     public function test_seo_title_is_saved_on_the_article(): void
