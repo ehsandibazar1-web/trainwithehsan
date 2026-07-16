@@ -585,6 +585,7 @@ class ArticleImportService
     {
         return ImportLog::create([
             'user_id' => $context['user_id'] ?? auth()->id(),
+            'api_token_id' => $context['api_token_id'] ?? null,
             'source' => $context['source'] ?? 'panel',
             'ai_provider' => $analysis['payload']['provider'] ?? $context['ai_provider'] ?? null,
             'format' => $analysis['format'] ?? null,

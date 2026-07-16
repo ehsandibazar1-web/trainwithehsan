@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\SiteSetting;
 
 class PreviewController extends Controller
 {
@@ -28,6 +29,10 @@ class PreviewController extends Controller
 
         $translation = $article->translation ?? $article->translations()->first();
 
-        return view($view, compact('article', 'related', 'latest', 'translation'));
+        // همان عکس نویسنده‌ی BlogController::renderShow — پیش‌نمایش باید عین صفحه‌ی واقعی رندر شود
+        $authorPhoto = SiteSetting::get("about.{$article->locale}.hero_image")
+            ?? SiteSetting::get('about.en.hero_image');
+
+        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto'));
     }
 }

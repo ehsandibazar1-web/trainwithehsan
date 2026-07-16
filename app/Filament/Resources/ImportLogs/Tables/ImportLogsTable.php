@@ -25,9 +25,10 @@ class ImportLogsTable
                     ->dateTime('Y-m-d H:i')
                     ->sortable(),
 
-                TextColumn::make('user.name')
+                TextColumn::make('by')
                     ->label('By')
-                    ->default('—'),
+                    ->state(fn (ImportLog $record): string => $record->user->name
+                        ?? ($record->apiToken ? 'API: '.$record->apiToken->name : '—')),
 
                 TextColumn::make('ai_provider')
                     ->label('AI Provider')
