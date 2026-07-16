@@ -4,6 +4,7 @@ namespace App\Services\AiAssistant;
 
 use App\Models\Article;
 use App\Models\Page;
+use App\Services\BrandMemory\BrandMemoryService;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -22,6 +23,7 @@ class ContentAssistantService
     public function __construct(
         private readonly ProviderManager $providerManager,
         private readonly ContentReviewService $reviewService,
+        private readonly BrandMemoryService $brandMemory,
     ) {}
 
     /**
@@ -41,7 +43,7 @@ class ContentAssistantService
         }
 
         $raw = $this->providerManager->respond(
-            $this->buildSystemPrompt($definition, $mode),
+            $this->buildSystemPrompt($definition, $mode, $record->locale ?? 'en'),
             $this->buildUserPrompt($record, $field, $definition),
             $this->imagesFor($record, $field),
             array_merge(['max_tokens' => $definition['max_tokens'] ?? 2048], $options),
@@ -67,7 +69,7 @@ class ContentAssistantService
         $modelType = $record instanceof Article ? 'Article' : 'Page';
 
         $raw = $this->providerManager->respond(
-            $this->buildIntentSystemPrompt($modelType),
+            $this->buildIntentSystemPrompt($modelType, $record->locale ?? 'en'),
             $this->buildIntentUserPrompt($record, $message),
             [],
             ['max_tokens' => 400],
@@ -79,14 +81,14 @@ class ContentAssistantService
         return $this->parseIntentResponse($raw, $modelType);
     }
 
-    private function buildIntentSystemPrompt(string $modelType): string
+    private function buildIntentSystemPrompt(string $modelType, string $locale = 'en'): string
     {
         $fieldList = collect(ActionRegistry::applicableTo($modelType))
             ->reject(fn (array $definition, string $key) => $key === 'content_review_summary')
             ->map(fn (array $definition, string $key) => "- {$key} (\"{$definition['label']}\") — modes: ".implode(', ', $definition['modes']))
             ->implode("\n");
 
-        return <<<PROMPT
+        $prompt = <<<PROMPT
             You are an AI writing assistant embedded in the editor for a Brazilian Jiu-Jitsu / self-defense training website (bilingual: English and Turkish). The user just sent a chat message about the content they are currently editing. Classify their intent and respond with ONLY a JSON object (no markdown fences, no other text) with these keys:
             - "intent": one of "action", "translate", "chat"
             - "field": if intent is "action", the exact field key from the list below (else null)
@@ -99,6 +101,8 @@ class ContentAssistantService
 
             Examples: "Generate 5 FAQs" -> field=faq, mode=generate. "Improve the introduction" -> field=body, mode=improve. "Rewrite the conclusion" -> field=body, mode=rewrite. "Make it shorter" -> field=body, mode=shorten. "Improve readability" -> field=body, mode=improve. "Make it more persuasive" -> field=body, mode=improve. "Write a better CTA" -> field=cta, mode=improve. "Generate SEO title" -> field=seo_title, mode=generate. "Translate to Turkish" -> intent=translate, target_locale=tr. "Translate to English" -> intent=translate, target_locale=en. If the message doesn't map to a specific field/action (a general question, a compliment, an unclear request, or something this assistant can't do), use intent="chat" and answer directly in "reply".
             PROMPT;
+
+        return $this->withBrandMemory($prompt, $locale);
     }
 
     private function buildIntentUserPrompt(Model $record, string $message): string
@@ -183,7 +187,7 @@ class ContentAssistantService
         $languageName = $targetLocale === 'tr' ? 'Turkish' : 'English';
 
         $raw = $this->providerManager->respond(
-            $this->buildTranslateSystemPrompt($languageName, $modelType),
+            $this->buildTranslateSystemPrompt($languageName, $modelType, $record->locale ?? 'en'),
             $this->buildTranslateUserPrompt($record),
             [],
             ['max_tokens' => 6000],
@@ -195,13 +199,15 @@ class ContentAssistantService
         return $this->parseTranslationResponse($raw, $modelType);
     }
 
-    private function buildTranslateSystemPrompt(string $languageName, string $modelType): string
+    private function buildTranslateSystemPrompt(string $languageName, string $modelType, string $locale = 'en'): string
     {
         $fields = $modelType === 'Article'
             ? '"title", "body" (clean semantic HTML), "excerpt" (a standalone 1-2 sentence summary), and "faqs" (an array of {"question","answer"} objects — an empty array if there were none in the source)'
             : '"title" and "body" (clean semantic HTML)';
 
-        return "You are a professional translator for a Brazilian Jiu-Jitsu / self-defense training website. Translate the given content into {$languageName}, preserving meaning, tone, and HTML structure (headings, lists, paragraphs) exactly — do not add, remove, or summarize sections. Return ONLY a JSON object (no markdown fences, no other text) with these keys: {$fields}.";
+        $prompt = "You are a professional translator for a Brazilian Jiu-Jitsu / self-defense training website. Translate the given content into {$languageName}, preserving meaning, tone, and HTML structure (headings, lists, paragraphs) exactly — do not add, remove, or summarize sections. Return ONLY a JSON object (no markdown fences, no other text) with these keys: {$fields}.";
+
+        return $this->withBrandMemory($prompt, $locale);
     }
 
     private function buildTranslateUserPrompt(Model $record): string
@@ -248,7 +254,7 @@ class ContentAssistantService
         ];
     }
 
-    private function buildSystemPrompt(array $definition, string $mode): string
+    private function buildSystemPrompt(array $definition, string $mode, string $locale = 'en'): string
     {
         $modeInstruction = match ($mode) {
             'generate' => 'Generate this from scratch based on the content provided.',
@@ -259,7 +265,19 @@ class ContentAssistantService
             'simplify' => 'Simplify the current value below into clearer, plainer language.',
         };
 
-        return "You are an SEO and content assistant for a Brazilian Jiu-Jitsu / self-defense training website (bilingual: English and Turkish — always respond in the same language as the content shown to you). {$modeInstruction}\n\n{$definition['instruction']}";
+        $prompt = "You are an SEO and content assistant for a Brazilian Jiu-Jitsu / self-defense training website (bilingual: English and Turkish — always respond in the same language as the content shown to you). {$modeInstruction}\n\n{$definition['instruction']}";
+
+        return $this->withBrandMemory($prompt, $locale);
+    }
+
+    // بلوک حافظه‌ی برند را (اگر چیزی برای گفتن داشته باشد) به انتهای هر سه سازنده‌ی system prompt
+    // اضافه می‌کند — تنها جایی که این کار انجام می‌شود؛ نصب‌های بدون پیکربندی حافظه‌ی برند دقیقاً
+    // همان پرامپت قبلی را می‌گیرند (BrandMemoryService::buildContext() برایشان رشته‌ی خالی برمی‌گرداند)
+    private function withBrandMemory(string $prompt, string $locale): string
+    {
+        $context = $this->brandMemory->buildContext($locale);
+
+        return $context === '' ? $prompt : "{$prompt}\n\n{$context}";
     }
 
     /**
