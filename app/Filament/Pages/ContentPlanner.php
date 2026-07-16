@@ -183,6 +183,60 @@ class ContentPlanner extends Page
         return ContentPlanResource::getUrl('edit', ['record' => $plan->id]);
     }
 
+    // ============ یکپارچگی با AI Studio ============
+    // هرگز مستقیماً چیزی تولید نمی‌کند (طبق قاعده‌ی ثابت‌شده‌ی «تولید همیشه با کلیک صریح ادمین
+    // داخل AiAssistantPanel است») — این متدها فقط رکورد را (در صورت نیاز) مادیت می‌بخشند و
+    // ادمین را به همان صفحه‌ی ویرایش/دستیاری می‌برند که Generate Draft/FAQ/SEO/Translate/Optimize
+    // از قبل آنجا وجود دارند، بدون هیچ منطق هوش مصنوعی تازه‌ای.
+
+    /**
+     * «Generate Draft» روی یک کارت بدون contentable — رکورد Article/Page را می‌سازد (اگر نبود)،
+     * مرحله را به AI Draft می‌برد، و ادمین را مستقیماً به صفحه‌ی ویرایش (با نوار کناری دستیار
+     * هوش مصنوعی از قبل تعبیه‌شده) هدایت می‌کند.
+     */
+    public function generateDraft(int $planId): void
+    {
+        $plan = ContentPlan::find($planId);
+
+        if (! $plan) {
+            return;
+        }
+
+        if (! $plan->contentable_id) {
+            $aiDraftStage = WorkflowStage::findBySlug(WorkflowStage::STAGE_AI_DRAFT);
+
+            if ($aiDraftStage) {
+                $plan->moveToStage($aiDraftStage, Auth::user());
+            } else {
+                $plan->materializeContent();
+            }
+
+            $plan->refresh();
+        }
+
+        if (! $plan->contentable_id) {
+            Notification::make()->danger()->title('Could not create a draft for this idea')->send();
+
+            return;
+        }
+
+        $this->redirect($this->contentEditUrl($plan->contentable_type, $plan->contentable_id));
+    }
+
+    // لینک مستقیم به دستیار هوش مصنوعیِ همین رکورد (صفحه‌ی مستقل AiContentAssistant، همان
+    // چیزی که قبلاً به‌عنوان "fallback/deep link" مستقل نگه داشته شده) — null اگر هنوز
+    // contentable ندارد (که یعنی دکمه‌ی Generate Draft باید نشان داده شود، نه این)
+    public function aiAssistantUrlFor(ContentPlan $plan): ?string
+    {
+        if (! $plan->contentable_id || ! $plan->contentable_type) {
+            return null;
+        }
+
+        return $plan->contentable_type === 'Page'
+            ? AiContentAssistant::getUrl(['page' => $plan->contentable_id])
+            : AiContentAssistant::getUrl(['article' => $plan->contentable_id]);
+    }
+
     // ============ Kanban: درگ‌اند‌دراپ ============
 
     public function moveCard(int $planId, int $stageId): void

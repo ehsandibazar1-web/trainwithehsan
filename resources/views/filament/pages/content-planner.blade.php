@@ -55,6 +55,11 @@
         .cp-card-footer{display:flex;justify-content:space-between;font-size:.68rem;color:#9ca3af}
         .cp-card a{font-size:.72rem;color:#2563eb;text-decoration:none}
         :root.dark .cp-card a{color:#93c5fd}
+        .cp-ai-btn{
+            font-size:.72rem;color:#7c3aed;background:none;border:none;padding:0;cursor:pointer;
+            text-decoration:none;font-weight:600;
+        }
+        :root.dark .cp-ai-btn{color:#c4b5fd}
 
         .cp-bulk-bar{
             position:sticky;bottom:0;display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;
@@ -239,7 +244,14 @@
                                 <span>{{ $plan->updated_at->diffForHumans() }}</span>
                             </div>
 
-                            <a href="{{ $this->editUrlFor($plan) }}" wire:navigate>Edit →</a>
+                            <div class="cp-card-row">
+                                <a href="{{ $this->editUrlFor($plan) }}" wire:navigate>Edit →</a>
+                                @if($plan->contentable_id)
+                                    <a href="{{ $this->aiAssistantUrlFor($plan) }}" wire:navigate>AI Assistant →</a>
+                                @else
+                                    <button type="button" class="cp-ai-btn" wire:click="generateDraft({{ $plan->id }})">✨ Generate Draft</button>
+                                @endif
+                            </div>
                         </div>
                     @empty
                         <div class="cp-empty">No cards</div>
@@ -359,7 +371,14 @@
                             <td>{{ $score['categories']['readability']['score'] ?? '—' }}</td>
                             <td>{{ optional($plan->effectivePublishDate())->format('Y-m-d') ?? '—' }}</td>
                             <td>{{ $plan->updated_at->diffForHumans() }}</td>
-                            <td><a href="{{ $this->editUrlFor($plan) }}" wire:navigate>Edit →</a></td>
+                            <td>
+                                <a href="{{ $this->editUrlFor($plan) }}" wire:navigate>Edit →</a>
+                                @if($plan->contentable_id)
+                                    <a href="{{ $this->aiAssistantUrlFor($plan) }}" wire:navigate>AI Assistant →</a>
+                                @else
+                                    <button type="button" class="cp-ai-btn" wire:click="generateDraft({{ $plan->id }})">✨ Generate Draft</button>
+                                @endif
+                            </td>
                         </tr>
                     @empty
                         <tr><td colspan="14" class="cp-empty">No content plans match these filters.</td></tr>
