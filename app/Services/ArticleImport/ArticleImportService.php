@@ -58,9 +58,12 @@ class ArticleImportService
     /**
      * تجزیه + نرمال‌سازی + اعتبارسنجی، بدون هیچ ذخیره‌سازی.
      *
+     * $defaults (مثلاً از یک پروفایل هوش مصنوعی) فقط جاهای خالی محتوا را پر می‌کند —
+     * مقداری که خود محتوا داشته باشد همیشه برنده است.
+     *
      * @return array{payload: ?array, errors: string[], warnings: string[], mapping: array{mapped: array<string,string>, auto: array<string,string>, skipped: array<string,string>}, format: string}
      */
-    public function analyze(string $raw, string $format = 'auto'): array
+    public function analyze(string $raw, string $format = 'auto', array $defaults = []): array
     {
         $result = [
             'payload' => null,
@@ -92,7 +95,44 @@ class ArticleImportService
             return $result;
         }
 
-        return $this->normalizeAndValidate($input) + ['format' => $format];
+        return $this->normalizeAndValidate($input, $defaults) + ['format' => $format];
+    }
+
+    /**
+     * مانند analyze() اما اجرای پیش‌نمایش را در تاریخچه (import_logs) با
+     * وضعیت previewed ثبت می‌کند. همچنان هیچ مقاله‌ای ساخته نمی‌شود.
+     *
+     * @return array{payload: ?array, errors: string[], warnings: string[], mapping: array, format: string, log: ImportLog}
+     */
+    public function preview(string $raw, string $format = 'auto', array $context = [], array $defaults = []): array
+    {
+        $analysis = $this->analyze($raw, $format, $defaults);
+        $analysis['log'] = $this->writeLog('previewed', $analysis, null, $context);
+
+        return $analysis;
+    }
+
+    /**
+     * بازگردانی یک ایمپورت موفق: مقاله‌ی ساخته‌شده حذف می‌شود (از طریق Eloquent
+     * تا Activity Log هم ثبت کند) و زمان/کاربر بازگردانی روی لاگ می‌ماند.
+     * فایل رسانه‌ی دانلودشده عمداً حذف نمی‌شود — ممکن است جای دیگری استفاده شده باشد.
+     *
+     * @return array{ok: bool, message: string}
+     */
+    public function rollback(ImportLog $log, array $context = []): array
+    {
+        if (! $log->canRollBack()) {
+            return ['ok' => false, 'message' => 'This import cannot be rolled back — it either failed, was already rolled back, or its article no longer exists.'];
+        }
+
+        $log->article->delete();
+
+        $log->update([
+            'rolled_back_at' => now(),
+            'rolled_back_by' => $context['user_id'] ?? auth()->id(),
+        ]);
+
+        return ['ok' => true, 'message' => 'The imported article "'.$log->article_title.'" was removed.'];
     }
 
     /**
@@ -102,9 +142,9 @@ class ArticleImportService
      * @param  array{user_id?: ?int, source?: string}  $context
      * @return array{article: ?Article, errors: string[], warnings: string[], log: ImportLog}
      */
-    public function import(string $raw, string $format = 'auto', array $context = []): array
+    public function import(string $raw, string $format = 'auto', array $context = [], array $defaults = []): array
     {
-        $analysis = $this->analyze($raw, $format);
+        $analysis = $this->analyze($raw, $format, $defaults);
         $payload = $analysis['payload'];
 
         if ($analysis['errors'] !== [] || $payload === null) {
@@ -229,25 +269,25 @@ class ArticleImportService
     // ------------------------------------------------- normalization + validation
 
     /** @return array{payload: ?array, errors: string[], warnings: string[], mapping: array} */
-    private function normalizeAndValidate(array $input): array
+    private function normalizeAndValidate(array $input, array $defaults = []): array
     {
         $errors = [];
         $warnings = [];
         $mapping = ['mapped' => [], 'auto' => [], 'skipped' => []];
 
         // ترجمه‌ی نام‌های جایگزین به کلیدهای استاندارد + هشدار برای فیلدهای ناشناخته (نه خطا — قالب باید توسعه‌پذیر بماند)
-        $data = [];
-        $known = [];
-        foreach (self::ALIASES as $canonical => $aliases) {
-            foreach ($aliases as $alias) {
-                $known[] = $alias;
-                if (array_key_exists($alias, $input) && ! array_key_exists($canonical, $data)) {
-                    $data[$canonical] = $input[$alias];
-                }
-            }
-        }
-        foreach (array_diff(array_keys($input), $known) as $unknown) {
+        [$data, $unknownKeys] = $this->resolveAliases($input);
+        foreach ($unknownKeys as $unknown) {
             $warnings[] = "Unknown field \"$unknown\" was ignored.";
+        }
+
+        // پیش‌فرض‌های پروفایل فقط جاهای خالی را پر می‌کنند — محتوای واردشده همیشه مقدم است
+        [$defaultData] = $this->resolveAliases($defaults);
+        foreach ($defaultData as $key => $value) {
+            if (! array_key_exists($key, $data) || $data[$key] === null || $data[$key] === '') {
+                $data[$key] = $value;
+                $warnings[] = "Profile default applied for \"$key\": $value.";
+            }
         }
 
         // ----- زبان
@@ -475,6 +515,27 @@ class ArticleImportService
 
     // ---------------------------------------------------------------- helpers
 
+    /**
+     * ترجمه‌ی نام‌های جایگزین به کلیدهای استاندارد.
+     *
+     * @return array{0: array, 1: string[]} [داده‌ی نرمال‌شده، کلیدهای ناشناخته]
+     */
+    private function resolveAliases(array $input): array
+    {
+        $data = [];
+        $known = [];
+        foreach (self::ALIASES as $canonical => $aliases) {
+            foreach ($aliases as $alias) {
+                $known[] = $alias;
+                if (array_key_exists($alias, $input) && ! array_key_exists($canonical, $data)) {
+                    $data[$canonical] = $input[$alias];
+                }
+            }
+        }
+
+        return [$data, array_values(array_diff(array_keys($input), $known))];
+    }
+
     private function isUrl(string $value): bool
     {
         return str_starts_with($value, 'http://') || str_starts_with($value, 'https://');
@@ -525,7 +586,7 @@ class ArticleImportService
         return ImportLog::create([
             'user_id' => $context['user_id'] ?? auth()->id(),
             'source' => $context['source'] ?? 'panel',
-            'ai_provider' => $analysis['payload']['provider'] ?? null,
+            'ai_provider' => $analysis['payload']['provider'] ?? $context['ai_provider'] ?? null,
             'format' => $analysis['format'] ?? null,
             'status' => $status,
             'errors' => $analysis['errors'],
