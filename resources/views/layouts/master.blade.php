@@ -171,6 +171,12 @@
             border-radius:0 25px 25px 0;cursor:pointer;font-family:inherit;font-size:14px;
             flex-shrink:0;white-space:nowrap;
         }
+        /* پیام نتیجهٔ فرم خبرنامه — تا وقتی پیامی نیست هیچ فضایی نمی‌گیرد */
+        .newsletter-form{position:relative}
+        .newsletter-msg{display:none;flex-basis:100%;width:100%;font-size:13px;font-weight:600;margin-top:10px}
+        .newsletter-msg.show{display:block}
+        .newsletter-msg.ok{color:#14421c}
+        .newsletter-msg.err{color:#7a1414}
 
         /* ===== Footer — عیناً مطابق site.min.css سایت اصلی: .footer{background:url(bg-footer.png) #0a0809} ===== */
         .site-footer{
@@ -258,10 +264,18 @@
             <h3>{{ $fv('newsletter_title', 'Get the latest articles') }}</h3>
             <p>{{ $fv('newsletter_description', 'Subscribe to receive new articles and training tips by email.') }}</p>
         </div>
-        <form class="newsletter-form" action="{{ url('/contact') }}" method="get">
+        <form class="newsletter-form js-newsletter-form" method="post" action="{{ url('/newsletter/subscribe') }}" novalidate
+              data-msg-toomany="{{ __('newsletter.too_many', [], 'en') }}"
+              data-msg-error="{{ __('newsletter.error', [], 'en') }}">
+            <input type="hidden" name="locale" value="en">
+            {{-- سد زمانی: مُهر زمانی رمزشدهٔ لحظهٔ رندر — ارسالِ زودتر از ۳ ثانیه یعنی بات --}}
+            <input type="hidden" name="_nl_ts" value="{{ \Illuminate\Support\Facades\Crypt::encryptString((string) now()->timestamp) }}">
+            {{-- هانی‌پات: برای انسان‌ها نامرئی است؛ پر شدنش یعنی بات --}}
+            <input type="text" name="website" value="" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;top:-9999px;height:0;width:0;border:0;padding:0">
             <input type="email" name="email" placeholder="{{ $fv('newsletter_placeholder', 'Enter your email') }}" required>
             <button type="submit">{{ $fv('newsletter_button', 'Subscribe') }}</button>
         </form>
+        <div class="newsletter-msg" role="status" aria-live="polite"></div>
     </div>
 </div>
 
@@ -354,6 +368,46 @@
             });
             next && next.addEventListener('click', function () {
                 track.scrollBy({ left: step(), behavior: 'smooth' });
+            });
+        });
+    })();
+
+    // ===== فرم خبرنامه — ارسال AJAX با CSRF؛ پیام موفق/خطا از سرور (ترجمه‌شده) نمایش داده می‌شود =====
+    (function () {
+        document.querySelectorAll('.js-newsletter-form').forEach(function (form) {
+            var msg = form.parentElement.querySelector('.newsletter-msg');
+            var btn = form.querySelector('button[type="submit"]');
+            var csrf = document.querySelector('meta[name="csrf-token"]');
+            function show(text, ok) {
+                if (!msg) return;
+                msg.textContent = text;
+                msg.classList.add('show');
+                msg.classList.toggle('ok', ok);
+                msg.classList.toggle('err', !ok);
+            }
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (btn) btn.disabled = true;
+                fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf ? csrf.content : '',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: new FormData(form)
+                }).then(function (res) {
+                    if (res.status === 429) { show(form.dataset.msgToomany, false); return null; }
+                    return res.json().then(function (data) { return { ok: !!(data && data.ok), message: data && data.message }; });
+                }).then(function (r) {
+                    if (!r) return;
+                    show(r.message || form.dataset.msgError, r.ok);
+                    if (r.ok) { var em = form.querySelector('input[type="email"]'); if (em) em.value = ''; }
+                }).catch(function () {
+                    show(form.dataset.msgError, false);
+                }).finally(function () {
+                    if (btn) btn.disabled = false;
+                });
             });
         });
     })();

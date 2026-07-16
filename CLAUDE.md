@@ -36,6 +36,7 @@ app/
   Filament/
     Resources/Articles/                     ArticleResource + Schemas/ArticleForm.php, Tables/ArticlesTable.php, Pages/
     Resources/Pages/                        PageResource (standalone site pages: privacy, terms, FAQ, ...) — same layout as Articles
+    Resources/NewsletterSubscribers/        NewsletterSubscriberResource — search/filters, CSV export, bulk resend verification, bulk send (queued)
     Pages/EditorialCalendar.php              Drag-and-drop article scheduling calendar
     Pages/HomepageSettings.php               Homepage content-block editor (per locale)
     Pages/AboutPageSettings.php              About page content-block editor (hero, stats, certificates, gallery, timeline, CTA, SEO — per locale)
@@ -46,18 +47,25 @@ app/
   Http/Controllers/
     BlogController.php                       Home, about, blog index, blog show — EN and TR variants
     PageController.php                       Standalone pages (privacy, terms, FAQ, ...) — EN and TR show routes
+    NewsletterController.php                 Newsletter subscribe (AJAX) / verify / unsubscribe / resend — honeypot, time-gate, rate limit
     SeoController.php                        sitemap.xml, /feed, /tr/feed
     PreviewController.php                    Signed-URL preview of unpublished/scheduled articles
+  Mail/
+    NewsletterVerificationMail.php           Double-opt-in confirmation email (per-subscriber locale)
+    NewsletterCampaignMail.php               Queued newsletter email — used by the admin bulk send, base for future campaigns
   Models/
     Article.php                              Bilingual article model, translation self-relation, published/locale scopes
     Page.php                                 Standalone-page model — same bilingual two-row shape as Article, fully separate from blog
+    NewsletterSubscriber.php                 Newsletter subscriber — double opt-in (verified_at), per-row verify/unsubscribe tokens, locale
     SiteSetting.php                          Generic key/value store — the ad hoc CMS backend for homepage/about-page/menu content
     Media.php                                 Metadata record for uploaded media (name/path/url/mime/size)
     User.php                                  Default Laravel auth user (admin login)
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles, media, site_settings, activity_log, pages (project-specific, dated 2026-07-xx)
+  migrations/                                users, cache, jobs (Laravel defaults) + articles, media, site_settings, activity_log, pages, newsletter_subscribers (project-specific, dated 2026-07-xx)
+lang/
+  en/newsletter.php, tr/newsletter.php       ALL user-facing newsletter strings (form messages, result pages, emails) — the only lang files in the project
   factories/, seeders/
 resources/
   views/
@@ -101,7 +109,8 @@ Key duplication to be aware of: **every public-facing view and its Turkish count
 
 ## 7. Multilingual Architecture
 
-- Two locales today: `en` (default) and `tr`. There is no i18n package (no Laravel localization files, no `lang/` directory in active use) — translation is handled entirely by **duplicating routes, controllers methods, views, and database rows** per locale, not by string-translation files. Do not introduce Laravel's `__()` translation-file system for page content; it does not fit this project's model (content is data-driven from the database, not static UI strings).
+- Two locales today: `en` (default) and `tr`. Translation of **page content** is handled entirely by **duplicating routes, controller methods, views, and database rows** per locale, not by string-translation files. Do not introduce Laravel's `__()` translation-file system for page content; it does not fit this project's model (content is data-driven from the database, not static UI strings).
+- Exception for **module UI strings** (form feedback messages, transactional email copy): the newsletter module keeps all its user-facing strings in `lang/en/newsletter.php` + `lang/tr/newsletter.php` and resolves them with `__()` after `app()->setLocale()` per request (or `Mailable::locale()` per email). Follow this pattern for any future module that needs small sets of fixed UI strings in both languages — it is not a license to move page content into lang files.
 - Route convention: English routes are bare (`/`, `/blog`, `/blog/{slug}`), Turkish routes are prefixed with `/tr` (`/tr`, `/tr/blog`, `/tr/blog/{slug}`). Follow this exact prefix convention for any new localized route — do not use a `{locale}` route parameter or subdomain-based localization; it would require a larger refactor and hasn't been decided.
 - Standalone CMS pages (the `Page` model — privacy, terms, FAQ, ...) resolve at root level: `/{slug}` and `/tr/{slug}`. These two routes are registered **last** in `routes/web.php` with a reserved-slug lookahead (admin/blog/about/tr/feed/...) so every other route always wins — keep them at the bottom of the file, and register any new fixed route above them.
 - Article rows carry their own `locale` column and are queried with `Article::locale('en')` / `Article::locale('tr')`. The `translation_of` foreign key links a translated pair together (see Laravel Conventions above) — always set this when creating a translated counterpart of an existing article, so `BlogController::renderShow()` can surface the "other language" link.
@@ -216,6 +225,7 @@ No CI/CD pipeline or deploy script exists in this repo today (no `.github/workfl
 5. `php artisan migrate --force` **run manually via the deploy process/SSH — never via a public route** (see Security Rules; this replaces the two routes that must eventually be removed).
 6. `php artisan config:cache && php artisan route:cache && php artisan view:cache` for production performance.
 7. Confirm the scheduler cron (`* * * * * php artisan schedule:run`) is present on the server so `articles:publish-due` actually fires every 5 minutes — this is invisible if missing (articles just silently never auto-publish).
+8. The admin "Send newsletter" bulk action queues its mails (`QUEUE_CONNECTION=database`) — a queue worker (`php artisan queue:work`, or `queue:run` via cron) must be running on the server or queued newsletters sit in the `jobs` table forever. Verification emails are sent synchronously and do not need the worker. A real `MAIL_MAILER` (SMTP etc.) must be configured in the server `.env` — the repo default is `log`, which writes emails to the log file instead of sending them.
 Introducing a real CI/CD pipeline (even a minimal GitHub Actions workflow running Pint + `php artisan test` on push) is a recommended near-term improvement — see Future Development Guidelines.
 
 ## 19. SQLite Backup Strategy
@@ -256,7 +266,7 @@ Rules for any new image-handling work:
 
 ## 23. Testing Strategy
 
-**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The one real test file is `tests/Feature/PagesModuleTest.php`, covering the standalone Pages module (publish states, locale routing, blog/feed/sitemap isolation, Filament resource access). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
+**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access) and `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
 
 Priority order for adding real tests (highest-value first):
 1. `Article::scopePublished()` — feed it draft/scheduled-future/scheduled-due/published rows and assert visibility; this is the single most important piece of business logic in the app and the easiest to silently break.
