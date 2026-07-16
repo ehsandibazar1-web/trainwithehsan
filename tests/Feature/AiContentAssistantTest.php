@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Filament\Pages\AiContentAssistant;
 use App\Jobs\RunAiContentGeneration;
+use App\Livewire\AiAssistantPanel;
 use App\Models\AiGeneration;
 use App\Models\Article;
 use App\Models\InternalLinkSuggestion;
@@ -424,7 +424,7 @@ class AiContentAssistantTest extends TestCase
             ],
         ]);
 
-        $page = new AiContentAssistant;
+        $page = new AiAssistantPanel;
         $page->record = $source;
         $page->recordType = 'Article';
         $page->applyInternalLinkSuggestions($generation->id);
@@ -485,7 +485,7 @@ class AiContentAssistantTest extends TestCase
             'result' => 'A student passing the guard',
         ]);
 
-        $page = new AiContentAssistant;
+        $page = new AiAssistantPanel;
         $page->record = $article;
         $page->recordType = 'Article';
         $page->applyGeneration($generation->id);

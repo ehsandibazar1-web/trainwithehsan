@@ -52,6 +52,19 @@ class AiGeneration extends Model
             ->where('field', $field);
     }
 
+    // موازی scopeForField ولی بدون فیلتر روی field — پایه‌ی تب History (همه‌ی تولیدهای این
+    // رکورد، نه فقط ۵ تای آخرِ یک فیلد که همین حالا هم درون کارت هر فیلد نشان داده می‌شود)
+    public function scopeForRecord($query, string $contentType, int $contentId)
+    {
+        return $query->where('content_type', $contentType)
+            ->where('content_id', $contentId);
+    }
+
+    public function isCancellable(): bool
+    {
+        return in_array($this->status, ['queued', 'processing'], true);
+    }
+
     public function canApply(): bool
     {
         return $this->status === 'completed' && $this->result !== null;

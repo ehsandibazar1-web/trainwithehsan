@@ -21,8 +21,8 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 class ArticlesTable
 {
@@ -258,7 +258,7 @@ class ArticlesTable
 
                 Notification::make()
                     ->success()
-                    ->title('Schedule applied to ' . $records->count() . ' article(s)')
+                    ->title('Schedule applied to '.$records->count().' article(s)')
                     ->send();
             })
             ->deselectRecordsAfterCompletion();
@@ -283,7 +283,7 @@ class ArticlesTable
 
                 Notification::make()
                     ->success()
-                    ->title($count . ' article(s) moved back to Draft')
+                    ->title($count.' article(s) moved back to Draft')
                     ->send();
             })
             ->deselectRecordsAfterCompletion();

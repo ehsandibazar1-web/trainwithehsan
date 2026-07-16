@@ -22,7 +22,7 @@ class SeoController extends Controller
             ->orderByDesc('published_at')
             ->get();
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
         foreach ($staticUrls as $u) {
@@ -32,7 +32,7 @@ class SeoController extends Controller
         foreach ($articles as $article) {
             $loc = url($article->path());
             $lastmod = optional($article->updated_at)->toAtomString();
-            $xml .= "\n  <url><loc>{$loc}</loc>" . ($lastmod ? "<lastmod>{$lastmod}</lastmod>" : '') . '</url>';
+            $xml .= "\n  <url><loc>{$loc}</loc>".($lastmod ? "<lastmod>{$lastmod}</lastmod>" : '').'</url>';
         }
 
         $xml .= "\n</urlset>";
@@ -62,7 +62,7 @@ class SeoController extends Controller
 
         $esc = fn ($s) => htmlspecialchars($s ?? '', ENT_XML1 | ENT_QUOTES, 'UTF-8');
 
-        $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
+        $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
         $xml .= '<rss version="2.0"><channel>';
         $xml .= "\n  <title>{$esc($title)}</title>";
         $xml .= "\n  <link>{$link}</link>";

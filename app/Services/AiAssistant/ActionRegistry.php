@@ -48,6 +48,18 @@ class ActionRegistry
             'response_shape' => 'text',
             'instruction' => 'Write a standalone, quotable 1-2 sentence summary of this article, suitable for a blog listing card and an RSS feed description. Return ONLY the excerpt text — no quotes, no explanation.',
         ],
+        // بدنه‌ی مقاله/صفحه — تنها فیلدی که پاسخش HTML خام است، نه متن ساده/لیست؛ به‌جای «generate»
+        // فقط حالت‌های ویرایشیِ روی محتوای موجود دارد (این دستیار زمینه‌ی کافی برای نوشتن یک مقاله‌ی
+        // کامل از صفر ندارد) — همین چهار/پنج حالت است که «بهبود مقدمه»، «بازنویسی نتیجه‌گیری»،
+        // «کوتاه‌ترش کن» و مثال‌های مشابه در چت هوش مصنوعی را ممکن می‌کند
+        'body' => [
+            'label' => 'Article Body',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['improve', 'rewrite', 'expand', 'shorten', 'simplify'],
+            'response_shape' => 'html',
+            'max_tokens' => 4096,
+            'instruction' => 'Return the full replacement body content as clean, semantic HTML only — real <h2>/<h3> headings, <p> paragraphs, <ul>/<ol> lists where appropriate, no inline styles, no <script> tags. Preserve the overall structure and topic, just apply the requested change. Return ONLY the HTML — no markdown, no code fences, no explanation outside it.',
+        ],
         'faq' => [
             'label' => 'FAQ',
             'applicable_to' => ['Article'],
@@ -150,6 +162,20 @@ class ActionRegistry
             'response_shape' => 'text',
             'appliable' => false,
             'instruction' => 'Write a short, engaging caption (max 20 words) for this content\'s featured image, suitable to show underneath it. Return ONLY the caption — no quotes, no explanation.',
+        ],
+        // ترجمه‌ی کامل — بر خلاف بقیه‌ی فیلدها، مسیر تولیدش ContentAssistantService::generate()
+        // نیست (که یک مقدار متنی/لیستی برمی‌گرداند)، بلکه ::buildTranslationPayload() +
+        // App\Jobs\TranslateArticleDraft است که یک ردیف Article/Page کاملاً تازه می‌سازد؛
+        // 'modes' اینجا در واقع زبان مقصد است (en/tr)، نه یک حالت ویرایشی معمول. appliable=false
+        // چون «Apply» به این معنا وجود ندارد — نتیجه از قبل یک رکورد ذخیره‌شده‌ی مستقل است، نه
+        // چیزی که باید روی این رکورد نوشته شود؛ AiAssistantPanel::translate() این را صف می‌کند.
+        'translate' => [
+            'label' => 'Translate',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['en', 'tr'],
+            'response_shape' => 'text',
+            'appliable' => false,
+            'instruction' => 'Translate this content, preserving meaning, tone, and HTML structure.',
         ],
     ];
 
