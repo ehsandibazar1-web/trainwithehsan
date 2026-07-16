@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Models\Article;
 use App\Models\ContentPlan;
+use App\Models\KnowledgeEntry;
 use App\Models\Page;
 use App\Services\AiAssistant\Contracts\AiProvider;
 use App\Services\AiAssistant\Providers\AnthropicProvider;
@@ -45,6 +46,7 @@ class AppServiceProvider extends ServiceProvider
             'Article' => Article::class,
             'Page' => Page::class,
             'ContentPlan' => ContentPlan::class,
+            'KnowledgeEntry' => KnowledgeEntry::class,
         ]);
 
         // محدودیت نرخ فرم خبرنامه — جلوی ثبت‌نام انبوه/اسپم را می‌گیرد

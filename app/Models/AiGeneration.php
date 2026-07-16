@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
@@ -43,6 +44,13 @@ class AiGeneration extends Model
     public function restoredBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'restored_by');
+    }
+
+    // ورودی‌های دانشی که App\Services\KnowledgeBase\KnowledgeBaseService برای همین اجرا انتخاب
+    // کرد و به پرامپت اضافه شد — پایه‌ی نمایش «Knowledge used» در AiAssistantPanel
+    public function knowledgeEntries(): BelongsToMany
+    {
+        return $this->belongsToMany(KnowledgeEntry::class, 'ai_generation_knowledge_entry');
     }
 
     public function scopeForField($query, string $contentType, int $contentId, string $field)
