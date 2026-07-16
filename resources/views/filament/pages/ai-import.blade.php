@@ -86,12 +86,21 @@
             </div>
 
             @if($preview['image'])
-                <img src="{{ $preview['image'] }}" alt="Featured image preview" style="max-width:420px;width:100%;height:auto;border-radius:8px;margin-bottom:1rem">
+                <img src="{{ $preview['image'] }}" alt="{{ $preview['image_alt'] ?: 'Featured image preview' }}" style="max-width:420px;width:100%;height:auto;border-radius:8px;margin-bottom:.25rem">
+                <div style="font-size:.78rem;color:#888;margin-bottom:1rem">ALT: {{ $preview['image_alt'] ?: '— none given —' }}</div>
             @endif
 
             <h2 style="font-size:1.4rem;font-weight:700;margin-bottom:.5rem">{{ $preview['title'] }}</h2>
             @if($preview['excerpt'])
                 <p style="font-style:italic;color:#666;margin-bottom:1rem">{{ $preview['excerpt'] }}</p>
+            @endif
+
+            @if($preview['tags'] !== [])
+                <div style="display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:1rem">
+                    @foreach($preview['tags'] as $tag)
+                        <span style="background:rgba(217,187,117,.18);color:#8a6d1f;padding:2px 10px;border-radius:9999px;font-size:.75rem">{{ $tag }}</span>
+                    @endforeach
+                </div>
             @endif
 
             <div style="border:1px solid #e5e5e5;border-radius:8px;padding:1rem 1.25rem;line-height:1.9;font-size:.95rem;max-height:420px;overflow-y:auto">
@@ -108,13 +117,36 @@
                 @endforeach
             @endif
 
-            <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 .5rem">SEO</h3>
+            <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 .5rem">SEO &amp; social preview</h3>
             <div style="font-size:.85rem;line-height:2;color:#555">
                 <div><strong>Page title:</strong> {{ $preview['seo']['page_title'] }}</div>
                 <div><strong>Meta description:</strong> {{ $preview['seo']['meta_description'] }}</div>
+                @if($preview['seo']['og_title'])<div><strong>Open Graph title:</strong> {{ $preview['seo']['og_title'] }}</div>@endif
+                @if($preview['seo']['og_description'])<div><strong>Open Graph description:</strong> {{ $preview['seo']['og_description'] }}</div>@endif
                 <div><strong>URL:</strong> {{ $preview['seo']['canonical'] }}</div>
+                @if($preview['keywords'] !== [])<div><strong>Target keywords:</strong> {{ implode(', ', $preview['keywords']) }}</div>@endif
                 <div><strong>Structured data:</strong> Article schema{{ $preview['faqs'] !== [] ? ' + FAQ schema' : '' }} — generated automatically</div>
             </div>
+
+            @if($preview['internal_links'] !== [])
+                <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 .5rem">Internal link suggestions ({{ count($preview['internal_links']) }})</h3>
+                <p style="font-size:.8rem;color:#888;margin-bottom:.5rem">Added as pending suggestions in the Internal Linking Center once you import.</p>
+                <div style="font-size:.85rem;line-height:1.9;color:#555">
+                    @foreach($preview['internal_links'] as $link)
+                        <div>→ <strong>{{ $link['target'] }}</strong>@if($link['anchor_text']) — "{{ $link['anchor_text'] }}"@endif @if($link['reason'])<span style="color:#999">({{ $link['reason'] }})</span>@endif</div>
+                    @endforeach
+                </div>
+            @endif
+
+            @if($preview['external_links'] !== [])
+                <h3 style="font-size:1.05rem;font-weight:700;margin:1.25rem 0 .5rem">External link suggestions ({{ count($preview['external_links']) }})</h3>
+                <p style="font-size:.8rem;color:#888;margin-bottom:.5rem">Reference only — not stored anywhere; paste into the body manually if you want to use one.</p>
+                <div style="font-size:.85rem;line-height:1.9;color:#555">
+                    @foreach($preview['external_links'] as $link)
+                        <div>{{ $link['url'] }} @if($link['broken'])<span style="color:#b91c1c">(unreachable)</span>@endif @if($link['anchor_text']) — "{{ $link['anchor_text'] }}"@endif</div>
+                    @endforeach
+                </div>
+            @endif
         </x-filament::section>
     @endif
 
@@ -122,9 +154,10 @@
     <x-filament::section collapsible collapsed>
         <x-slot name="heading">📋 Format guide — what to ask the AI to produce</x-slot>
         <p style="font-size:.85rem;color:#555;margin-bottom:.75rem">
-            Give your AI (Claude, ChatGPT, …) this JSON structure. Only <strong>title</strong> and <strong>content</strong> are required — everything else is optional.
-            Markdown with a front-matter header (and an optional <code>## FAQ</code> section at the end) is accepted too.
+            Five formats are auto-detected — <strong>JSON</strong>, <strong>Markdown</strong>, <strong>HTML</strong>, <strong>XML</strong>, and a custom <code>[[FIELD]]</code> marker format. Only <strong>title</strong> and <strong>content</strong> are required in any of them — everything else is optional. Sections with no field to store yet (Schema, Image Caption, Call To Action, Twitter Card, Featured Image Prompt) are still detected and shown in the mapping report, but nothing is saved for them.
         </p>
+
+        <p style="font-size:.8rem;font-weight:600;color:#333;margin-bottom:.35rem">JSON</p>
 @verbatim
 <pre style="background:rgba(0,0,0,.05);border-radius:8px;padding:1rem;font-size:.78rem;overflow-x:auto;line-height:1.7">{
   "language": "en",
@@ -133,15 +166,61 @@
   "excerpt": "One or two standalone sentences used as the meta description.",
   "content": "&lt;p&gt;Full article body in clean HTML (or Markdown with \"content_format\": \"markdown\").&lt;/p&gt;",
   "category": "Self-Defense",
+  "tags": ["beginner", "self-defense"],
   "featured_image": "https://example.com/image.jpg  (or an existing media path like articles/photo.jpg)",
+  "image_alt": "A student practicing a hip throw",
+  "seo": {
+    "title": "SEO title override",
+    "meta_description": "Search-result description.",
+    "keywords": ["guard passing", "bjj basics"]
+  },
+  "og": { "title": "Social share title", "description": "Social share description." },
   "faq": [
     {"question": "A question?", "answer": "Its answer."}
+  ],
+  "internal_links": [
+    {"target": "slug-of-an-existing-article", "anchor_text": "guard passing", "reason": "related technique"}
+  ],
+  "external_links": [
+    {"target": "https://example.com/source", "anchor_text": "the study", "reason": "supporting reference"}
   ],
   "publish_status": "draft | scheduled | published",
   "publish_date": "2026-08-01 09:00",
   "translation_of": "slug-of-the-other-language-version",
   "provider": "claude"
 }</pre>
+@endverbatim
+
+        <p style="font-size:.8rem;font-weight:600;color:#333;margin:1rem 0 .35rem">Markdown</p>
+        <p style="font-size:.82rem;color:#555;margin-bottom:.5rem">A <code>---</code> front-matter block of <code>field: value</code> lines, then the body, with an optional <code>## FAQ</code> section (using <code>###</code> per question) at the end.</p>
+
+        <p style="font-size:.8rem;font-weight:600;color:#333;margin:1rem 0 .35rem">HTML</p>
+        <p style="font-size:.82rem;color:#555;margin-bottom:.5rem">Either a full document (its <code>&lt;title&gt;</code>/<code>&lt;meta name="description"&gt;</code>/<code>&lt;meta property="og:*"&gt;</code>/<code>&lt;body&gt;</code> are read automatically), or a plain fragment with an optional leading <code>&lt;!-- field: value --&gt;</code> comment block for metadata — same <code>field: value</code> syntax as Markdown's front matter.</p>
+
+        <p style="font-size:.8rem;font-weight:600;color:#333;margin:1rem 0 .35rem">XML</p>
+        <p style="font-size:.82rem;color:#555;margin-bottom:.5rem">A root <code>&lt;article&gt;</code> element with child tags matching the JSON field names above (<code>&lt;title&gt;</code>, <code>&lt;seo&gt;&lt;title&gt;/&lt;meta_description&gt;&lt;/seo&gt;</code>, <code>&lt;tags&gt;&lt;tag&gt;...&lt;/tag&gt;&lt;/tags&gt;</code>, <code>&lt;faq&gt;&lt;item&gt;&lt;question&gt;/&lt;answer&gt;&lt;/item&gt;&lt;/faq&gt;</code>, etc.).</p>
+
+        <p style="font-size:.8rem;font-weight:600;color:#333;margin:1rem 0 .35rem">Custom <code>[[FIELD]]</code> markers</p>
+        <p style="font-size:.82rem;color:#555;margin-bottom:.5rem">For AI tools that won't reliably produce JSON/XML — each field is a bracketed marker on its own line, followed by its value until the next marker.</p>
+@verbatim
+<pre style="background:rgba(0,0,0,.05);border-radius:8px;padding:1rem;font-size:.78rem;overflow-x:auto;line-height:1.7">[[TITLE]]
+Article title
+
+[[CONTENT]]
+&lt;p&gt;Full article body in HTML.&lt;/p&gt;
+
+[[TAGS]]
+beginner, self-defense
+
+[[SEO_TITLE]]
+SEO title override
+
+[[FAQ]]
+Q: A question?
+A: Its answer.
+
+[[STATUS]]
+draft</pre>
 @endverbatim
     </x-filament::section>
 
@@ -163,6 +242,7 @@
                             <th style="padding:.5rem .6rem">Lang</th>
                             <th style="padding:.5rem .6rem">FAQs</th>
                             <th style="padding:.5rem .6rem">Images</th>
+                            <th style="padding:.5rem .6rem"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -187,6 +267,11 @@
                             <td style="padding:.45rem .6rem">{{ strtoupper($log->locale ?? '') ?: '—' }}</td>
                             <td style="padding:.45rem .6rem">{{ $log->faq_count }}</td>
                             <td style="padding:.45rem .6rem">{{ $log->image_count }}</td>
+                            <td style="padding:.45rem .6rem;white-space:nowrap">
+                                @if($log->canRollBack())
+                                    <button type="button" wire:click="rollbackLog({{ $log->id }})" wire:confirm="Delete the imported article &quot;{{ $log->article_title }}&quot;? This cannot be undone." style="color:#b91c1c;background:none;border:none;cursor:pointer;font-size:.78rem;text-decoration:underline">Roll back</button>
+                                @endif
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>

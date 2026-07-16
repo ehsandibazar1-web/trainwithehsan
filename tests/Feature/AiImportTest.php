@@ -266,7 +266,10 @@ class AiImportTest extends TestCase
         $this->assertSame('failed', ImportLog::first()->status);
     }
 
-    public function test_tags_and_seo_extras_warn_but_do_not_block(): void
+    // این تست قبلاً بررسی می‌کرد که tags/og نادیده گرفته می‌شوند — حالا که Tag واقعی و ستون‌های
+    // og_title/og_description وجود دارند (One Click Publish)، این دو دیگر باید mapped باشند؛
+    // canonical/robots/schema همچنان هیچ جای ذخیره‌ای در این سایت ندارند، پس auto می‌مانند
+    public function test_tags_and_seo_extras_are_now_mapped_while_canonical_robots_schema_stay_automatic(): void
     {
         $analysis = $this->service()->analyze($this->validJson([
             'tags' => ['a', 'b'],
@@ -277,8 +280,8 @@ class AiImportTest extends TestCase
         ]));
 
         $this->assertSame([], $analysis['errors']);
-        $this->assertArrayHasKey('tags', $analysis['mapping']['skipped']);
-        $this->assertArrayHasKey('og', $analysis['mapping']['auto']);
+        $this->assertArrayHasKey('tags', $analysis['mapping']['mapped']);
+        $this->assertArrayHasKey('og.title', $analysis['mapping']['mapped']);
         $this->assertArrayHasKey('canonical', $analysis['mapping']['auto']);
         $this->assertArrayHasKey('robots', $analysis['mapping']['auto']);
         $this->assertArrayHasKey('schema', $analysis['mapping']['auto']);
