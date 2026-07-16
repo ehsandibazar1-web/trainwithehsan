@@ -37,6 +37,7 @@ app/
     Resources/Articles/                     ArticleResource + Schemas/ArticleForm.php, Tables/ArticlesTable.php, Pages/
     Resources/Pages/                        PageResource (standalone site pages: privacy, terms, FAQ, ...) — same layout as Articles
     Resources/NewsletterSubscribers/        NewsletterSubscriberResource — search/filters, CSV export, bulk resend verification, bulk send (queued)
+    Pages/AiImport.php                       Paste-area importer for AI-generated articles (JSON/Markdown → validate → preview → import)
     Pages/EditorialCalendar.php              Drag-and-drop article scheduling calendar
     Pages/HomepageSettings.php               Homepage content-block editor (per locale)
     Pages/AboutPageSettings.php              About page content-block editor (hero, stats, certificates, gallery, timeline, CTA, SEO — per locale)
@@ -54,16 +55,18 @@ app/
     NewsletterVerificationMail.php           Double-opt-in confirmation email (per-subscriber locale)
     NewsletterCampaignMail.php               Queued newsletter email — used by the admin bulk send, base for future campaigns
   Models/
-    Article.php                              Bilingual article model, translation self-relation, published/locale scopes
+    Article.php                              Bilingual article model, translation self-relation, published/locale scopes, faqs JSON column (per-article FAQ + FAQPage schema)
     Page.php                                 Standalone-page model — same bilingual two-row shape as Article, fully separate from blog
     NewsletterSubscriber.php                 Newsletter subscriber — double opt-in (verified_at), per-row verify/unsubscribe tokens, locale
+    ImportLog.php                            Audit row per AI-import attempt (user, provider, format, result, counts)
     SiteSetting.php                          Generic key/value store — the ad hoc CMS backend for homepage/about-page/menu content
     Media.php                                 Metadata record for uploaded media (name/path/url/mime/size)
     User.php                                  Default Laravel auth user (admin login)
+  Services/ArticleImport/ArticleImportService.php   UI-independent import pipeline (parse → validate → map → import) — the AiImport page calls it today; a future secure API must reuse it unchanged
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles, media, site_settings, activity_log, pages, newsletter_subscribers (project-specific, dated 2026-07-xx)
+  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs column), media, site_settings, activity_log, pages, newsletter_subscribers, import_logs (project-specific, dated 2026-07-xx)
 lang/
   en/newsletter.php, tr/newsletter.php       ALL user-facing newsletter strings (form messages, result pages, emails) — the only lang files in the project
   factories/, seeders/
@@ -98,7 +101,8 @@ Key duplication to be aware of: **every public-facing view and its Turkish count
 ## 6. Filament Conventions
 
 - Filament v4 resources live under `app/Filament/Resources/{Name}/` with `Schemas/{Name}Form.php` for the form definition and `Tables/{Name}sTable.php` for the table definition, plus a `Pages/` subfolder for List/Create/Edit pages — follow `ArticleResource`'s layout exactly for any new resource.
-- Custom (non-CRUD) admin screens are Filament **Pages**, not Resources — `EditorialCalendar`, `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, `FooterSettings`, `ActivityLogPage` are all `Pages` with a paired Blade view under `resources/views/filament/pages/`. Use this pattern for any new admin screen that isn't a straightforward CRUD resource.
+- Custom (non-CRUD) admin screens are Filament **Pages**, not Resources — `EditorialCalendar`, `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, `FooterSettings`, `ActivityLogPage`, `AiImport` are all `Pages` with a paired Blade view under `resources/views/filament/pages/`. Use this pattern for any new admin screen that isn't a straightforward CRUD resource.
+- **AI Import** (`AiImport` page + `App\Services\ArticleImport\ArticleImportService`): imports AI-generated articles from pasted JSON or Markdown-with-front-matter. All parse/validate/map/persist logic lives in the service, NOT the page — a future secure API endpoint must call the same `analyze()`/`import()` methods rather than duplicating any of it. `analyze()` never writes; `import()` is the only write path and always records an `ImportLog` row (success or failure). The importer maps onto existing article fields only (title/slug/excerpt/body/category/faqs/image_path/status/published_at/translation_of) and reuses the existing scheduling, FAQ, SEO, media and activity-log systems; format fields with no CMS home (tags, per-article og/canonical/robots/schema) are accepted but reported as skipped/auto-handled in the mapping report — do not add a parallel scheduling/SEO path here. Extending the accepted format = one row in `ArticleImportService::ALIASES` plus a mapping branch.
 - `HomepageSettings`, `AboutPageSettings`, `MenuSettings`, and `FooterSettings` manually decode/encode JSON and normalize Filament's `FileUpload` return shape (e.g. `array_values(array_filter($value))[0] ?? null`) in `mount()`/`save()`. This is brittle by nature (tied to Filament's current return shape) — if a Filament upgrade changes `FileUpload`'s value shape, check these files first.
 - Layout-level CMS data (header menu `menu.{locale}.items`, footer `footer.{locale}.*`) is loaded **inline in the master layouts** via `@php` + `SiteSetting` (the footer block sits before the `<style>` tag because the background image is used inside the CSS) — not via controllers or view composers. Follow that in-layout pattern for any future layout-level content.
 - Repeater items that need manual ordering (e.g. `AboutPageSettings`'s `certificates`/`gallery`/`timeline`) get an explicit numeric `sort_order` field alongside Filament's built-in `->reorderable()` drag handle, and the consuming controller sorts by it (`BlogController::sortBySortOrder()`) before passing data to the view. Reuse this pattern — plain numeric field + a small `usort` in the controller — rather than relying on array order alone, since admins may want to reorder without dragging.
@@ -266,7 +270,7 @@ Rules for any new image-handling work:
 
 ## 23. Testing Strategy
 
-**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access) and `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
+**Current state: almost no test coverage.** `tests/Feature/ExampleTest.php` asserts `/` returns HTTP 200, and `tests/Unit/ExampleTest.php` asserts `true === true` — both are the unmodified Laravel scaffold. The real test files are `tests/Feature/PagesModuleTest.php` (standalone Pages module: publish states, locale routing, blog/feed/sitemap isolation, Filament resource access), `tests/Feature/NewsletterTest.php` (subscribe/verify/unsubscribe flows, honeypot + time-gate bot defenses, rate limiting, locale handling, admin resource) and `tests/Feature/AiImportTest.php` (AI import: JSON/Markdown parsing, validation errors, field mapping, scheduling/draft/published paths, image download into the media library, import logging, admin page access). None of the following are tested at all today: `Article::scopePublished()` time-based logic, `BlogController` (any of the public methods, either locale), `SeoController` sitemap/RSS XML correctness, `PreviewController`'s signed-URL gate, `PublishDueArticles`, or the Article Filament resource. Note: `ExampleTest` currently fails when run (it hits `/` against an unmigrated in-memory DB) — pre-existing, run new tests by file path.
 
 Priority order for adding real tests (highest-value first):
 1. `Article::scopePublished()` — feed it draft/scheduled-future/scheduled-due/published rows and assert visibility; this is the single most important piece of business logic in the app and the easiest to silently break.
