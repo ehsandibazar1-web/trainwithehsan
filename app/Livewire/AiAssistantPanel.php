@@ -6,6 +6,7 @@ use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\Pages\PageResource;
 use App\Jobs\ProcessAiChatMessage;
 use App\Jobs\RunAiContentGeneration;
+use App\Jobs\TranslateArticleDraft;
 use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
 use App\Models\Article;
@@ -260,6 +261,31 @@ class AiAssistantPanel extends Component
             ->count();
 
         return max(0, $recentTotal - $pending).' of '.$recentTotal.' done';
+    }
+
+    // ============ Translate (full draft, not a text suggestion — see App\Jobs\TranslateArticleDraft) ============
+
+    public function translate(string $targetLocale): void
+    {
+        $generation = AiGeneration::create([
+            'content_type' => $this->recordType,
+            'content_id' => $this->record->id,
+            'field' => 'translate',
+            'mode' => $targetLocale,
+            'provider' => config('services.anthropic.driver', 'anthropic'),
+            'status' => 'queued',
+        ]);
+
+        TranslateArticleDraft::dispatch($this->recordType, $this->record->id, $targetLocale, $generation->id);
+
+        $this->notifyQueued('Translation to '.strtoupper($targetLocale));
+    }
+
+    public function getTranslationsProperty(): Collection
+    {
+        return AiGeneration::forField($this->recordType, $this->record->id, 'translate')
+            ->latest()
+            ->get();
     }
 
     private function queueGeneration(string $field, string $mode): void

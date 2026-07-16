@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Jobs\ProcessAiChatMessage;
 use App\Jobs\RunAiContentGeneration;
+use App\Jobs\TranslateArticleDraft;
 use App\Livewire\AiAssistantPanel;
 use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
@@ -14,6 +15,7 @@ use App\Services\AiAssistant\ActionRegistry;
 use App\Services\AiAssistant\ContentAssistantService;
 use App\Services\AiAssistant\ContentReviewService;
 use App\Services\AiAssistant\DiffService;
+use App\Services\ArticleImport\ArticleImportService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\Http;
@@ -506,5 +508,172 @@ class AiAssistantPanelTest extends TestCase
 
         AiChatMessage::create(['content_type' => 'Article', 'content_id' => $article->id, 'role' => 'assistant', 'message' => 'Hello!']);
         $this->assertFalse($this->makePanel($article)->isChatPending);
+    }
+
+    // ============ ContentAssistantService::buildTranslationPayload (Phase R5, Translate) ============
+
+    public function test_build_translation_payload_for_an_article_includes_excerpt_and_faqs(): void
+    {
+        $article = $this->makeArticle([
+            'excerpt' => 'A short summary.',
+            'faqs' => [['question' => 'Q1', 'answer' => 'A1']],
+        ]);
+        $this->fakeAnthropicText(json_encode([
+            'title' => 'Temel Muhafaza Geçişi', 'body' => '<p>Muhafaza geçişi temel bir teknik.</p>',
+            'excerpt' => 'Kısa bir özet.', 'faqs' => [['question' => 'S1', 'answer' => 'C1']],
+        ]));
+
+        $result = app(ContentAssistantService::class)->buildTranslationPayload($article, 'tr');
+
+        $this->assertSame('Temel Muhafaza Geçişi', $result['title']);
+        $this->assertSame('Kısa bir özet.', $result['excerpt']);
+        $this->assertSame([['question' => 'S1', 'answer' => 'C1']], $result['faqs']);
+    }
+
+    public function test_build_translation_payload_for_a_page_never_includes_excerpt_or_faqs(): void
+    {
+        $page = $this->makePage();
+        $this->fakeAnthropicText(json_encode([
+            'title' => 'Gizlilik Politikası', 'body' => '<p>İçerik.</p>',
+            'excerpt' => 'This should be ignored', 'faqs' => [['question' => 'Q', 'answer' => 'A']],
+        ]));
+
+        $result = app(ContentAssistantService::class)->buildTranslationPayload($page, 'tr');
+
+        $this->assertSame('Gizlilik Politikası', $result['title']);
+        $this->assertNull($result['excerpt']);
+        $this->assertNull($result['faqs']);
+    }
+
+    public function test_build_translation_payload_throws_on_a_malformed_response(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText('not json at all');
+
+        $this->expectException(\RuntimeException::class);
+
+        app(ContentAssistantService::class)->buildTranslationPayload($article, 'tr');
+    }
+
+    // ============ TranslateArticleDraft job (Phase R5) ============
+
+    public function test_translate_article_draft_creates_a_linked_draft_article(): void
+    {
+        $article = $this->makeArticle(['status' => 'published']);
+        $this->fakeAnthropicText(json_encode([
+            'title' => 'Translated Title', 'body' => '<p>Translated body.</p>', 'excerpt' => null, 'faqs' => [],
+        ]));
+
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'translate', 'mode' => 'tr', 'status' => 'queued',
+        ]);
+
+        (new TranslateArticleDraft('Article', $article->id, 'tr', $generation->id))
+            ->handle(app(ContentAssistantService::class), app(ArticleImportService::class));
+
+        $generation->refresh();
+        $this->assertSame('completed', $generation->status);
+
+        $translated = Article::find($generation->result['id']);
+        $this->assertNotNull($translated);
+        $this->assertSame('tr', $translated->locale);
+        $this->assertSame('draft', $translated->status);
+        $this->assertSame($article->id, $translated->translation_of);
+        $this->assertSame('Translated Title', $translated->title);
+    }
+
+    public function test_translate_article_draft_creates_a_linked_draft_page(): void
+    {
+        $page = $this->makePage(['status' => 'published']);
+        $this->fakeAnthropicText(json_encode(['title' => 'Çevrilmiş Başlık', 'body' => '<p>Çevrilmiş içerik.</p>']));
+
+        $generation = AiGeneration::create([
+            'content_type' => 'Page', 'content_id' => $page->id, 'field' => 'translate', 'mode' => 'tr', 'status' => 'queued',
+        ]);
+
+        (new TranslateArticleDraft('Page', $page->id, 'tr', $generation->id))
+            ->handle(app(ContentAssistantService::class), app(ArticleImportService::class));
+
+        $generation->refresh();
+        $this->assertSame('completed', $generation->status);
+
+        $translated = Page::find($generation->result['id']);
+        $this->assertNotNull($translated);
+        $this->assertSame('tr', $translated->locale);
+        $this->assertSame('draft', $translated->status);
+        $this->assertSame($page->id, $translated->translation_of);
+    }
+
+    public function test_translate_article_draft_fails_gracefully_when_the_ai_response_is_unusable(): void
+    {
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText('not json');
+
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'translate', 'mode' => 'tr', 'status' => 'queued',
+        ]);
+
+        (new TranslateArticleDraft('Article', $article->id, 'tr', $generation->id))
+            ->handle(app(ContentAssistantService::class), app(ArticleImportService::class));
+
+        $generation->refresh();
+        $this->assertSame('failed', $generation->status);
+        $this->assertNotNull($generation->error);
+        $this->assertSame(1, Article::count());
+    }
+
+    public function test_translate_article_draft_fails_gracefully_when_the_source_no_longer_exists(): void
+    {
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => 999999, 'field' => 'translate', 'mode' => 'tr', 'status' => 'queued',
+        ]);
+
+        (new TranslateArticleDraft('Article', 999999, 'tr', $generation->id))
+            ->handle(app(ContentAssistantService::class), app(ArticleImportService::class));
+
+        $generation->refresh();
+        $this->assertSame('failed', $generation->status);
+        $this->assertStringContainsString('no longer exists', $generation->error);
+    }
+
+    // ============ AiAssistantPanel::translate() + chat translate intent (Phase R5) ============
+
+    public function test_panel_translate_queues_a_generation_and_dispatches_the_job(): void
+    {
+        Bus::fake();
+
+        $article = $this->makeArticle();
+        $this->makePanel($article)->translate('tr');
+
+        $generation = AiGeneration::where('content_id', $article->id)->sole();
+        $this->assertSame('translate', $generation->field);
+        $this->assertSame('tr', $generation->mode);
+
+        Bus::assertDispatched(TranslateArticleDraft::class);
+    }
+
+    public function test_process_chat_message_dispatches_translate_job_for_translate_intent(): void
+    {
+        Bus::fake([TranslateArticleDraft::class]);
+
+        $article = $this->makeArticle();
+        $this->fakeAnthropicText(json_encode([
+            'intent' => 'translate', 'target_locale' => 'tr', 'reply' => 'Preparing a Turkish draft now.',
+        ]));
+
+        $userMessage = AiChatMessage::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'role' => 'user', 'message' => 'Translate to Turkish',
+        ]);
+
+        (new ProcessAiChatMessage('Article', $article->id, $userMessage->id))->handle(app(ContentAssistantService::class));
+
+        $generation = AiGeneration::where('content_id', $article->id)->sole();
+        $this->assertSame('translate', $generation->field);
+        $this->assertSame('tr', $generation->mode);
+
+        $assistantMessage = AiChatMessage::where('role', 'assistant')->sole();
+        $this->assertSame($generation->id, $assistantMessage->related_generation_id);
+
+        Bus::assertDispatched(TranslateArticleDraft::class);
     }
 }

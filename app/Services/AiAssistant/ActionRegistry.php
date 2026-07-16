@@ -163,6 +163,20 @@ class ActionRegistry
             'appliable' => false,
             'instruction' => 'Write a short, engaging caption (max 20 words) for this content\'s featured image, suitable to show underneath it. Return ONLY the caption — no quotes, no explanation.',
         ],
+        // ترجمه‌ی کامل — بر خلاف بقیه‌ی فیلدها، مسیر تولیدش ContentAssistantService::generate()
+        // نیست (که یک مقدار متنی/لیستی برمی‌گرداند)، بلکه ::buildTranslationPayload() +
+        // App\Jobs\TranslateArticleDraft است که یک ردیف Article/Page کاملاً تازه می‌سازد؛
+        // 'modes' اینجا در واقع زبان مقصد است (en/tr)، نه یک حالت ویرایشی معمول. appliable=false
+        // چون «Apply» به این معنا وجود ندارد — نتیجه از قبل یک رکورد ذخیره‌شده‌ی مستقل است، نه
+        // چیزی که باید روی این رکورد نوشته شود؛ AiAssistantPanel::translate() این را صف می‌کند.
+        'translate' => [
+            'label' => 'Translate',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['en', 'tr'],
+            'response_shape' => 'text',
+            'appliable' => false,
+            'instruction' => 'Translate this content, preserving meaning, tone, and HTML structure.',
+        ],
     ];
 
     public static function all(): array

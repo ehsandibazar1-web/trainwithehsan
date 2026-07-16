@@ -12,10 +12,11 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
 // یک تماس API هزینه‌بر است — مثل RunAiContentGeneration فقط یک‌بار تلاش می‌کند، نه retry خودکار.
-// پیام کاربر را طبقه‌بندی می‌کند (ContentAssistantService::classifyIntent) و بر اساس نتیجه یا یک
-// AiGeneration معمولی صف می‌کند (همان RunAiContentGeneration موجود، نه یک مسیر تولید جدید)، یا صرفاً
-// یک پاسخ گفتگویی assistant می‌نویسد. Translate هنوز اینجا سیم‌کشی نشده — تا تکمیل آن (بخش Translate)
-// فقط با یک پاسخ متنی جواب می‌دهد، بدون صف کردن چیزی.
+// پیام کاربر را طبقه‌بندی می‌کند (ContentAssistantService::classifyIntent) و بر اساس نتیجه یکی از
+// سه کار را می‌کند: یک AiGeneration معمولی صف می‌کند (همان RunAiContentGeneration موجود)، یک
+// ترجمه‌ی کامل صف می‌کند (همان TranslateArticleDraft که AiAssistantPanel::translate() هم استفاده
+// می‌کند)، یا صرفاً یک پاسخ گفتگویی assistant می‌نویسد — در هر سه حالت هیچ مسیر تولید جدیدی
+// ساخته نمی‌شود، فقط همان‌هایی که از قبل موجودند صدا زده می‌شوند.
 class ProcessAiChatMessage implements ShouldQueue
 {
     use Queueable;
@@ -72,7 +73,23 @@ class ProcessAiChatMessage implements ShouldQueue
             return;
         }
 
-        // intent=translate تا سیم‌کشی کامل (بخش Translate) فقط پاسخ می‌دهد، چیزی صف نمی‌کند
+        if ($classification['intent'] === 'translate') {
+            $generation = AiGeneration::create([
+                'content_type' => $this->contentType,
+                'content_id' => $this->contentId,
+                'field' => 'translate',
+                'mode' => $classification['target_locale'],
+                'provider' => config('services.anthropic.driver', 'anthropic'),
+                'status' => 'queued',
+            ]);
+
+            TranslateArticleDraft::dispatch($this->contentType, $this->contentId, $classification['target_locale'], $generation->id);
+
+            $this->reply($classification['reply'], $generation->id);
+
+            return;
+        }
+
         $this->reply($classification['reply']);
     }
 

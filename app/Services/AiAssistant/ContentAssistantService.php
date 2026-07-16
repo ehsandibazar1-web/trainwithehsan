@@ -161,6 +161,83 @@ class ContentAssistantService
         ];
     }
 
+    /**
+     * محتوای قابل‌ترجمه‌ی رکورد را به زبان مقصد برمی‌گرداند — فقط خودِ محتوا (title/body و برای
+     * Article هم excerpt/faqs)، نه یک payload کامل آماده‌ی import. متادیتای ثابت (locale،
+     * translation_of، status=draft، تصویر، دسته) عمداً اینجا ساخته نمی‌شود — App\Jobs\TranslateArticleDraft
+     * آن را از روی خودِ رکورد اصلی می‌سازد تا هوش مصنوعی هرگز مسئول تصمیم‌های غیرمحتوایی
+     * (مثل وضعیت انتشار) نباشد.
+     *
+     * @return array{title: string, body: string, excerpt: ?string, faqs: ?array}
+     */
+    public function buildTranslationPayload(Model $record, string $targetLocale): array
+    {
+        $modelType = $record instanceof Article ? 'Article' : 'Page';
+        $languageName = $targetLocale === 'tr' ? 'Turkish' : 'English';
+
+        $raw = $this->provider->respond(
+            $this->buildTranslateSystemPrompt($languageName, $modelType),
+            $this->buildTranslateUserPrompt($record),
+            [],
+            ['max_tokens' => 6000],
+        );
+
+        return $this->parseTranslationResponse($raw, $modelType);
+    }
+
+    private function buildTranslateSystemPrompt(string $languageName, string $modelType): string
+    {
+        $fields = $modelType === 'Article'
+            ? '"title", "body" (clean semantic HTML), "excerpt" (a standalone 1-2 sentence summary), and "faqs" (an array of {"question","answer"} objects — an empty array if there were none in the source)'
+            : '"title" and "body" (clean semantic HTML)';
+
+        return "You are a professional translator for a Brazilian Jiu-Jitsu / self-defense training website. Translate the given content into {$languageName}, preserving meaning, tone, and HTML structure (headings, lists, paragraphs) exactly — do not add, remove, or summarize sections. Return ONLY a JSON object (no markdown fences, no other text) with these keys: {$fields}.";
+    }
+
+    private function buildTranslateUserPrompt(Model $record): string
+    {
+        $lines = [
+            'Title: '.$record->title,
+            'Body (HTML):'."\n".(string) $record->body,
+        ];
+
+        if ($record instanceof Article) {
+            if (filled($record->excerpt)) {
+                $lines[] = 'Excerpt: '.$record->excerpt;
+            }
+
+            if (! empty($record->faqs)) {
+                $lines[] = 'FAQs: '.json_encode($record->faqs);
+            }
+        }
+
+        return implode("\n\n", $lines);
+    }
+
+    /**
+     * @return array{title: string, body: string, excerpt: ?string, faqs: ?array}
+     */
+    private function parseTranslationResponse(string $raw, string $modelType): array
+    {
+        $stripped = preg_replace('/^```(json)?|```$/m', '', trim($raw));
+        $decoded = json_decode(trim($stripped), true);
+
+        if (! is_array($decoded) || blank($decoded['title'] ?? null) || blank($decoded['body'] ?? null)) {
+            throw new \RuntimeException('The AI did not return a usable translation — raw response: '.mb_substr($raw, 0, 300));
+        }
+
+        $faqs = $modelType === 'Article' && is_array($decoded['faqs'] ?? null) && $decoded['faqs'] !== []
+            ? $decoded['faqs']
+            : null;
+
+        return [
+            'title' => trim($decoded['title']),
+            'body' => trim($decoded['body']),
+            'excerpt' => $modelType === 'Article' && filled($decoded['excerpt'] ?? null) ? trim($decoded['excerpt']) : null,
+            'faqs' => $faqs,
+        ];
+    }
+
     private function buildSystemPrompt(array $definition, string $mode): string
     {
         $modeInstruction = match ($mode) {

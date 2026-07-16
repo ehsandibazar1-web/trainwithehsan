@@ -426,6 +426,33 @@
                     @endif
                 </div>
             @endif
+
+            <div class="ai-ca-card">
+                <h3>Translate</h3>
+                <div class="ai-ca-modes">
+                    @if ($record->locale !== 'en')
+                        <button type="button" class="ai-ca-mode-btn" wire:click="translate('en')" wire:loading.attr="disabled" wire:confirm="Create a new English draft translated from this {{ strtolower($recordType) }}?">Translate to English</button>
+                    @endif
+                    @if ($record->locale !== 'tr')
+                        <button type="button" class="ai-ca-mode-btn" wire:click="translate('tr')" wire:loading.attr="disabled" wire:confirm="Create a new Turkish draft translated from this {{ strtolower($recordType) }}?">Translate to Turkish</button>
+                    @endif
+                </div>
+
+                @forelse ($this->translations as $translation)
+                    <div class="ai-ca-history-item">
+                        @if (in_array($translation->status, ['queued', 'processing']))
+                            <span>{{ strtoupper($translation->mode) }} draft — {{ $translation->status }}…</span>
+                        @elseif ($translation->status === 'failed')
+                            <span style="color:#b91c1c">{{ strtoupper($translation->mode) }} draft failed: {{ $translation->error }}</span>
+                        @elseif ($translation->status === 'completed')
+                            <span>{{ strtoupper($translation->mode) }} draft ready — "{{ $translation->result['title'] }}"</span>
+                            <a href="{{ $translation->result['edit_url'] }}" style="color:#2563eb">Open draft</a>
+                        @endif
+                    </div>
+                @empty
+                    <div class="ai-ca-current empty">No translations yet — creates a full linked draft article/page, saved for review, never published automatically.</div>
+                @endforelse
+            </div>
         </div>
         @endif
     </div>
