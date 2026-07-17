@@ -109,11 +109,11 @@ class HomepageSettings extends Page implements HasForms
                     ->schema(self::membersFields('en'))
                     ->collapsed(),
                 Section::make('English — Instagram Showcase')
-                    ->description('The embedded Instagram post/reel shown next to the text on the homepage. Leave "Enable" off to show a simple fallback card instead.')
+                    ->description('The embedded Instagram post/reel shown next to the text on the homepage.')
                     ->schema(self::instaShowcaseFields('en', 'insta_showcase', 'insta_embed_url', includeProfileUrl: true))
                     ->collapsed(),
                 Section::make('English — Instagram Showcase — Row 2 (optional)')
-                    ->description('An optional second Instagram row below the first — for a different post, Reel, or account. Off by default; nothing changes on the homepage until you enable it.')
+                    ->description('An optional second Instagram row below the first — for a different post, Reel, or account. Add an Embed URL or Fallback Image below to make it appear; nothing changes on the homepage until you do.')
                     ->schema(self::instaShowcaseFields('en', 'insta_showcase2', alwaysVisible: false))
                     ->collapsed(),
 
@@ -133,11 +133,11 @@ class HomepageSettings extends Page implements HasForms
                     ->schema(self::membersFields('tr'))
                     ->collapsed(),
                 Section::make('Türkçe — Instagram Showcase')
-                    ->description('The embedded Instagram post/reel shown next to the text on the homepage. Leave "Enable" off to show a simple fallback card instead.')
+                    ->description('The embedded Instagram post/reel shown next to the text on the homepage.')
                     ->schema(self::instaShowcaseFields('tr', 'insta_showcase', 'insta_embed_url', includeProfileUrl: true))
                     ->collapsed(),
                 Section::make('Türkçe — Instagram Showcase — Row 2 (optional)')
-                    ->description('An optional second Instagram row below the first — for a different post, Reel, or account. Off by default; nothing changes on the homepage until you enable it.')
+                    ->description('An optional second Instagram row below the first — for a different post, Reel, or account. Add an Embed URL or Fallback Image below to make it appear; nothing changes on the homepage until you do.')
                     ->schema(self::instaShowcaseFields('tr', 'insta_showcase2', alwaysVisible: false))
                     ->collapsed(),
             ])
@@ -268,15 +268,18 @@ class HomepageSettings extends Page implements HasForms
                 ->helperText('Your Instagram profile, e.g. https://instagram.com/ehsandibazar — used for the "Follow" buttons whenever a row has no Button URL of its own. (This is the shared link for both rows.)');
         }
 
+        // توجه: نمایش امبد زنده فقط به وجود Embed URL بستگی دارد (نه به این توگل) — و همین‌طور
+        // نمایش Fallback Image فقط به آپلود آن عکس بستگی دارد. این هماهنگی عمدی است تا رفتار
+        // «آپلود عکس» و «چسباندن لینک» بین ردیف اول و دوم دقیقاً یکسان باشد (به‌درخواست کاربر).
         $fields[] = Toggle::make("$l.{$prefix}_enabled")
             ->label('Enable Instagram Showcase')
             ->helperText($alwaysVisible
-                ? 'When off, a simple fallback card is shown instead and the Instagram embed script never loads.'
-                : 'When off, this row is not shown on the homepage at all.');
+                ? 'Not required — this row always appears. Add an Embed URL below to show a live post/reel, or a Fallback Image for a static photo; either one appears automatically without needing this toggle.'
+                : 'Not required if you add an Embed URL or Fallback Image below — this row then appears automatically. Turn this on only if you want the row to show with just the default Instagram icon and no photo/embed yet.');
         $fields[] = TextInput::make("$l.$embedKey")
             ->label('Instagram Embed URL')
             ->url()
-            ->helperText('Paste any public Instagram Post or Reel URL, e.g. https://www.instagram.com/p/ABC123/ or https://www.instagram.com/reel/ABC123/ — the correct embed is detected automatically.');
+            ->helperText('Paste any public Instagram Post or Reel URL, e.g. https://www.instagram.com/p/ABC123/ or https://www.instagram.com/reel/ABC123/ — shows automatically once saved, the correct embed is detected automatically.');
 
         return array_merge($fields, [
             TextInput::make("$l.{$prefix}_title")->label('Section Title'),
