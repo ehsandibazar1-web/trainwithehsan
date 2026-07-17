@@ -15,8 +15,13 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class AiProviderConfig extends Model
 {
+    // فقط این دو ارائه‌دهنده واقعاً یک API عمومیِ embedding دارند — Anthropic/Grok/DeepSeek ندارند
+    // (نگاه کنید به CLAUDE.md، بخش RAG). App\Services\AiAssistant\ProviderManager::embed() فقط
+    // برای این دو یک EmbeddingProvider واقعی می‌سازد.
+    public const EMBEDDING_CAPABLE_SLUGS = ['openai', 'gemini'];
+
     protected $fillable = [
-        'slug', 'name', 'api_key', 'base_url', 'default_model',
+        'slug', 'name', 'api_key', 'base_url', 'default_model', 'embedding_model',
         'max_tokens', 'temperature', 'timeout_seconds', 'is_enabled',
         'last_tested_at', 'last_test_status', 'last_test_latency_ms', 'last_test_model', 'last_test_error',
     ];
@@ -41,5 +46,14 @@ class AiProviderConfig extends Model
     protected function isUsable(): Attribute
     {
         return Attribute::get(fn () => $this->is_enabled && filled($this->api_key));
+    }
+
+    // مثل isUsable، بعلاوه‌ی اینکه واقعاً یک ارائه‌دهنده‌ی embedding-capable باشد و مدل embedding
+    // آن پر شده باشد — ProviderManager::resolveEmbeddingProvider() همین را چک می‌کند
+    protected function isUsableForEmbeddings(): Attribute
+    {
+        return Attribute::get(fn () => $this->is_usable
+            && in_array($this->slug, self::EMBEDDING_CAPABLE_SLUGS, true)
+            && filled($this->embedding_model));
     }
 }

@@ -32,6 +32,15 @@
 
         .ai-ca-knowledge{font-size:.7rem;color:#6b7280;background:#f9fafb;border:1px solid rgb(243 244 246);border-radius:.4rem;padding:.3rem .5rem;margin-bottom:.5rem}
 
+        .ai-ca-knowledge-chunks{font-size:.7rem;color:#6b7280;background:#f9fafb;border:1px solid rgb(243 244 246);border-radius:.4rem;padding:.3rem .5rem;margin-bottom:.5rem}
+        .ai-ca-knowledge-chunks summary{cursor:pointer;font-weight:500}
+        .ai-ca-chunk-list{list-style:none;margin:.4rem 0 0;padding:0;display:flex;flex-direction:column;gap:.4rem}
+        .ai-ca-chunk-list li{border-top:1px solid rgb(243 244 246);padding-top:.35rem}
+        .ai-ca-chunk-meta{display:flex;align-items:center;gap:.35rem;margin-bottom:.15rem;color:#374151}
+        .ai-ca-chunk-badge{font-size:.62rem;font-weight:600;padding:.05rem .35rem;border-radius:999px;background:#fef3c7;color:#92400e}
+        .ai-ca-chunk-score{margin-left:auto;font-variant-numeric:tabular-nums;color:#059669;font-weight:600}
+        .ai-ca-chunk-text{color:#6b7280;line-height:1.4}
+
         .ai-ca-tabs{display:flex;gap:.4rem;margin-bottom:1rem;border-bottom:1px solid rgb(229 231 235)}
         .ai-ca-tab-btn{padding:.5rem .9rem;font-size:.82rem;color:#6b7280;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer}
         .ai-ca-tab-btn.active{color:#111827;font-weight:600;border-bottom-color:#d9bb75}
@@ -104,6 +113,11 @@
         :root.dark .ai-ca-score-cat .name{color:#9ca3af}
         :root.dark .ai-ca-history-item{border-color:#374151}
         :root.dark .ai-ca-knowledge{background:#111827;border-color:#374151;color:#9ca3af}
+        :root.dark .ai-ca-knowledge-chunks{background:#111827;border-color:#374151;color:#9ca3af}
+        :root.dark .ai-ca-chunk-list li{border-color:#374151}
+        :root.dark .ai-ca-chunk-meta{color:#d1d5db}
+        :root.dark .ai-ca-chunk-badge{background:#78350f;color:#fde68a}
+        :root.dark .ai-ca-chunk-score{color:#34d399}
         :root.dark .ai-ca-chat{background:#1f2937;border-color:#374151}
         :root.dark .ai-ca-chat-msg.assistant .bubble{background:#111827;color:#e5e7eb}
         :root.dark .ai-ca-chat-msg.user .bubble{color:#111827}
@@ -217,7 +231,9 @@
                             · {{ ucfirst($past->mode) }} · {{ $past->created_at->diffForHumans() }}
                             @if ($past->applied_at) — applied {{ $past->applied_at->diffForHumans() }} @endif
                             @if ($past->restored_at) — restored {{ $past->restored_at->diffForHumans() }} @endif
-                            @if ($past->knowledgeEntries->isNotEmpty())
+                            @if (! empty($past->retrieved_chunks))
+                                <br><span style="color:#6b7280">📚 {{ collect($past->retrieved_chunks)->pluck('source')->unique()->implode(', ') }} ({{ count($past->retrieved_chunks) }} chunk{{ count($past->retrieved_chunks) === 1 ? '' : 's' }})</span>
+                            @elseif ($past->knowledgeEntries->isNotEmpty())
                                 <br><span style="color:#6b7280">📚 {{ $past->knowledgeEntries->pluck('title')->implode(', ') }}</span>
                             @endif
                         </span>
@@ -334,7 +350,25 @@
                                 </div>
                             @endif
 
-                            @if ($latest->knowledgeEntries->isNotEmpty())
+                            @if (! empty($latest->retrieved_chunks))
+                                <details class="ai-ca-knowledge-chunks">
+                                    <summary>📚 Knowledge used: {{ collect($latest->retrieved_chunks)->pluck('source')->unique()->implode(', ') }} ({{ count($latest->retrieved_chunks) }} chunk{{ count($latest->retrieved_chunks) === 1 ? '' : 's' }})</summary>
+                                    <ul class="ai-ca-chunk-list">
+                                        @foreach ($latest->retrieved_chunks as $chunk)
+                                            <li>
+                                                <div class="ai-ca-chunk-meta">
+                                                    <strong>{{ $chunk['source'] ?? $chunk['entry_title'] ?? 'Unknown source' }}</strong>
+                                                    @if ($chunk['pinned'] ?? false)
+                                                        <span class="ai-ca-chunk-badge">Pinned</span>
+                                                    @endif
+                                                    <span class="ai-ca-chunk-score">{{ number_format((($chunk['score'] ?? 0) * 100), 0) }}% match</span>
+                                                </div>
+                                                <div class="ai-ca-chunk-text">{{ \Illuminate\Support\Str::limit($chunk['text'] ?? '', 220) }}</div>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </details>
+                            @elseif ($latest->knowledgeEntries->isNotEmpty())
                                 <div class="ai-ca-knowledge">📚 Knowledge used: {{ $latest->knowledgeEntries->pluck('title')->implode(', ') }}</div>
                             @endif
 

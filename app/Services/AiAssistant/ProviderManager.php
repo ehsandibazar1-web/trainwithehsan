@@ -8,6 +8,7 @@ use App\Models\AiProviderModel;
 use App\Models\AiProviderSetting;
 use App\Models\AiUsageLog;
 use App\Services\AiAssistant\Contracts\AiProvider;
+use App\Services\AiAssistant\Contracts\EmbeddingProvider;
 use App\Services\AiAssistant\Contracts\UsageAwareProvider;
 use App\Services\AiAssistant\Providers\AnthropicProvider;
 use App\Services\AiAssistant\Providers\DeepSeekProvider;
@@ -208,6 +209,97 @@ class ProviderManager
         ])->save();
 
         return $result;
+    }
+
+    /**
+     * ارائه‌دهنده‌ی فعلاً پیکربندی‌شده برای embedding — یا null اگر چیزی تنظیم نشده یا آنچه تنظیم
+     * شده دیگر قابل‌استفاده نیست (کلید حذف شده، غیرفعال شده، مدل embedding خالی است). هیچ مسیر
+     * پشتیبان .env ای برای embedding وجود ندارد (بر خلاف respond()) چون هیچ نصب قدیمی‌ای هرگز
+     * از این قابلیت استفاده نمی‌کرده — این یک قابلیت کاملاً تازه است.
+     */
+    public function resolveEmbeddingProvider(): ?AiProviderConfig
+    {
+        $config = AiProviderSetting::current()->embeddingProvider;
+
+        return $config?->is_usable_for_embeddings ? $config : null;
+    }
+
+    /**
+     * @param  string[]  $texts
+     * @return array<int, float[]>
+     *
+     * @throws \RuntimeException اگر هیچ ارائه‌دهنده‌ی embedding پیکربندی نشده باشد یا تماس شکست بخورد
+     *                           — بر خلاف respond()، اینجا هیچ failover/retry ای نیست: بازیابیِ
+     *                           دانش همیشه یک fallback کلمه‌ای دارد (KnowledgeBaseService) که این
+     *                           throw را می‌گیرد، پس پیچیدگیِ retry اینجا لازم نیست.
+     */
+    public function embed(array $texts, ?string $contentType = null, ?int $contentId = null): array
+    {
+        $config = $this->resolveEmbeddingProvider();
+
+        if (! $config) {
+            throw new \RuntimeException('No embedding provider is configured — set one in AI Studio → AI Routing → Embeddings.');
+        }
+
+        $provider = $this->buildEmbeddingProvider($config);
+        $start = microtime(true);
+
+        try {
+            $vectors = $provider->embed($texts);
+            $elapsedMs = (int) round((microtime(true) - $start) * 1000);
+
+            $this->logEmbeddingUsage($config, $contentType, $contentId, count($texts), $elapsedMs, $provider->lastEmbeddingUsage(), 'success', null);
+
+            return $vectors;
+        } catch (Throwable $e) {
+            $elapsedMs = (int) round((microtime(true) - $start) * 1000);
+            $this->logEmbeddingUsage($config, $contentType, $contentId, count($texts), $elapsedMs, null, 'failed', $this->sanitizeError($e));
+
+            throw $e;
+        }
+    }
+
+    private function buildEmbeddingProvider(AiProviderConfig $config): EmbeddingProvider
+    {
+        $class = self::DRIVERS[$config->slug] ?? null;
+
+        if (! $class || ! is_subclass_of($class, EmbeddingProvider::class)) {
+            throw new \RuntimeException("Provider \"{$config->slug}\" does not support embeddings.");
+        }
+
+        $credentials = new ProviderCredentials(
+            apiKey: $config->api_key,
+            baseUrl: $config->base_url,
+            model: $config->embedding_model,
+            timeoutSeconds: $config->timeout_seconds,
+        );
+
+        return new $class($credentials);
+    }
+
+    private function logEmbeddingUsage(AiProviderConfig $config, ?string $contentType, ?int $contentId, int $inputCount, int $elapsedMs, ?array $usage, string $status, ?string $error): void
+    {
+        try {
+            $promptTokens = $usage['prompt_tokens'] ?? null;
+
+            AiUsageLog::create([
+                'provider_slug' => $config->slug,
+                'model' => $config->embedding_model,
+                'action_key' => 'embedding',
+                'content_type' => $contentType,
+                'content_id' => $contentId,
+                'prompt_tokens' => $promptTokens,
+                'completion_tokens' => null,
+                'total_tokens' => $promptTokens,
+                'estimated_cost_usd' => $this->estimateCost($config->slug, $config->embedding_model, $promptTokens, 0),
+                'response_time_ms' => $elapsedMs,
+                'status' => $status,
+                'error_message' => $error,
+                'user_id' => Auth::id(),
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     private function buildProvider(AiProviderConfig $config, ?string $modelOverride = null): AiProvider

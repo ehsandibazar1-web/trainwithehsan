@@ -66,6 +66,7 @@ class AiActionRouting extends Page implements HasForms
             'default_provider_config_id' => $settings->default_provider_config_id,
             'failover_enabled' => $settings->failover_enabled,
             'fallback_provider_config_id' => $settings->fallback_provider_config_id,
+            'embedding_provider_config_id' => $settings->embedding_provider_config_id,
         ];
 
         $overrides = AiActionOverride::all()->keyBy('action_key');
@@ -93,6 +94,12 @@ class AiActionRouting extends Page implements HasForms
                         ->visible(fn (Get $get): bool => (bool) $get('failover_enabled')),
                 ])
                 ->columns(2),
+
+            Section::make('Embeddings')
+                ->description('Which provider generates vectors for the Knowledge Base RAG index (Section 27/RAG). Only OpenAI and Gemini support embeddings — the chosen provider also needs an "Embedding model" set on its row in AI Providers. Leave unset to fall back to keyword-based retrieval (no semantic search).')
+                ->schema([
+                    self::embeddingProviderSelect(),
+                ]),
         ];
 
         foreach (self::SECTIONS as $label => $keys) {
@@ -141,6 +148,24 @@ class AiActionRouting extends Page implements HasForms
             ->nullable();
     }
 
+    // فقط OpenAI/Gemini (App\Models\AiProviderConfig::EMBEDDING_CAPABLE_SLUGS) — ارائه‌دهنده‌ای
+    // که هنوز embedding_model نگرفته هم در فهرست می‌ماند (تا ادمین بتواند اول اینجا انتخاب کند و
+    // بعد برود مدل را تنظیم کند)، اما وضعیتش را در برچسب نشان می‌دهیم تا گیج‌کننده نباشد.
+    private static function embeddingProviderSelect(): Select
+    {
+        return Select::make('embedding_provider_config_id')
+            ->label('Embedding provider')
+            ->options(fn () => AiProviderConfig::query()
+                ->whereIn('slug', AiProviderConfig::EMBEDDING_CAPABLE_SLUGS)
+                ->get()
+                ->mapWithKeys(fn (AiProviderConfig $config) => [
+                    $config->id => $config->name.($config->is_usable_for_embeddings ? '' : ' (not ready — set API key + embedding model)'),
+                ]))
+            ->native(false)
+            ->placeholder('Not configured — keyword-only retrieval')
+            ->nullable();
+    }
+
     public function save(): void
     {
         $state = $this->form->getState();
@@ -149,6 +174,7 @@ class AiActionRouting extends Page implements HasForms
             'default_provider_config_id' => $state['default_provider_config_id'] ?? null,
             'failover_enabled' => (bool) ($state['failover_enabled'] ?? false),
             'fallback_provider_config_id' => ($state['failover_enabled'] ?? false) ? ($state['fallback_provider_config_id'] ?? null) : null,
+            'embedding_provider_config_id' => $state['embedding_provider_config_id'] ?? null,
         ]);
 
         foreach ($state['overrides'] ?? [] as $actionKey => $override) {

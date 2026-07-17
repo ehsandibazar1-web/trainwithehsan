@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\AiProviderConfigs\Schemas;
 
+use App\Models\AiProviderConfig;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -70,6 +71,16 @@ class AiProviderConfigForm
                         Toggle::make('is_enabled')
                             ->label('Enabled')
                             ->helperText('Must be enabled AND have an API key set before it can be chosen as the default or a per-field provider.'),
+
+                        // فقط OpenAI/Gemini واقعاً یک API عمومیِ embedding دارند (نگاه کنید به
+                        // AiProviderConfig::EMBEDDING_CAPABLE_SLUGS و CLAUDE.md، بخش RAG) — روی
+                        // بقیه‌ی ارائه‌دهنده‌ها این فیلد اصلاً نمایش داده نمی‌شود تا ادمین گمان
+                        // نکند اینجا هم قابل‌تنظیم است
+                        TextInput::make('embedding_model')
+                            ->label('Embedding model')
+                            ->nullable()
+                            ->visible(fn (?AiProviderConfig $record): bool => in_array($record?->slug, AiProviderConfig::EMBEDDING_CAPABLE_SLUGS, true))
+                            ->helperText('The embedding model ID, e.g. "text-embedding-3-small" (OpenAI) or "text-embedding-004" (Gemini). Required before this provider can be picked in AI Routing → Embeddings.'),
                     ])
                     ->columns(2),
 
