@@ -41,6 +41,7 @@ class HomepageSettings extends Page implements HasForms
         'app_title', 'app_subtitle', 'app_text', 'app_button_label',
         'courses_title', 'courses_subtitle',
         'course1_label', 'course2_label', 'course3_label',
+        'course1_link', 'course2_link', 'course3_link',
         'members_title', 'members_subtitle', 'members_button_label',
         'insta_url',
     ];
@@ -183,8 +184,13 @@ class HomepageSettings extends Page implements HasForms
             TextInput::make("$l.courses_title")->label('Section title'),
             Textarea::make("$l.courses_subtitle")->label('Section subtitle')->rows(2),
         ];
+        $blogPath = $l === 'tr' ? '/tr/blog' : '/blog';
         foreach ([1, 2, 3] as $i) {
             $fields[] = TextInput::make("$l.course{$i}_label")->label("Course $i — Label");
+            $fields[] = TextInput::make("$l.course{$i}_link")
+                ->label("Course $i — Link")
+                ->nullable()
+                ->helperText("Where this card goes when clicked — a relative path (e.g. /blog/some-article) or a full https:// URL. Leave blank to link to the blog ($blogPath) as a placeholder until you have a dedicated page.");
             $fields[] = FileUpload::make("$l.course{$i}_image")
                 ->label("Course $i — Image")
                 ->image()

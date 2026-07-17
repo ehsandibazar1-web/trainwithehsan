@@ -378,7 +378,9 @@
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
                 <div class="learn-grid carousel-track reveal-group">
                 @foreach([1, 2, 3] as $i)
-                <a href="{{ url('/tr/courses') }}" class="l-box reveal">
+                @php($courseLink = trim($v("course{$i}_link")))
+                @php($courseHref = $courseLink !== '' ? (str_starts_with($courseLink, 'http') ? $courseLink : url($courseLink)) : url('/tr/blog'))
+                <a href="{{ $courseHref }}" class="l-box reveal">
                     <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
                         @unless($v("course{$i}_image"))<b>{{ $courseDefaults[$i - 1][0] }}</b>@endunless
                     </div>
