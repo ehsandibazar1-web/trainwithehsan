@@ -168,10 +168,6 @@
             display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;
             scrollbar-width:none;padding-bottom:4px;
             -webkit-overflow-scrolling:touch;scroll-padding-left:15px;
-            /* روش قبلی (محدودسازی جهت لمس) کل اسکرول لمسیِ کاروسل را روی برخی دستگاه‌ها
-               غیرفعال کرد؛ این نسخه‌ی امن‌تر فقط از سرریز شدن اسکرول به صفحه (در لبه‌ی
-               کاروسل) جلوگیری می‌کند و به رفتار پیش‌فرض اسکرول افقی مرورگر دست نمی‌زند */
-            overscroll-behavior-x:contain;
         }
         .carousel-track::-webkit-scrollbar{display:none}
         .carousel-track>*{scroll-snap-align:start;flex:0 0 auto}
