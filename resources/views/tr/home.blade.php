@@ -297,7 +297,7 @@
 
     .insta-showcase-card{display:flex;justify-content:center}
     .insta-embed-wrap{
-        position:relative;width:100%;max-width:360px;min-height:640px;
+        position:relative;width:100%;max-width:270px;min-height:480px;
         background:#f9f7f2;border:1px solid #e8e3d5;border-radius:16px;
         box-shadow:0 18px 40px -18px rgba(37,32,15,.35);
         overflow:hidden;display:flex;align-items:center;justify-content:center;
@@ -306,7 +306,7 @@
     .insta-embed-wrap:hover{transform:translateY(-4px);box-shadow:0 24px 48px -16px rgba(37,32,15,.4);border-color:var(--gold)}
     .insta-embed-wrap iframe{border-radius:16px!important}
     .insta-embed-wrap .instagram-media{margin:0 auto!important;min-width:326px!important}
-    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:640px}
+    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:480px}
     .insta-embed-spinner{
         width:32px;height:32px;border-radius:50%;
         border:3px solid #e8e3d5;border-top-color:var(--gold);
@@ -314,10 +314,10 @@
     }
     @@keyframes insta-spin{to{transform:rotate(360deg)}}
     @@media (prefers-reduced-motion: reduce){.insta-embed-spinner{animation-duration:2.5s}}
-    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;min-height:640px;object-fit:cover}
+    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;min-height:480px;object-fit:cover}
     .insta-embed-fallback-overlay{
         position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;
-        justify-content:center;width:100%;min-height:640px;padding:32px;text-align:center;
+        justify-content:center;width:100%;min-height:480px;padding:32px;text-align:center;
         background:linear-gradient(180deg,rgba(10,8,9,.15) 0%,rgba(10,8,9,.72) 100%);
     }
     .insta-embed-fallback-overlay .insta-showcase-logo{width:46px;height:auto}
