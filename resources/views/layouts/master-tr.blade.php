@@ -7,7 +7,11 @@
 
     <title>@yield('title', 'Ehsan Dibazar — İstanbul\'da Kendini Savunma ve Martial Intelligence Eğitimi')</title>
     <meta name="description" content="@yield('meta_description', 'İstanbul\'da tam başlangıç seviyesi için kendini savunma ve Brezilya Jiu-Jitsu eğitimi. Baskı altında doğru kararı vermeyi öğrenin — Ehsan Dibazar\'ın Martial Intelligence metodu.')">
-    <meta name="robots" content="index,follow">
+    @php($metaKeywords = trim($__env->yieldContent('meta_keywords')))
+    @if($metaKeywords)
+    <meta name="keywords" content="{{ $metaKeywords }}">
+    @endif
+    <meta name="robots" content="@yield('robots', 'index,follow')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
     <link rel="alternate" hreflang="en" href="https://trainwithehsan.com@yield('path_suffix')">
@@ -333,20 +337,22 @@
 <footer class="site-footer">
     <div class="wrap">
         @php($footerColumnsList = !empty($footerColumns) ? $footerColumns : [
-            ['title' => 'Gizlilik Politikası', 'links' => [
-                ['label' => 'Şartlar ve Koşullar', 'url' => '/tr/terms-and-conditions'],
-                ['label' => 'Gizlilik Politikası', 'url' => '/tr/privacy-policy'],
-            ]],
-            ['title' => 'Kurslar', 'links' => [
-                ['label' => 'Kurslar', 'url' => '/tr/courses'],
-                ['label' => 'Martial Intelligence', 'url' => '/tr/martial-intelligence'],
-            ]],
-            ['title' => 'Blog', 'links' => [
-                ['label' => 'Blog', 'url' => '/tr/blog'],
-            ]],
-            ['title' => 'İletişim', 'links' => [
-                ['label' => 'İletişim', 'url' => '/tr/contact'],
+            ['title' => 'Hakkımızda', 'links' => [
                 ['label' => 'Hakkımda', 'url' => '/tr/about'],
+                ['label' => 'İletişim', 'url' => '/tr/contact'],
+            ]],
+            ['title' => 'Eğitim', 'links' => [
+                ['label' => 'Kurslar', 'url' => '/tr/courses'],
+            ]],
+            ['title' => 'Kaynaklar', 'links' => [
+                ['label' => 'Blog', 'url' => '/tr/blog'],
+                ['label' => 'SSS', 'url' => '/tr/faq'],
+            ]],
+            ['title' => 'Yasal', 'links' => [
+                ['label' => 'Gizlilik Politikası', 'url' => '/tr/privacy-policy'],
+                ['label' => 'Şartlar ve Koşullar', 'url' => '/tr/terms-and-conditions'],
+                ['label' => 'Çerez Politikası', 'url' => '/tr/cookie-policy'],
+                ['label' => 'Sorumluluk Reddi', 'url' => '/tr/disclaimer'],
             ]],
         ])
         <div class="footer-grid">

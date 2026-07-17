@@ -281,18 +281,13 @@ class SeoAuditService
 
     private function missingSchema(Collection $items): array
     {
-        // مقاله‌ها همیشه schema Article دارند (blog-post.blade.php) — اینجا فقط صفحات مستقل چک می‌شوند
-        // که هیچ‌گاه json-ld تولید نمی‌کنند (page.blade.php این @section را ندارد)
-        $findings = $items
-            ->filter(fn ($item) => $item['model'] === 'Page')
-            ->map(fn ($item) => $this->finding(
-                $item,
-                'missing_schema',
-                'Standalone pages have no JSON-LD template (page.blade.php does not emit one) — this is a template gap, not something fixable by editing this page.'
-            ))
-            ->values()->all();
+        // مقاله‌ها همیشه schema Article دارند (blog-post.blade.php). صفحات مستقل هم از
+        // ۲۰۲۶-۰۷-۱۷ همیشه WebPage (و در صورت داشتن FAQ، FAQPage هم) دارند — page.blade.php/
+        // tr/page.blade.php دیگر خالی نیستند، پس این دسته دیگر هیچ صفحه‌ای را پرچم نمی‌زند؛
+        // فقط شکاف واقعی باقی‌مانده (ایندکس بلاگ) گزارش می‌شود
+        $findings = [];
 
-        // ایندکس بلاگ هم schema ندارد (blog.blade.php)
+        // ایندکس بلاگ schema ندارد (blog.blade.php)
         foreach (['en' => '/blog', 'tr' => '/tr/blog'] as $locale => $path) {
             $findings[] = [
                 'category' => 'missing_schema',

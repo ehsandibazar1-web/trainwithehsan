@@ -66,6 +66,14 @@ class AppServiceProvider extends ServiceProvider
             ];
         });
 
+        // محدودیت نرخ فرم تماس — همون سقفِ فرم خبرنامه (۵ در دقیقه، ۲۰ در ساعت به‌ازای هر IP)
+        RateLimiter::for('contact', function (Request $request) {
+            return [
+                Limit::perMinute(5)->by($request->ip()),
+                Limit::perHour(20)->by($request->ip()),
+            ];
+        });
+
         // محدودیت نرخ API ایمپورت هوش مصنوعی — به‌ازای هر توکن (و اگر نبود، IP)
         RateLimiter::for('ai-import-api', function (Request $request) {
             $key = $request->attributes->get('ai_api_token')?->id ?? $request->ip();

@@ -100,7 +100,10 @@ class AiAgentTest extends TestCase
 
         $findings = $this->findingsFor($this->service()->run(), 'missing_internal_links');
 
-        $this->assertEmpty(collect($findings)->where('content_id', $source->id)->all());
+        // content_type هم چک می‌شود چون content_id بین جدول‌های Article/Page مستقل است — صفحات
+        // seed-شده‌ی Contact/FAQ/Legal (۲۰۲۶_۰۷_۱۷_۰۰۰۰۱۱) می‌توانند id عددی یکسان با این مقاله
+        // داشته باشند
+        $this->assertEmpty(collect($findings)->where('content_type', 'Article')->where('content_id', $source->id)->all());
     }
 
     public function test_missing_faq_flags_long_articles_with_no_faqs(): void
@@ -166,11 +169,13 @@ class AiAgentTest extends TestCase
 
     public function test_thin_content_ignores_long_articles(): void
     {
-        $this->makeArticle();
+        $article = $this->makeArticle();
 
         $findings = $this->findingsFor($this->service()->run(), 'thin_content');
 
-        $this->assertEmpty($findings);
+        // فقط همین مقاله چک می‌شود، نه کل دسته — صفحات seed-شده‌ی Contact/FAQ (۲۰۲۶_۰۷_۱۷_۰۰۰۰۱۱)
+        // عمداً کوتاه‌اند (زیر ۳۰۰ کلمه) و به‌درستی در همین دسته پرچم می‌خورند
+        $this->assertEmpty(collect($findings)->where('content_type', 'Article')->where('content_id', $article->id)->all());
     }
 
     public function test_missing_alt_is_fixable_when_the_media_is_a_records_featured_image(): void
@@ -201,13 +206,17 @@ class AiAgentTest extends TestCase
         $this->assertNull($findings[0]['fix_type']);
     }
 
-    public function test_missing_schema_always_flags_pages(): void
+    // از ۲۰۲۶-۰۷-۱۷ page.blade.php/tr/page.blade.php همیشه WebPage schema تولید می‌کنند — پس
+    // صفحات مستقل دیگر در «Missing Schema» پرچم نمی‌خورند (نگاه کنید به
+    // SeoAuditService::missingSchema()); تنها شکاف واقعی باقی‌مانده ایندکس بلاگ است
+    public function test_missing_schema_no_longer_flags_pages_only_the_blog_index(): void
     {
         $page = $this->makePage();
 
         $findings = $this->findingsFor($this->service()->run(), 'missing_schema');
 
-        $this->assertTrue(collect($findings)->contains(fn ($f) => $f['content_id'] === $page->id && $f['content_type'] === 'Page'));
+        $this->assertFalse(collect($findings)->contains(fn ($f) => $f['content_id'] === $page->id && $f['content_type'] === 'Page'));
+        $this->assertTrue(collect($findings)->every(fn ($f) => $f['content_type'] === 'Blog index'));
         $this->assertTrue(collect($findings)->every(fn ($f) => $f['fix_type'] === null));
     }
 
@@ -366,12 +375,15 @@ class AiAgentTest extends TestCase
         $other = $this->makeArticle(['title' => 'Other', 'slug' => 'other-article']);
         $article = $this->makeArticle(['body' => '<p>No links here at all.</p>']);
         $this->service()->generateAndPersist('manual');
-        $this->assertTrue(AiRecommendation::category('missing_internal_links')->where('content_id', $article->id)->exists());
+        // content_type هم چک می‌شود چون content_id بین جدول‌های Article/Page مستقل است — صفحات
+        // seed-شده‌ی Contact/FAQ/Legal (۲۰۲۶_۰۷_۱۷_۰۰۰۰۱۱) می‌توانند id عددی یکسان با این مقاله
+        // داشته باشند
+        $this->assertTrue(AiRecommendation::category('missing_internal_links')->where('content_type', 'Article')->where('content_id', $article->id)->exists());
 
         $article->update(['body' => '<p>Now it links to <a href="/blog/other-article">a related article</a>.</p>']);
         $run2 = $this->service()->generateAndPersist('manual');
 
-        $this->assertFalse(AiRecommendation::category('missing_internal_links')->where('content_id', $article->id)->where('status', 'pending')->exists());
+        $this->assertFalse(AiRecommendation::category('missing_internal_links')->where('content_type', 'Article')->where('content_id', $article->id)->where('status', 'pending')->exists());
         $this->assertGreaterThan(0, $run2->resolved_count);
     }
 

@@ -12,13 +12,16 @@ class PagesModuleTest extends TestCase
 {
     use RefreshDatabase;
 
+    // اسلاگ پیش‌فرض عمداً «privacy-policy» نیست — این اسلاگ الان توسط مهاجرت seed صفحات
+    // Contact/FAQ/Legal (۲۰۲۶_۰۷_۱۷_۰۰۰۰۱۱) واقعاً پر شده و روی هر اجرای RefreshDatabase موجود
+    // است؛ استفاده از همون اسلاگ اینجا با UNIQUE(slug, locale) تصادم می‌کرد
     private function makePage(array $overrides = []): Page
     {
         return Page::create(array_merge([
             'locale' => 'en',
-            'title' => 'Privacy Policy',
-            'slug' => 'privacy-policy',
-            'body' => '<p>Privacy body text.</p>',
+            'title' => 'Test Standalone Page',
+            'slug' => 'test-standalone-page',
+            'body' => '<p>Sample standalone page body text.</p>',
             'status' => 'published',
             'published_at' => now()->subDay(),
         ], $overrides));
@@ -29,13 +32,13 @@ class PagesModuleTest extends TestCase
         $en = $this->makePage();
         $this->makePage([
             'locale' => 'tr',
-            'title' => 'Gizlilik Politikası',
-            'slug' => 'gizlilik-politikasi',
+            'title' => 'Örnek Sayfa',
+            'slug' => 'ornek-sayfa',
             'translation_of' => $en->id,
         ]);
 
-        $this->get('/privacy-policy')->assertOk()->assertSee('Privacy body text');
-        $this->get('/tr/gizlilik-politikasi')->assertOk()->assertSee('Gizlilik Politikası');
+        $this->get('/test-standalone-page')->assertOk()->assertSee('Sample standalone page body text');
+        $this->get('/tr/ornek-sayfa')->assertOk()->assertSee('Örnek Sayfa');
     }
 
     public function test_draft_and_future_scheduled_pages_are_hidden(): void
@@ -54,7 +57,7 @@ class PagesModuleTest extends TestCase
         $this->get('/due')->assertOk();
     }
 
-    public function test_pages_never_appear_in_blog_home_feed_or_sitemap(): void
+    public function test_pages_never_appear_in_blog_home_or_feed_but_do_appear_in_sitemap(): void
     {
         $this->makePage(['title' => 'Standalone Page Title', 'slug' => 'standalone-page']);
 
@@ -64,14 +67,18 @@ class PagesModuleTest extends TestCase
             'status' => 'published', 'published_at' => now()->subHour(),
         ]);
 
-        foreach (['/blog', '/', '/feed', '/sitemap.xml'] as $url) {
+        foreach (['/blog', '/', '/feed'] as $url) {
             $this->get($url)->assertOk()
                 ->assertDontSee('Standalone Page Title')
                 ->assertDontSee('standalone-page');
         }
 
         $this->get('/blog')->assertSee('A Blog Article');
-        $this->get('/sitemap.xml')->assertSee('a-blog-article');
+        // صفحات مستقل منتشرشده الان واقعاً در سایت‌مپ هستند — تغییر عمدی (نگاه کنید به
+        // SeoController::sitemap()) که پوشش سایت‌مپ را برای Contact/FAQ/Legal کامل می‌کند
+        $this->get('/sitemap.xml')->assertOk()
+            ->assertSee('a-blog-article')
+            ->assertSee('standalone-page');
     }
 
     public function test_reserved_routes_are_not_shadowed_by_the_page_catchall(): void

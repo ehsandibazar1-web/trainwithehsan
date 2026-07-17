@@ -11,14 +11,16 @@ use Illuminate\Support\Str;
 class Page extends Model
 {
     protected $fillable = [
-        'locale', 'translation_of', 'title', 'slug', 'body',
-        'seo_title', 'meta_description', 'og_title', 'og_description',
+        'locale', 'translation_of', 'title', 'slug', 'body', 'faqs',
+        'seo_title', 'meta_description', 'meta_keywords', 'canonical_url', 'robots',
+        'og_title', 'og_description',
         'image_path', 'status', 'published_at',
         'hero_image_prompt', 'thumbnail_image_prompt', 'og_image_prompt', 'social_image_prompt',
     ];
 
     protected $casts = [
         'published_at' => 'datetime',
+        'faqs' => 'array',
     ];
 
     // نسخه‌ی هم‌زبان دیگه (لینک بین انگلیسی و ترکی)
