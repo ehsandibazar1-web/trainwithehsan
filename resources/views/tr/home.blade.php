@@ -190,10 +190,19 @@
 
     /* ===== مقالات — پس‌زمینهٔ بافت دیوار/بتنِ روشن، عیناً مطابق ehsandibazar.com؛ چون کارت‌های
        خبر خودشان پس‌زمینهٔ سفید مجزا دارند (.news-card{background:#fff})، نیازی به گرادیان
-       تیره‌کننده نیست. background-attachment:fixed جلوهٔ پارالاکس می‌سازد (عکس هنگام اسکرول ثابت
-       می‌ماند) — دقیقاً مطابق CSS واقعیِ ehsandibazar.com (.section-news{background:...fixed}) —
-       طبق درخواست صریح کاربر فقط همین بخش، نه ۳ بخش دیگر ===== */
-    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat fixed;padding:56px 0 64px}
+       تیره‌کننده نیست. جلوهٔ پارالاکس (عکس هنگام اسکرول کندتر از محتوا حرکت می‌کند) — طبق درخواست
+       صریح کاربر فقط همین بخش، نه ۳ بخش دیگر. background-attachment:fixed بومی جایگزین شد چون
+       باعث ری‌پینت/لرزشِ محسوس مرورگر (به‌ویژه کروم/ویندوز) هنگام توقفِ اسکرول می‌شد — لایهٔ
+       .section-news-bg جدا با transform (فقط GPU compositing، بدون ری‌پینت) کاملاً نرم است؛
+       جاوااسکریپت پایین صفحه offset را روی هر فریمِ اسکرول (rAF-throttled) تنظیم می‌کند و اگر
+       prefers-reduced-motion فعال باشد، اصلاً اجرا نمی‌شود (پس‌زمینه ثابت می‌ماند) ===== */
+    .section-news{position:relative;overflow:hidden;padding:56px 0 64px}
+    .section-news-bg{
+        position:absolute;inset:-10% 0;z-index:0;
+        background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat;
+        transform:translate3d(0,0,0);will-change:transform;
+    }
+    .section-news>.wrap{position:relative;z-index:1}
     /* .title-section {color:#000; font-size:20px; font-weight:500} */
     .title-section{color:#000;font-size:20px;font-weight:500;text-align:center;line-height:1.5}
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
@@ -442,6 +451,7 @@
 
     {{-- ============ مطالب آموزشی (داینامیک از دیتابیس) ============ --}}
     <section class="section-news">
+        <div class="section-news-bg" aria-hidden="true"></div>
         <div class="wrap">
             <div class="reveal">
                 <h3 class="title-section">Eğitim Makaleleri</h3>
@@ -634,6 +644,32 @@
         });
         closeBtn.addEventListener('click', close);
         modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    })();
+
+    // ===== پارالاکس بخش مقالات — لایهٔ .section-news-bg را با transform جابه‌جا می‌کند (فقط
+    // GPU compositing، بدون ری‌پینت مرورگر) به‌جای background-attachment:fixed بومی که باعث
+    // لرزش/جابه‌جایی محسوس هنگام توقف اسکرول می‌شد. offset با rAF محدود می‌شود (حداکثر ۶۰px،
+    // هم‌راستا با inset:-10% لایهٔ پس‌زمینه تا هرگز لبه‌ای دیده نشود) و فقط وقتی بخش داخل دید
+    // است محاسبه می‌شود. اگر prefers-reduced-motion فعال باشد، اصلاً اجرا نمی‌شود و پس‌زمینه
+    // بدون هیچ حرکتی (استاتیک) نمایش داده می‌شود.
+    (function () {
+        var section = document.querySelector('.section-news');
+        var bg = section ? section.querySelector('.section-news-bg') : null;
+        if (!section || !bg) return;
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        var ticking = false;
+        function update() {
+            var rect = section.getBoundingClientRect();
+            if (rect.bottom >= 0 && rect.top <= window.innerHeight) {
+                var offset = Math.max(-60, Math.min(60, rect.top * 0.15));
+                bg.style.transform = 'translate3d(0,' + offset.toFixed(1) + 'px,0)';
+            }
+            ticking = false;
+        }
+        window.addEventListener('scroll', function () {
+            if (!ticking) { window.requestAnimationFrame(update); ticking = true; }
+        }, { passive: true });
+        update();
     })();
 
     // ===== ویترین اینستاگرام — امبد رسمی (instagram.com/embed.js) فقط وقتی کارت وارد نمای
