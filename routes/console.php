@@ -13,3 +13,6 @@ Schedule::command('articles:publish-due')->everyFiveMinutes();
 
 // اعلان مهلت‌های نزدیک برنامه‌ریز محتوا — هر ساعت کافی است (بر خلاف انتشار، دقتِ دقیقه‌ای لازم نیست)
 Schedule::command('content-plans:notify-deadlines')->hourly();
+
+// ممیزی هفتگیِ خودکار AI Agent — نگاه کنید به App\Services\AiAgent\AgentAuditService
+Schedule::command('agent:audit')->weekly();

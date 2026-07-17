@@ -104,6 +104,7 @@ class SeoAuditService
                 $findings[] = [
                     'category' => 'broken_external_links',
                     'type' => $source['type'],
+                    'id' => $source['id'] ?? null,
                     'locale' => $source['locale'],
                     'title' => $source['label'],
                     'detail' => $status
@@ -266,6 +267,7 @@ class SeoAuditService
                     $findings[] = [
                         'category' => 'missing_alt',
                         'type' => 'Media',
+                        'id' => $media->id,
                         'locale' => null,
                         'title' => $usage['label'].' — '.$media->original_name,
                         'detail' => "Media Library image used as \"{$usage['field']}\" has no ALT text.",
@@ -295,6 +297,7 @@ class SeoAuditService
             $findings[] = [
                 'category' => 'missing_schema',
                 'type' => 'Blog index',
+                'id' => null,
                 'locale' => $locale,
                 'title' => 'Blog index ('.strtoupper($locale).')',
                 'detail' => "The blog listing page ({$path}) has no JSON-LD structured data.",
@@ -359,6 +362,7 @@ class SeoAuditService
                 $findings[] = [
                     'category' => 'broken_internal_links',
                     'type' => $source['meta']['type'],
+                    'id' => $source['meta']['id'] ?? null,
                     'locale' => $source['meta']['locale'],
                     'title' => $source['meta']['label'],
                     'detail' => "Links to \"{$link['href']}\", which does not match any known route or existing slug.",
@@ -417,6 +421,7 @@ class SeoAuditService
             'html' => $item['body'],
             'meta' => [
                 'type' => $item['model'],
+                'id' => $item['id'],
                 'locale' => $item['locale'],
                 'label' => $item['title'].' ('.strtoupper($item['locale']).')',
                 'edit_url' => $item['edit_url'],
@@ -433,6 +438,7 @@ class SeoAuditService
                     'html' => $menuHtml,
                     'meta' => [
                         'type' => 'Menu',
+                        'id' => null,
                         'locale' => $locale,
                         'label' => 'Header menu ('.strtoupper($locale).')',
                         'edit_url' => MenuSettings::getUrl(),
@@ -449,6 +455,7 @@ class SeoAuditService
                     'html' => $footerHtml,
                     'meta' => [
                         'type' => 'Footer',
+                        'id' => null,
                         'locale' => $locale,
                         'label' => 'Footer links ('.strtoupper($locale).')',
                         'edit_url' => FooterSettings::getUrl(),
@@ -465,6 +472,7 @@ class SeoAuditService
         return [
             'category' => $category,
             'type' => $item['model'],
+            'id' => $item['id'],
             'locale' => $item['locale'],
             'title' => $item['title'].' ('.strtoupper($item['locale']).')',
             'detail' => $detail,

@@ -10,18 +10,17 @@ use App\Jobs\TranslateArticleDraft;
 use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
 use App\Models\Article;
-use App\Models\InternalLinkSuggestion;
 use App\Models\Media;
 use App\Models\Page as PageModel;
 use App\Services\AiAssistant\ActionRegistry;
 use App\Services\AiAssistant\ContentReviewService;
 use App\Services\AiAssistant\DiffService;
+use App\Services\AiAssistant\GenerationApplier;
 use App\Services\Seo\SeoAuditService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Str;
 use Livewire\Component;
 
 /**
@@ -356,21 +355,13 @@ class AiAssistantPanel extends Component
             return;
         }
 
-        if ($generation->field === 'alt_text') {
-            $media = $this->mediaForRecord();
+        if ($generation->field === 'alt_text' && ! $this->mediaForRecord()) {
+            Notification::make()->danger()->title('No Media Library entry found for this image')->send();
 
-            if (! $media) {
-                Notification::make()->danger()->title('No Media Library entry found for this image')->send();
-
-                return;
-            }
-
-            $media->update(['alt_text' => $generation->result]);
-        } else {
-            $this->record->update([$generation->field => $generation->result]);
+            return;
         }
 
-        $generation->update(['applied_at' => now(), 'applied_by' => Auth::id()]);
+        app(GenerationApplier::class)->apply($generation, $this->record);
 
         Notification::make()->success()->title('Applied to '.ActionRegistry::for($generation->field)['label'])->send();
     }
@@ -383,20 +374,15 @@ class AiAssistantPanel extends Component
             return;
         }
 
-        if ($generation->field === 'alt_text') {
-            $this->mediaForRecord()?->update(['alt_text' => $generation->input_snapshot]);
-        } else {
-            $this->record->update([$generation->field => $generation->input_snapshot]);
-        }
-
-        $generation->update(['restored_at' => now(), 'restored_by' => Auth::id()]);
+        app(GenerationApplier::class)->restore($generation, $this->record);
 
         Notification::make()->success()->title('Restored previous value for '.ActionRegistry::for($generation->field)['label'])->send();
     }
 
     // پیشنهادهای لینک داخلیِ هوش‌مصنوعی را به همان جدول/چرخه‌ی موجود
     // (App\Models\InternalLinkSuggestion، تایید/رد در Internal Linking Center) اضافه می‌کند —
-    // منطق insertLinkForSuggestion دست‌نخورده می‌ماند، اینجا فقط ردیف pending با origin=ai می‌سازد
+    // منطق نوشتن در App\Services\AiAssistant\GenerationApplier است (اینجا و داشبورد AI Agent هر دو
+    // همان را صدا می‌زنند)، اینجا فقط پیام موفقیت را نمایش می‌دهد
     public function applyInternalLinkSuggestions(int $id): void
     {
         $generation = AiGeneration::find($id);
@@ -405,42 +391,7 @@ class AiAssistantPanel extends Component
             return;
         }
 
-        $count = 0;
-
-        foreach ($generation->result as $item) {
-            $targetType = $item['type'] ?? null;
-            $targetId = (int) ($item['id'] ?? 0);
-
-            if (! in_array($targetType, ['Article', 'Page'], true) || $targetId === 0) {
-                continue;
-            }
-
-            $target = $targetType === 'Article' ? Article::find($targetId) : PageModel::find($targetId);
-
-            if (! $target) {
-                continue;
-            }
-
-            InternalLinkSuggestion::updateOrCreate(
-                [
-                    'source_type' => $this->recordType,
-                    'source_id' => $this->record->id,
-                    'target_type' => $targetType,
-                    'target_id' => $targetId,
-                ],
-                [
-                    'locale' => $this->record->locale,
-                    'confidence_score' => 70,
-                    'recommended_anchor_text' => Str::limit($item['anchor_text'] ?? $target->title, 60, ''),
-                    'reason' => $item['reason'] ?? 'Suggested by AI.',
-                    'status' => 'pending',
-                    'origin' => 'ai',
-                ]
-            );
-            $count++;
-        }
-
-        $generation->update(['applied_at' => now(), 'applied_by' => Auth::id()]);
+        $count = app(GenerationApplier::class)->applyInternalLinkSuggestions($generation, $this->record);
 
         Notification::make()
             ->success()
