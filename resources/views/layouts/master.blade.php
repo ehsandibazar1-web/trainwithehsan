@@ -268,7 +268,15 @@
         }
         .cookie-consent__btn--ghost{background:transparent;border:1px solid #555;color:#fff}
         .cookie-consent__btn:hover{opacity:.85}
-        @@media (max-width:600px){.cookie-consent{flex-direction:column;align-items:stretch;text-align:center}.cookie-consent__actions{justify-content:center}}
+        /* در حالت ستونی (موبایل)، flex-basis:320px روی محور اصلی (که اینجا عمودی است) اعمال
+           می‌شود و متن را به ۳۲۰px بلندی مجبور می‌کند — همون چیزی که فاصله‌ی خالی بزرگ زیر پیام
+           در موبایل را می‌ساخت. flex:none این محدودیت را برمی‌دارد تا بلندی فقط با محتوای واقعی
+           متن تعیین شود */
+        @@media (max-width:600px){
+            .cookie-consent{flex-direction:column;align-items:stretch;text-align:center}
+            .cookie-consent__text{flex:none;max-width:none}
+            .cookie-consent__actions{justify-content:center}
+        }
     </style>
     {{-- بدون جاوااسکریپت: محتوا هرگز نباید مخفی بماند --}}
     <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
