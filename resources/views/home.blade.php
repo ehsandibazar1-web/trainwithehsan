@@ -245,10 +245,10 @@
     .insta-showcase{background:#ebebeb;border-top:1px solid #c2c2c2;padding:56px 0}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
     @@media (max-width:900px){.insta-showcase-grid{grid-template-columns:1fr;gap:32px}}
-    .insta-showcase-text .insta-showcase-logo{width:56px;height:auto;margin-bottom:16px}
+    .insta-showcase-text .insta-showcase-logo{width:100px;height:auto;margin-bottom:20px}
     .insta-showcase-text h2{font-size:24px;font-weight:700;color:var(--title);margin-bottom:10px;line-height:1.35}
     .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.9;margin-bottom:20px;max-width:420px}
-    @@media (max-width:900px){.insta-showcase-text{text-align:center}.insta-showcase-text p{margin-left:auto;margin-right:auto}}
+    @@media (max-width:900px){.insta-showcase-text{text-align:center}.insta-showcase-text p{margin-left:auto;margin-right:auto}.insta-showcase-text .insta-showcase-logo{margin-left:auto;margin-right:auto}}
     .insta-showcase-btn{
         display:inline-flex;align-items:center;gap:8px;background:#252525;color:var(--gold);
         padding:11px 28px;border-radius:30px;font-weight:600;font-size:14px;transition:.25s linear;
