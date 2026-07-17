@@ -494,6 +494,38 @@
             @endif
 
             <div class="ai-ca-card">
+                <h3>Hero Image</h3>
+
+                @if (! $this->canGenerateImages)
+                    <div class="ai-ca-current empty">No image-generation provider configured — set one up in AI Studio → AI Routing → Image Generation.</div>
+                @else
+                    <x-filament::button size="xs" wire:click="generateHeroImage" wire:loading.attr="disabled" wire:confirm="Generate a new hero image and set it as the featured image? This also auto-fills ALT text, caption, description, and any blank SEO fields.">
+                        ✨ Generate Hero Image
+                    </x-filament::button>
+                @endif
+
+                @forelse ($this->heroImageGenerations as $imageGeneration)
+                    <div class="ai-ca-history-item">
+                        @if (in_array($imageGeneration->status, ['queued', 'processing']))
+                            <span>{{ ucfirst($imageGeneration->status) }}…</span>
+                            <button type="button" class="ai-ca-cancel" wire:click="cancelImageGeneration({{ $imageGeneration->id }})" wire:confirm="Cancel this image generation?">Cancel</button>
+                        @elseif ($imageGeneration->status === 'failed')
+                            <span style="color:#b91c1c">Failed: {{ $imageGeneration->error }}</span>
+                        @elseif ($imageGeneration->status === 'completed')
+                            <span>
+                                @if ($imageGeneration->media?->thumbnail_url)
+                                    <img src="{{ $imageGeneration->media->thumbnail_url }}" alt="" style="width:2rem;height:2rem;object-fit:cover;border-radius:.25rem;vertical-align:middle;margin-right:.35rem">
+                                @endif
+                                Generated via {{ ucfirst($imageGeneration->provider_slug) }} — set as featured image
+                            </span>
+                        @endif
+                    </div>
+                @empty
+                    <div class="ai-ca-current empty">No hero image generated yet.</div>
+                @endforelse
+            </div>
+
+            <div class="ai-ca-card">
                 <h3>Translate</h3>
                 <div class="ai-ca-modes">
                     @if ($record->locale !== 'en')

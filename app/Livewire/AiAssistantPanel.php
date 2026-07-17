@@ -4,11 +4,13 @@ namespace App\Livewire;
 
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\Pages\PageResource;
+use App\Jobs\GenerateHeroImage;
 use App\Jobs\ProcessAiChatMessage;
 use App\Jobs\RunAiContentGeneration;
 use App\Jobs\TranslateArticleDraft;
 use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
+use App\Models\AiImageGeneration;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\Page as PageModel;
@@ -16,6 +18,7 @@ use App\Services\AiAssistant\ActionRegistry;
 use App\Services\AiAssistant\ContentReviewService;
 use App\Services\AiAssistant\DiffService;
 use App\Services\AiAssistant\GenerationApplier;
+use App\Services\AiAssistant\ProviderManager;
 use App\Services\Seo\SeoAuditService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
@@ -153,7 +156,10 @@ class AiAssistantPanel extends Component
         return AiGeneration::where('content_type', $this->recordType)
             ->where('content_id', $this->record->id)
             ->whereIn('status', ['queued', 'processing'])
-            ->exists();
+            ->exists()
+            || AiImageGeneration::forRecord($this->recordType, $this->record->id)
+                ->whereIn('status', ['queued', 'processing'])
+                ->exists();
     }
 
     // ============ AI Chat ============
@@ -288,6 +294,61 @@ class AiAssistantPanel extends Component
         return AiGeneration::forField($this->recordType, $this->record->id, 'translate')
             ->latest()
             ->get();
+    }
+
+    // ============ Hero Image Generation (App\Jobs\GenerateHeroImage — see CLAUDE.md, AI Image Pipeline) ============
+
+    // آیا اصلاً یک ارائه‌دهنده‌ی تولید تصویرِ قابل‌استفاده تنظیم شده — دکمه‌ی «Generate Hero Image»
+    // فقط وقتی این true است فعال می‌شود، وگرنه یک پیام راهنما به‌جایش نشان داده می‌شود
+    public function getCanGenerateImagesProperty(): bool
+    {
+        return app(ProviderManager::class)->resolveImageProvider() !== null;
+    }
+
+    public function getHeroImageGenerationsProperty(): Collection
+    {
+        return AiImageGeneration::forRecord($this->recordType, $this->record->id)
+            ->with('media')
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+
+    // برخلاف generateField/queueGeneration (که یک AiGeneration دو-مرحله‌ای preview-then-apply
+    // می‌سازد)، اینجا یک AiImageGeneration جداگانه است — تصویر همان لحظه که جاب تمام شود ذخیره و
+    // featured image می‌شود، بدون کلیک Apply جدا (هم‌روحِ Translate بالا)
+    public function generateHeroImage(): void
+    {
+        if (! $this->canGenerateImages) {
+            Notification::make()->danger()->title('No image-generation provider is configured')->body('Set one up in AI Studio → AI Routing → Image Generation.')->send();
+
+            return;
+        }
+
+        $generation = AiImageGeneration::create([
+            'content_type' => $this->recordType,
+            'content_id' => $this->record->id,
+            'prompt_field' => 'hero_image_prompt',
+            'status' => 'queued',
+            'user_id' => Auth::id(),
+        ]);
+
+        GenerateHeroImage::dispatch($generation->id);
+
+        $this->notifyQueued('Hero image generation');
+    }
+
+    public function cancelImageGeneration(int $id): void
+    {
+        $generation = AiImageGeneration::find($id);
+
+        if (! $generation || ! $generation->isCancellable()) {
+            return;
+        }
+
+        $generation->update(['status' => 'cancelled']);
+
+        Notification::make()->success()->title('Image generation cancelled')->send();
     }
 
     // ============ Cancellation ============

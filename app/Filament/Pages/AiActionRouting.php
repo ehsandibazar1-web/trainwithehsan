@@ -53,7 +53,7 @@ class AiActionRouting extends Page implements HasForms
         'SEO' => ['seo_title', 'meta_description', 'og_title', 'og_description', 'slug'],
         'Content' => ['excerpt', 'body', 'faq', 'outline', 'cta', 'tags', 'category', 'content_review_summary'],
         'Translation' => ['translate'],
-        'Media' => ['alt_text', 'caption'],
+        'Media' => ['alt_text', 'caption', 'description', 'hero_image_prompt', 'thumbnail_image_prompt', 'og_image_prompt', 'social_image_prompt'],
         'Links' => ['internal_links', 'external_links'],
         'Schema' => ['schema'],
     ];
@@ -67,6 +67,9 @@ class AiActionRouting extends Page implements HasForms
             'failover_enabled' => $settings->failover_enabled,
             'fallback_provider_config_id' => $settings->fallback_provider_config_id,
             'embedding_provider_config_id' => $settings->embedding_provider_config_id,
+            'default_image_provider_config_id' => $settings->default_image_provider_config_id,
+            'image_failover_enabled' => $settings->image_failover_enabled,
+            'fallback_image_provider_config_id' => $settings->fallback_image_provider_config_id,
         ];
 
         $overrides = AiActionOverride::all()->keyBy('action_key');
@@ -100,6 +103,19 @@ class AiActionRouting extends Page implements HasForms
                 ->schema([
                     self::embeddingProviderSelect(),
                 ]),
+
+            Section::make('Image Generation')
+                ->description('Which provider generates the one-click "Hero Image" for an Article/Page (AI Image Pipeline). Only OpenAI and Gemini support image generation — the chosen provider also needs an "Image model" set on its row in AI Providers. Leave unset to disable one-click image generation entirely.')
+                ->schema([
+                    self::imageProviderSelect('default_image_provider_config_id', 'Default image provider'),
+                    Toggle::make('image_failover_enabled')
+                        ->label('Enable failover')
+                        ->helperText('If the chosen image provider fails, automatically retry with the fallback provider below.')
+                        ->live(),
+                    self::imageProviderSelect('fallback_image_provider_config_id', 'Fallback image provider')
+                        ->visible(fn (Get $get): bool => (bool) $get('image_failover_enabled')),
+                ])
+                ->columns(2),
         ];
 
         foreach (self::SECTIONS as $label => $keys) {
@@ -166,6 +182,23 @@ class AiActionRouting extends Page implements HasForms
             ->nullable();
     }
 
+    // فقط OpenAI/Gemini (App\Models\AiProviderConfig::IMAGE_GENERATION_CAPABLE_SLUGS) — همان
+    // الگوی embeddingProviderSelect() بالا، به‌علاوه‌ی toggle-based failover مثل providerSelect()
+    private static function imageProviderSelect(string $name, string $label): Select
+    {
+        return Select::make($name)
+            ->label($label)
+            ->options(fn () => AiProviderConfig::query()
+                ->whereIn('slug', AiProviderConfig::IMAGE_GENERATION_CAPABLE_SLUGS)
+                ->get()
+                ->mapWithKeys(fn (AiProviderConfig $config) => [
+                    $config->id => $config->name.($config->is_usable_for_image_generation ? '' : ' (not ready — set API key + image model)'),
+                ]))
+            ->native(false)
+            ->placeholder('Use Default Provider')
+            ->nullable();
+    }
+
     public function save(): void
     {
         $state = $this->form->getState();
@@ -175,6 +208,9 @@ class AiActionRouting extends Page implements HasForms
             'failover_enabled' => (bool) ($state['failover_enabled'] ?? false),
             'fallback_provider_config_id' => ($state['failover_enabled'] ?? false) ? ($state['fallback_provider_config_id'] ?? null) : null,
             'embedding_provider_config_id' => $state['embedding_provider_config_id'] ?? null,
+            'default_image_provider_config_id' => $state['default_image_provider_config_id'] ?? null,
+            'image_failover_enabled' => (bool) ($state['image_failover_enabled'] ?? false),
+            'fallback_image_provider_config_id' => ($state['image_failover_enabled'] ?? false) ? ($state['fallback_image_provider_config_id'] ?? null) : null,
         ]);
 
         foreach ($state['overrides'] ?? [] as $actionKey => $override) {

@@ -10,6 +10,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -120,6 +121,29 @@ class PageForm
                         ->store($file, $component->getDirectory(), $component->getDiskName())
                         ->disk_path)
                     ->nullable(),
+
+                Section::make('AI Image Prompts (optional)')
+                    ->description('Editable prompts used by the AI Image Pipeline. Leave "Hero image" blank to let the AI Assistant build one automatically from the title/excerpt when you click "Generate Hero Image" in the sidebar. The other three are stored for future use (thumbnail/social/OG image generation) and are not used yet.')
+                    ->collapsed()
+                    ->columnSpanFull()
+                    ->schema([
+                        Textarea::make('hero_image_prompt')
+                            ->label('Hero image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                        Textarea::make('thumbnail_image_prompt')
+                            ->label('Thumbnail image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                        Textarea::make('og_image_prompt')
+                            ->label('Open Graph image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                        Textarea::make('social_image_prompt')
+                            ->label('Social image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                    ]),
 
                 Select::make('status')
                     ->label('Status')

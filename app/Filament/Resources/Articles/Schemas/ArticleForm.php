@@ -153,6 +153,29 @@ class ArticleForm
                         ->disk_path)
                     ->nullable(),
 
+                Section::make('AI Image Prompts (optional)')
+                    ->description('Editable prompts used by the AI Image Pipeline. Leave "Hero image" blank to let the AI Assistant build one automatically from the title/category/excerpt when you click "Generate Hero Image" in the sidebar. The other three are stored for future use (thumbnail/social/OG image generation) and are not used yet.')
+                    ->collapsed()
+                    ->columnSpanFull()
+                    ->schema([
+                        Textarea::make('hero_image_prompt')
+                            ->label('Hero image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                        Textarea::make('thumbnail_image_prompt')
+                            ->label('Thumbnail image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                        Textarea::make('og_image_prompt')
+                            ->label('Open Graph image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                        Textarea::make('social_image_prompt')
+                            ->label('Social image prompt')
+                            ->rows(2)
+                            ->nullable(),
+                    ]),
+
                 TextInput::make('author_name')
                     ->label('Author')
                     ->default('Ehsan Dibazar')
