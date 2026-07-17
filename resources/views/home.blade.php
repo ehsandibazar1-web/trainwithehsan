@@ -145,9 +145,11 @@
        روی عکس برای حفظِ کنتراستِ متن سفید (.title-counter/.sun-counter) اضافه شده ===== */
     .counter{
         background:linear-gradient(rgba(15,15,15,.72),rgba(15,15,15,.82)),url('{{ asset('images/homepage/bg-courses.jpg') }}') 0 0/cover no-repeat;
-        min-height:508px;color:#fff;padding:50px 0 60px;
+        min-height:508px;color:#fff;
     }
-    @@media (max-width:767px){.counter{background-position:center!important}}
+    @@media (min-width:992px){.counter{padding-top:50px;padding-bottom:0}}
+    @@media (min-width:768px) and (max-width:991.98px){.counter{padding-top:6rem;padding-bottom:0}}
+    @@media (max-width:767px){.counter{padding-top:90px;padding-bottom:30px;background-position:center!important}}
     /* .title-counter {font-size:2rem} centered */
     .title-counter{font-size:2rem;text-align:center;color:#fff;font-weight:700}
     @@media (max-width:767px){.title-counter{font-size:1.5rem}}
@@ -268,7 +270,7 @@
        ردیف اول همیشه نمایش داده می‌شود (fallback در صورت غیرفعال بودن)، ردیف دوم کاملاً
        اختیاری و پیش‌فرض مخفی است تا رفتار قبلی برای مدیرهایی که فقط ردیف اول را تنظیم
        کرده‌اند بدون تغییر بماند ===== */
-    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding:56px 0}
+    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding:3rem 0 2rem}
     .insta-showcase--row2{background:#fff url('{{ asset('images/homepage/bg-instagram-row2.jpg') }}') 0 0/cover no-repeat;border-top:0}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
     /* تبلت هم مثل دسکتاپ دو ستونی بماند (متن یک طرف، کادر طرف دیگر) — فقط روی موبایل تک‌ستونی
