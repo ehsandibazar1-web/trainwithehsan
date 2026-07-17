@@ -492,8 +492,10 @@
     {{-- ============ ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ فعال‌سازی،
          لینک embed و متن‌ها از پنل مدیریت (Homepage Settings → Instagram Showcase) می‌آید.
          دو ردیف مستقل (برای دو پست/ریل/پیج جدا) روی همان دیتای s رندر می‌شوند — ردیف اول
-         همیشه نمایش داده می‌شود (رفتار قبلی، بدون تغییر)، ردیف دوم کاملاً اختیاری است و
-         فقط وقتی ادمین صریحاً فعالش کند ظاهر می‌شود ============ --}}
+         همیشه نمایش داده می‌شود (رفتار قبلی، بدون تغییر)، ردیف دوم به‌محض داشتن محتوای واقعی
+         (Embed URL یا Fallback Image یا روشن‌بودن Enable) ظاهر می‌شود — نه فقط با روشن‌بودن
+         Enable به‌تنهایی؛ نمایش امبد زنده هم فقط به وجود Embed URL بستگی دارد، نه توگل Enable —
+         تا رفتار هر دو ردیف برای «آپلود عکس» و «چسباندن لینک» کاملاً یکسان باشد ============ --}}
     @php($instaRows = [
         [
             'section_class' => '',
@@ -519,7 +521,7 @@
         ],
     ])
     @foreach ($instaRows as $row)
-        @continue(!$row['always_visible'] && !$row['enabled'])
+        @continue(!$row['always_visible'] && !$row['enabled'] && !$row['embed_url'] && !$row['fallback_image'])
         <section class="insta-showcase{{ $row['section_class'] }}">
             <div class="wrap">
                 <div class="insta-showcase-grid reveal-group">
@@ -533,7 +535,7 @@
                     </div>
 
                     <div class="insta-showcase-card reveal">
-                        @if($row['enabled'] && $row['embed_url'])
+                        @if($row['embed_url'])
                             {{-- امبد رسمی اینستاگرام فقط وقتی این بخش وارد نمای دستگاه می‌شود لود می‌شود
                                  (نگاه کنید به page-js پایین صفحه) — تا آن لحظه فقط یک placeholder با
                                  ارتفاع رزروشده اینجاست تا CLS ایجاد نشود --}}
