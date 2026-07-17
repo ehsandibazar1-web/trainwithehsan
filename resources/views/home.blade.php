@@ -240,9 +240,16 @@
     }
     @@media (max-width:991px){.img-user{width:100px;height:100px;font-size:22px}}
 
-    /* ===== ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ یک کارت پرمیوم
-       (گوشه‌ی گرد، سایه، بوردر ظریف طلایی) کنار متن در دسکتاپ، زیر متن در موبایل ===== */
+    /* ===== ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ کارت پرمیوم
+       (گوشه‌ی گرد، سایه، بوردر ظریف طلایی) کنار متن در دسکتاپ، زیر متن در موبایل. قاب
+       امبد به نسبت تقریبی ۹:۱۶ (عمودی، مثل ریلز/پست‌های اینستاگرام) رزرو می‌شود — همان
+       ویژگی امبد رسمی/لیزی‌لود/فال‌بک قبلی، فقط با تناسب تصویر عمودی‌تر. دو ردیف مستقل
+       (برای دو پست/ریل/پیج جدا، مثل سایت مرجع ehsandibazar.com) با پس‌زمینه‌ی متناوب —
+       ردیف اول همیشه نمایش داده می‌شود (fallback در صورت غیرفعال بودن)، ردیف دوم کاملاً
+       اختیاری و پیش‌فرض مخفی است تا رفتار قبلی برای مدیرهایی که فقط ردیف اول را تنظیم
+       کرده‌اند بدون تغییر بماند ===== */
     .insta-showcase{background:#ebebeb;border-top:1px solid #c2c2c2;padding:56px 0}
+    .insta-showcase--row2{background:#fff;border-top:0}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
     @@media (max-width:900px){.insta-showcase-grid{grid-template-columns:1fr;gap:32px}}
     .insta-showcase-text .insta-showcase-logo{width:100px;height:auto;margin-bottom:20px}
@@ -257,7 +264,7 @@
 
     .insta-showcase-card{display:flex;justify-content:center}
     .insta-embed-wrap{
-        position:relative;width:100%;max-width:550px;min-height:460px;
+        position:relative;width:100%;max-width:360px;min-height:640px;
         background:#f9f7f2;border:1px solid #e8e3d5;border-radius:16px;
         box-shadow:0 18px 40px -18px rgba(37,32,15,.35);
         overflow:hidden;display:flex;align-items:center;justify-content:center;
@@ -266,7 +273,7 @@
     .insta-embed-wrap:hover{transform:translateY(-4px);box-shadow:0 24px 48px -16px rgba(37,32,15,.4);border-color:var(--gold)}
     .insta-embed-wrap iframe{border-radius:16px!important}
     .insta-embed-wrap .instagram-media{margin:0 auto!important;min-width:326px!important}
-    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:460px}
+    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:640px}
     .insta-embed-spinner{
         width:32px;height:32px;border-radius:50%;
         border:3px solid #e8e3d5;border-top-color:var(--gold);
@@ -274,10 +281,10 @@
     }
     @@keyframes insta-spin{to{transform:rotate(360deg)}}
     @@media (prefers-reduced-motion: reduce){.insta-embed-spinner{animation-duration:2.5s}}
-    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;min-height:460px;object-fit:cover}
+    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;min-height:640px;object-fit:cover}
     .insta-embed-fallback-overlay{
         position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;
-        justify-content:center;width:100%;min-height:460px;padding:32px;text-align:center;
+        justify-content:center;width:100%;min-height:640px;padding:32px;text-align:center;
         background:linear-gradient(180deg,rgba(10,8,9,.15) 0%,rgba(10,8,9,.72) 100%);
     }
     .insta-embed-fallback-overlay .insta-showcase-logo{width:46px;height:auto}
@@ -472,50 +479,78 @@
     </section>
 
     {{-- ============ ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ فعال‌سازی،
-         لینک embed و متن‌ها از پنل مدیریت (Homepage Settings → Instagram Showcase) می‌آید ============ --}}
-    @php($instaFollowUrl = $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'))
-    @php($instaFallbackImg = $v('insta_showcase_fallback_image') ? asset('storage/' . $v('insta_showcase_fallback_image')) : '')
-    <section class="insta-showcase">
-        <div class="wrap">
-            <div class="insta-showcase-grid reveal-group">
-                <div class="insta-showcase-text reveal">
-                    <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
-                    <h2>{{ $v('insta_showcase_title', 'Follow the Journey') }}</h2>
-                    <p>{{ $v('insta_showcase_subtitle', 'Real training moments, straight from Instagram.') }}</p>
-                    <a href="{{ $instaFollowUrl }}" class="insta-showcase-btn" rel="noopener" target="_blank">
-                        {{ $v('insta_showcase_button_text', 'Follow us on Instagram') }}
-                    </a>
-                </div>
+         لینک embed و متن‌ها از پنل مدیریت (Homepage Settings → Instagram Showcase) می‌آید.
+         دو ردیف مستقل (برای دو پست/ریل/پیج جدا) روی همان دیتای s رندر می‌شوند — ردیف اول
+         همیشه نمایش داده می‌شود (رفتار قبلی، بدون تغییر)، ردیف دوم کاملاً اختیاری است و
+         فقط وقتی ادمین صریحاً فعالش کند ظاهر می‌شود ============ --}}
+    @php($instaRows = [
+        [
+            'section_class' => '',
+            'always_visible' => true,
+            'enabled' => $v('insta_showcase_enabled'),
+            'embed_url' => $v('insta_embed_url'),
+            'title' => $v('insta_showcase_title', 'Follow the Journey'),
+            'subtitle' => $v('insta_showcase_subtitle', 'Real training moments, straight from Instagram.'),
+            'button_text' => $v('insta_showcase_button_text', 'Follow us on Instagram'),
+            'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'),
+            'fallback_image' => $v('insta_showcase_fallback_image') ? asset('storage/' . $v('insta_showcase_fallback_image')) : '',
+        ],
+        [
+            'section_class' => ' insta-showcase--row2',
+            'always_visible' => false,
+            'enabled' => $v('insta_showcase2_enabled'),
+            'embed_url' => $v('insta_showcase2_embed_url'),
+            'title' => $v('insta_showcase2_title', 'More From Instagram'),
+            'subtitle' => $v('insta_showcase2_subtitle', 'More highlights from our page.'),
+            'button_text' => $v('insta_showcase2_button_text', 'Follow us on Instagram'),
+            'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://instagram.com'),
+            'fallback_image' => $v('insta_showcase2_fallback_image') ? asset('storage/' . $v('insta_showcase2_fallback_image')) : '',
+        ],
+    ])
+    @foreach ($instaRows as $row)
+        @continue(!$row['always_visible'] && !$row['enabled'])
+        <section class="insta-showcase{{ $row['section_class'] }}">
+            <div class="wrap">
+                <div class="insta-showcase-grid reveal-group">
+                    <div class="insta-showcase-text reveal">
+                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
+                        <h2>{{ $row['title'] }}</h2>
+                        <p>{{ $row['subtitle'] }}</p>
+                        <a href="{{ $row['button_url'] }}" class="insta-showcase-btn" rel="noopener" target="_blank">
+                            {{ $row['button_text'] }}
+                        </a>
+                    </div>
 
-                <div class="insta-showcase-card reveal">
-                    @if($v('insta_showcase_enabled') && $v('insta_embed_url'))
-                        {{-- امبد رسمی اینستاگرام فقط وقتی این بخش وارد نمای دستگاه می‌شود لود می‌شود
-                             (نگاه کنید به page-js پایین صفحه) — تا آن لحظه فقط یک placeholder با
-                             ارتفاع رزروشده اینجاست تا CLS ایجاد نشود --}}
-                        <div class="insta-embed-wrap js-insta-embed"
-                             data-insta-url="{{ $v('insta_embed_url') }}"
-                             data-follow-url="{{ $instaFollowUrl }}"
-                             data-fallback-img="{{ $instaFallbackImg }}"
-                             data-logo="{{ asset('storage/homepage/logo-inst.png') }}">
-                            <div class="insta-embed-placeholder">
-                                <span class="insta-embed-spinner" aria-hidden="true"></span>
+                    <div class="insta-showcase-card reveal">
+                        @if($row['enabled'] && $row['embed_url'])
+                            {{-- امبد رسمی اینستاگرام فقط وقتی این بخش وارد نمای دستگاه می‌شود لود می‌شود
+                                 (نگاه کنید به page-js پایین صفحه) — تا آن لحظه فقط یک placeholder با
+                                 ارتفاع رزروشده اینجاست تا CLS ایجاد نشود --}}
+                            <div class="insta-embed-wrap js-insta-embed"
+                                 data-insta-url="{{ $row['embed_url'] }}"
+                                 data-follow-url="{{ $row['button_url'] }}"
+                                 data-fallback-img="{{ $row['fallback_image'] }}"
+                                 data-logo="{{ asset('storage/homepage/logo-inst.png') }}">
+                                <div class="insta-embed-placeholder">
+                                    <span class="insta-embed-spinner" aria-hidden="true"></span>
+                                </div>
                             </div>
-                        </div>
-                    @else
-                        <div class="insta-embed-wrap">
-                            @if($instaFallbackImg)
-                                <img src="{{ $instaFallbackImg }}" alt="Instagram" class="insta-embed-fallback-img">
-                            @endif
-                            <div class="insta-embed-fallback-overlay">
-                                <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
-                                <a href="{{ $v('insta_url', 'https://instagram.com') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Watch on Instagram</a>
+                        @else
+                            <div class="insta-embed-wrap">
+                                @if($row['fallback_image'])
+                                    <img src="{{ $row['fallback_image'] }}" alt="Instagram" class="insta-embed-fallback-img">
+                                @endif
+                                <div class="insta-embed-fallback-overlay">
+                                    <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
+                                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Watch on Instagram</a>
+                                </div>
                             </div>
-                        </div>
-                    @endif
+                        @endif
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    @endforeach
 
     {{-- ============ مودال پخش ویدیو ============ --}}
     <div class="video-modal" id="videoModal">
