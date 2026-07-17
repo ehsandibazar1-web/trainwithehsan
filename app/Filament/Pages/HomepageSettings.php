@@ -244,6 +244,17 @@ class HomepageSettings extends Page implements HasForms
                         ->disk('public')
                         ->directory('homepage/members')
                         ->nullable(),
+                    TextInput::make('video_embed')
+                        ->label('Video embed URL (YouTube)')
+                        ->helperText('Paste a YouTube link here, OR upload a video file below — not both. Clicking this member\'s photo will open the video, just like the videos at the top of the homepage.')
+                        ->nullable(),
+                    FileUpload::make('video_file')
+                        ->label('Video file (mp4)')
+                        ->disk('public')
+                        ->directory('homepage/members')
+                        ->acceptedFileTypes(['video/mp4'])
+                        ->maxSize(131072)
+                        ->nullable(),
                 ])
                 ->defaultItems(0)
                 ->addActionLabel('Add member'),

@@ -253,6 +253,7 @@
     .user-list{list-style:none;display:flex;flex-wrap:wrap;padding:0}
     .user-list li{width:32%;text-align:center;color:#222020;font-weight:500;margin-top:10px;font-size:13px}
     .img-user{
+        position:relative;
         width:150px;height:150px;border-radius:100%;margin:0 auto 8px;max-width:100%;
         background:linear-gradient(135deg,#e8e2d2,var(--gold));
         display:flex;align-items:center;justify-content:center;
@@ -260,6 +261,18 @@
     }
     @@media (max-width:991px){.img-user{width:100px;height:100px;font-size:22px}}
     @@media (max-width:767px){.img-user{width:90px;height:90px;font-size:20px}}
+    /* دایره‌ی عضو با ویدیو — همان الگوی آیکون پخش کارت‌های ویدیوی بالای صفحه (.video-icon)،
+       فقط کوچک‌تر تا با اندازه‌ی دایره‌ی عضو تناسب داشته باشد */
+    .img-user--video{cursor:pointer}
+    .img-user__play{
+        position:absolute;inset:0;margin:auto;width:36px;height:36px;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(0,0,0,.5);border:2px solid #fff;border-radius:50%;
+        color:#fff;font-size:13px;z-index:2;transition:.2s;pointer-events:none;
+    }
+    .img-user--video:hover .img-user__play,.img-user--video:focus-visible .img-user__play{background:var(--gold);border-color:var(--gold);color:#000}
+    @@media (max-width:991px){.img-user__play{width:30px;height:30px;font-size:11px}}
+    @@media (max-width:767px){.img-user__play{width:26px;height:26px;font-size:10px}}
 
     /* ===== ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ کارت پرمیوم
        (گوشه‌ی گرد، سایه، بوردر ظریف طلایی) کنار متن در دسکتاپ، زیر متن در موبایل. قاب
@@ -499,9 +512,20 @@
                     <ul class="user-list reveal-group">
                         @foreach($membersList as $m)
                         @php($mName = trim($m['name'] ?? '') !== '' ? $m['name'] : 'Üye')
+                        {{-- ویدیوی نتیجه‌ی عضو — دقیقاً همان مکانیزم کارت‌های ویدیوی بالای صفحه
+                             (.js-video/#videoModal): یا لینک embed یا فایل آپلودشده، نه هر دو --}}
+                        @php($mEmbed = $embed($m['video_embed'] ?? ''))
+                        @php($mFile = !empty($m['video_file']) ? asset('storage/' . $m['video_file']) : '')
+                        @php($mHasVideo = $mEmbed || $mFile)
                         <li class="reveal">
-                            <div class="img-user" @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
+                            <div class="img-user @if($mHasVideo) img-user--video js-video @endif"
+                                 @if($mHasVideo)
+                                 data-embed="{{ $mEmbed }}" data-file="{{ $mFile }}"
+                                 role="button" tabindex="0" aria-label="{{ 'Play ' . $mName . '’s video' }}"
+                                 @endif
+                                 @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
                                 @if(empty($m['photo'])){{ mb_substr($mName, 0, 1) }}@endif
+                                @if($mHasVideo)<span class="img-user__play" aria-hidden="true">▶</span>@endif
                             </div>{{ $mName }}
                         </li>
                         @endforeach
@@ -625,7 +649,7 @@
             inner.querySelectorAll('iframe,video').forEach(function (el) { el.remove(); });
         }
         document.querySelectorAll('.js-video').forEach(function (card) {
-            card.addEventListener('click', function () {
+            function open() {
                 var embed = card.getAttribute('data-embed');
                 var file = card.getAttribute('data-file');
                 if (!embed && !file) return;
@@ -643,6 +667,12 @@
                 }
                 inner.appendChild(el);
                 modal.classList.add('open');
+            }
+            card.addEventListener('click', open);
+            // دایره‌های عضو با ویدیو role="button"/tabindex دارند — این هندلر کیبورد را برای
+            // آن‌ها فعال می‌کند (روی کارت‌های ویدیوی بالای صفحه که tabindex ندارند بی‌اثر است)
+            card.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
             });
         });
         closeBtn.addEventListener('click', close);
