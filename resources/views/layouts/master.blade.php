@@ -13,6 +13,8 @@
     @endif
     <meta name="robots" content="@yield('robots', 'index,follow')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
+    <link rel="icon" type="image/png" href="{{ asset('storage/homepage/logo.header.png') }}">
+    <link rel="apple-touch-icon" href="{{ asset('storage/homepage/logo.header.png') }}">
 
     {{-- hreflang: فعال‌سازی بعد از آماده شدن نسخهٔ ترکی --}}
     {{-- <link rel="alternate" hreflang="en" href="https://trainwithehsan.com@yield('path_suffix')"> --}}
