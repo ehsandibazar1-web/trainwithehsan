@@ -174,6 +174,7 @@
         .l-box{flex:0 0 calc((100% - 40px) / 3)}
         .courses-carousel .car-arrow{display:none}
     }
+    @@media (min-width:1200px){.learn-grid{gap:30px}}
     .img-learn{
         position:relative;overflow:hidden;aspect-ratio:362/241;
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
@@ -189,7 +190,7 @@
     .l-box:hover .img-learn::before{transform:scaleX(1);opacity:.25}
     .l-title{
         display:block;color:#1e1e1e;background-color:var(--gold);font-weight:500;
-        font-size:15px;min-height:50px;padding-top:11px;text-align:center;
+        font-size:15px;min-height:50px;padding-top:7px;text-align:center;
     }
 
     /* ===== مقالات — پس‌زمینهٔ بافت دیوار/بتنِ روشن، عیناً مطابق ehsandibazar.com؛ چون کارت‌های
@@ -199,11 +200,14 @@
        فقط همین بخش، نه ۳ بخش دیگر. عکسِ اصلیِ JPG (۱۳۴۹×۶۳۷) نگه داشته شد — یک نسخهٔ WebP با
        رزولوشنِ بالاترِ AI-upscale شده هم امتحان شد، ولی کاربر صراحتاً ظاهرِ عکسِ اصلی را ترجیح داد
        و خواستِ برگشت به همین فایل (نه یک تصمیمِ کیفیت/رزولوشنِ فنی، بلکه یک ترجیحِ ظاهریِ مستقیم) ===== */
-    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat fixed;padding:56px 0 64px}
+    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat fixed}
+    @@media (min-width:992px){.section-news{padding-top:6rem;padding-bottom:4rem;min-height:603px}}
+    @@media (min-width:768px) and (max-width:991.98px){.section-news{padding-top:4rem;padding-bottom:4rem;min-height:500px}}
+    @@media (max-width:767px){.section-news{padding-top:2rem;padding-bottom:2rem;min-height:400px}}
     /* .title-section {color:#000; font-size:20px; font-weight:500} */
     .title-section{color:#000;font-size:20px;font-weight:500;text-align:center;line-height:1.5}
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
-    .sub-title-section{text-align:center;margin-top:8px}
+    .sub-title-section{text-align:center;margin-top:8px;color:#229e92;font-weight:600}
     .sub-title-section a{color:#353535;font-weight:500;font-size:15px}
     .articles-carousel{position:relative;margin-top:32px}
     .articles-carousel .car-arrow{color:#555}
@@ -225,10 +229,11 @@
         display:flex;align-items:center;justify-content:center;
     }
     .img-news b{font-weight:800;font-size:26px;color:rgba(0,0,0,.2)}
+    @@media (max-width:767px){.img-news{height:220px}}
     /* .title-news {color:#3e4949; font-weight:600; min-height:40px} */
     .title-news{color:#3e4949;padding:0 10px;font-weight:600;margin-top:15px;min-height:40px;line-height:1.5;font-size:14px}
     /* .news-short-text {color:#525050; 12px; justify; max-height:100px} */
-    .news-short-text{color:#525050;padding:5px 10px;text-align:justify;font-size:12px;min-height:100px;max-height:100px;overflow:hidden;line-height:1.6}
+    .news-short-text{color:#525050;padding:5px 10px;text-align:justify;font-size:12px;min-height:100px;max-height:100px;overflow:hidden;line-height:1.5}
     /* .more-news {80×33; gold} hover: bg #000 / gold  — راست‌چین در LTR */
     .news-more-row{text-align:right}
     .more-news{
@@ -241,7 +246,8 @@
     /* ===== نتایج اعضا — .result-section {background:#fff} + واترمارک لوگوی سپر (ED)، عیناً
        مطابق ehsandibazar.com — عکس PNG شفاف است و خودش کم‌رنگ/کم‌کنتراست صادر شده، بدون تکرار،
        گوشهٔ پایین‌سمت‌راست، تا متن‌های تیره روی سفید خوانا بمانند ===== */
-    .result-section{background:#fff url('{{ asset('images/homepage/watermark-shield.png') }}') no-repeat right center / 426px 520px;padding:70px 0 50px}
+    .result-section{background:#fff url('{{ asset('images/homepage/watermark-shield.png') }}') no-repeat right center / 426px 520px;min-height:520px;padding-top:7rem}
+    @@media (max-width:767px){.result-section{background-size:contain!important;background-position:top center!important;padding-bottom:2rem}}
     .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
     @@media (max-width:767px){.result-grid{grid-template-columns:1fr;text-align:center}}
     /* .user-list li {inline-block; 32%; center; color:#222020} + .img-user img {142px; دایره} */
@@ -254,6 +260,7 @@
         font-weight:700;font-size:30px;color:rgba(0,0,0,.25);
     }
     @@media (max-width:991px){.img-user{width:100px;height:100px;font-size:22px}}
+    @@media (max-width:767px){.img-user{width:90px;height:90px;font-size:20px}}
 
     /* ===== ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ کارت پرمیوم
        (گوشه‌ی گرد، سایه، بوردر ظریف طلایی) کنار متن در دسکتاپ، زیر متن در موبایل. قاب
@@ -263,8 +270,9 @@
        ردیف اول همیشه نمایش داده می‌شود (fallback در صورت غیرفعال بودن)، ردیف دوم کاملاً
        اختیاری و پیش‌فرض مخفی است تا رفتار قبلی برای مدیرهایی که فقط ردیف اول را تنظیم
        کرده‌اند بدون تغییر بماند ===== */
-    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding:3rem 0 2rem}
+    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding-top:3rem}
     .insta-showcase--row2{background:#fff url('{{ asset('images/homepage/bg-instagram-row2.jpg') }}') 0 0/cover no-repeat;border-top:0}
+    @@media (max-width:767px){.insta-showcase{padding-bottom:2rem}}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
     /* تبلت هم مثل دسکتاپ دو ستونی بماند (متن یک طرف، کادر طرف دیگر) — فقط روی موبایل تک‌ستونی
        می‌شود؛ نقطهٔ شکست از ۹۰۰ به ۶۴۰ کاهش یافت تا تبلت‌ها (۷۶۸/۸۲۰/…px) کنارِهم بمانند */
