@@ -4,6 +4,33 @@
 @section('meta_description', 'Practical articles on self-defense, Brazilian Jiu-Jitsu, and martial arts training by Ehsan Dibazar — for complete beginners, women and men.')
 @section('canonical', url('/blog'))
 
+@section('json-ld')
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "CollectionPage",
+  "@@id": "https://trainwithehsan.com/blog#webpage",
+  "name": "Blog",
+  "url": "https://trainwithehsan.com/blog",
+  "description": "Practical articles on self-defense, Brazilian Jiu-Jitsu, and martial arts training by Ehsan Dibazar — for complete beginners, women and men.",
+  "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"},
+  "mainEntity": {
+    "@@type": "ItemList",
+    "itemListElement": [
+      @foreach($articles as $article)
+      {
+        "@@type": "ListItem",
+        "position": {{ $loop->iteration }},
+        "url": @json(url('/blog/' . $article->slug)),
+        "name": @json($article->title)
+      }@unless($loop->last),@endunless
+      @endforeach
+    ]
+  }
+}
+</script>
+@endsection
+
 @section('page-css')
 <style>
     .site-blog{background-color:#f6f6f6;padding:50px 0}

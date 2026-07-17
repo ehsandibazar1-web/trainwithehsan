@@ -98,9 +98,9 @@ class SeoAuditTest extends TestCase
     }
 
     // از ۲۰۲۶-۰۷-۱۷ page.blade.php/tr/page.blade.php همیشه WebPage schema تولید می‌کنند (و در
-    // صورت وجود faqs، FAQPage هم) — پس صفحات مستقل دیگر در «Missing Schema» پرچم نمی‌خورند؛
-    // تنها شکاف واقعی باقی‌مانده ایندکس بلاگ است (blog.blade.php هنوز json-ld ندارد)
-    public function test_missing_schema_flags_only_the_blog_index_not_pages_or_articles(): void
+    // صورت وجود faqs، FAQPage هم)، و از ۲۰۲۶-۰۷-۱۸ blog.blade.php/tr/blog.blade.php هم همیشه
+    // CollectionPage تولید می‌کنند — پس دیگر هیچ‌چیزی در «Missing Schema» پرچم نمی‌خورد
+    public function test_missing_schema_flags_nothing_pages_articles_and_blog_index_all_have_schema(): void
     {
         $this->makeArticle();
         $this->makePage();
@@ -109,7 +109,8 @@ class SeoAuditTest extends TestCase
 
         $this->assertCount(0, collect($result['missing_schema'])->where('type', 'Page'));
         $this->assertCount(0, collect($result['missing_schema'])->where('type', 'Article'));
-        $this->assertCount(2, collect($result['missing_schema'])->where('type', 'Blog index'));
+        $this->assertCount(0, collect($result['missing_schema'])->where('type', 'Blog index'));
+        $this->assertEmpty($result['missing_schema']);
     }
 
     public function test_duplicate_titles_and_descriptions_are_grouped(): void

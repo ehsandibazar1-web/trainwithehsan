@@ -206,18 +206,17 @@ class AiAgentTest extends TestCase
         $this->assertNull($findings[0]['fix_type']);
     }
 
-    // از ۲۰۲۶-۰۷-۱۷ page.blade.php/tr/page.blade.php همیشه WebPage schema تولید می‌کنند — پس
-    // صفحات مستقل دیگر در «Missing Schema» پرچم نمی‌خورند (نگاه کنید به
-    // SeoAuditService::missingSchema()); تنها شکاف واقعی باقی‌مانده ایندکس بلاگ است
-    public function test_missing_schema_no_longer_flags_pages_only_the_blog_index(): void
+    // از ۲۰۲۶-۰۷-۱۷ page.blade.php/tr/page.blade.php همیشه WebPage schema تولید می‌کنند، و از
+    // ۲۰۲۶-۰۷-۱۸ blog.blade.php/tr/blog.blade.php هم همیشه CollectionPage تولید می‌کنند — پس
+    // این دسته دیگر هیچ‌چیزی را پرچم نمی‌زند (نگاه کنید به SeoAuditService::missingSchema())
+    public function test_missing_schema_flags_nothing_now_that_pages_and_blog_index_both_have_schema(): void
     {
         $page = $this->makePage();
 
         $findings = $this->findingsFor($this->service()->run(), 'missing_schema');
 
+        $this->assertEmpty($findings);
         $this->assertFalse(collect($findings)->contains(fn ($f) => $f['content_id'] === $page->id && $f['content_type'] === 'Page'));
-        $this->assertTrue(collect($findings)->every(fn ($f) => $f['content_type'] === 'Blog index'));
-        $this->assertTrue(collect($findings)->every(fn ($f) => $f['fix_type'] === null));
     }
 
     public function test_poor_seo_flags_content_with_no_seo_fields_set(): void

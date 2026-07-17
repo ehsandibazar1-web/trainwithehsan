@@ -81,6 +81,30 @@ class PagesModuleTest extends TestCase
             ->assertSee('standalone-page');
     }
 
+    // ۲۰۲۶-۰۷-۱۸: blog.blade.php/tr/blog.blade.php حالا یک CollectionPage/ItemList JSON-LD
+    // دارند (قبلاً هیچ schema نداشتند — تنها شکاف باقی‌مانده در SeoAuditService::missingSchema())
+    public function test_blog_index_emits_collection_page_schema_for_both_locales(): void
+    {
+        Article::create([
+            'locale' => 'en', 'title' => 'A Blog Article', 'slug' => 'a-blog-article',
+            'body' => '<p>body</p>', 'excerpt' => 'excerpt', 'author_name' => 'Ehsan Dibazar',
+            'status' => 'published', 'published_at' => now()->subHour(),
+        ]);
+        Article::create([
+            'locale' => 'tr', 'title' => 'Bir Blog Makalesi', 'slug' => 'bir-blog-makalesi',
+            'body' => '<p>body</p>', 'excerpt' => 'excerpt', 'author_name' => 'Ehsan Dibazar',
+            'status' => 'published', 'published_at' => now()->subHour(),
+        ]);
+
+        $this->get('/blog')->assertOk()
+            ->assertSee('"@type": "CollectionPage"', false)
+            ->assertSee('a-blog-article');
+
+        $this->get('/tr/blog')->assertOk()
+            ->assertSee('"@type": "CollectionPage"', false)
+            ->assertSee('bir-blog-makalesi');
+    }
+
     public function test_reserved_routes_are_not_shadowed_by_the_page_catchall(): void
     {
         $this->get('/admin/login')->assertOk();

@@ -44,7 +44,7 @@ class SeoAuditService
             'missing_descriptions' => $this->missingDescriptions($items),
             'missing_canonicals' => $this->missingCanonicals(),
             'missing_alt' => $this->missingAlt($items),
-            'missing_schema' => $this->missingSchema($items),
+            'missing_schema' => $this->missingSchema(),
             'duplicate_titles' => $this->duplicateTitles($items),
             'duplicate_descriptions' => $this->duplicateDescriptions($items),
             'broken_internal_links' => $this->brokenInternalLinks($items),
@@ -279,28 +279,16 @@ class SeoAuditService
         return $findings;
     }
 
-    private function missingSchema(Collection $items): array
+    /**
+     * مقاله‌ها همیشه schema Article دارند (blog-post.blade.php). صفحات مستقل از ۲۰۲۶-۰۷-۱۷
+     * همیشه WebPage (و در صورت داشتن FAQ، FAQPage هم) دارند. ایندکس بلاگ هم از ۲۰۲۶-۰۷-۱۸
+     * همیشه CollectionPage دارد (blog.blade.php/tr/blog.blade.php) — پس این بررسی طبق طراحیِ
+     * فعلی همیشه خالی است؛ اینجا نگه داشته شده تا اگر روزی یکی از این سه fallback حذف شد،
+     * بلافاصله دیده شود (همان الگوی missingCanonicals()).
+     */
+    private function missingSchema(): array
     {
-        // مقاله‌ها همیشه schema Article دارند (blog-post.blade.php). صفحات مستقل هم از
-        // ۲۰۲۶-۰۷-۱۷ همیشه WebPage (و در صورت داشتن FAQ، FAQPage هم) دارند — page.blade.php/
-        // tr/page.blade.php دیگر خالی نیستند، پس این دسته دیگر هیچ صفحه‌ای را پرچم نمی‌زند؛
-        // فقط شکاف واقعی باقی‌مانده (ایندکس بلاگ) گزارش می‌شود
-        $findings = [];
-
-        // ایندکس بلاگ schema ندارد (blog.blade.php)
-        foreach (['en' => '/blog', 'tr' => '/tr/blog'] as $locale => $path) {
-            $findings[] = [
-                'category' => 'missing_schema',
-                'type' => 'Blog index',
-                'id' => null,
-                'locale' => $locale,
-                'title' => 'Blog index ('.strtoupper($locale).')',
-                'detail' => "The blog listing page ({$path}) has no JSON-LD structured data.",
-                'edit_url' => null,
-            ];
-        }
-
-        return $findings;
+        return [];
     }
 
     private function duplicateTitles(Collection $items): array
