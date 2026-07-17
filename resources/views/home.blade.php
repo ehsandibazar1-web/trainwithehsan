@@ -92,8 +92,11 @@
     .video-card__img{
         position:absolute;inset:0;
         background:linear-gradient(135deg,#2c2c2c 0%,#3a3222 60%,#8a6d1f 170%);
-        background-size:cover!important;background-position:center!important;
     }
+    /* تگ img واقعی به‌جای background-image: عکس‌های پس‌زمینه‌ی CSS داخل جعبه‌های اسکرول‌شونده
+       موقع اسکرولِ لمسیِ موبایل مجبورند هر فریم دوباره نقاشی بشن (به‌جای این‌که مرورگر آن‌ها را
+       روی لایه‌ی جدای GPU بگذارد)، که همان حس لغزیدن/ناپایداریِ تصویر داخل قاب را می‌داد */
+    .video-card__img img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
     .video-icon{
         position:absolute;inset:0;margin:auto;width:47px;height:46px;
         display:flex;align-items:center;justify-content:center;
@@ -184,6 +187,8 @@
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
         display:flex;align-items:center;justify-content:center;
     }
+    /* img واقعی به‌جای background-image — دلیل در video-card__img توضیح داده شده */
+    .img-learn img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
     .img-learn b{font-weight:800;font-size:24px;color:rgba(255,255,255,.35);letter-spacing:.04em}
     /* افکت هاور سفید wipe مثل .img-learn::before/::after */
     .img-learn::before{
@@ -228,10 +233,12 @@
     @@media (max-width:600px){.news-card{flex-basis:85%}}
     /* .img-news {height:170px} */
     .img-news{
-        height:170px;overflow:hidden;
+        position:relative;height:170px;overflow:hidden;
         background:linear-gradient(135deg,#d8d3c4 0%,#cdb87f 80%,var(--gold) 160%);
         display:flex;align-items:center;justify-content:center;
     }
+    /* img واقعی به‌جای background-image — دلیل در video-card__img توضیح داده شده */
+    .img-news img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center}
     .img-news b{font-weight:800;font-size:26px;color:rgba(0,0,0,.2)}
     @@media (max-width:767px){.img-news{height:220px}}
     /* .title-news {color:#3e4949; font-weight:600; min-height:40px} */
@@ -415,7 +422,10 @@
                 @php($vFile = $v("video{$i}_file"))
                 @php($vThumb = $v("video{$i}_thumb"))
                 <div class="video-card js-video reveal" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
-                    <div class="video-card__img" @if($vThumb) style="background:url('{{ asset('storage/' . $vThumb) }}') center/cover no-repeat" @endif>
+                    <div class="video-card__img">
+                        @if($vThumb)
+                            <img src="{{ asset('storage/' . $vThumb) }}" alt="{{ $v("video{$i}_caption", $videoDefaults[$i - 1]) }}">
+                        @endif
                         <span class="video-icon">▶</span>
                     </div>
                     <div class="text-video">{{ $v("video{$i}_caption", $videoDefaults[$i - 1]) }}</div>
@@ -459,8 +469,12 @@
                 @php($courseLink = trim($v("course{$i}_link")))
                 @php($courseHref = $courseLink !== '' ? (str_starts_with($courseLink, 'http') ? $courseLink : url($courseLink)) : url('/blog'))
                 <a href="{{ $courseHref }}" class="l-box reveal">
-                    <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
-                        @unless($v("course{$i}_image"))<b>{{ $courseDefaults[$i - 1][0] }}</b>@endunless
+                    <div class="img-learn">
+                        @if($v("course{$i}_image"))
+                            <img src="{{ asset('storage/' . $v("course{$i}_image")) }}" alt="{{ $v("course{$i}_label", $courseDefaults[$i - 1][1]) }}">
+                        @else
+                            <b>{{ $courseDefaults[$i - 1][0] }}</b>
+                        @endif
                     </div>
                     <span class="l-title">{{ $v("course{$i}_label", $courseDefaults[$i - 1][1]) }}</span>
                 </a>
@@ -485,8 +499,12 @@
                 <div class="news-grid carousel-track reveal-group">
                 @forelse($latestArticles ?? collect() as $article)
                 <a class="news-card reveal" href="{{ url('/blog/' . $article->slug) }}">
-                    <div class="img-news" @if($article->image_path) style="background-image:url('{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}');background-size:cover;background-position:center" @endif>
-                        @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
+                    <div class="img-news">
+                        @if($article->image_path)
+                            <img src="{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}" alt="{{ $article->title }}">
+                        @else
+                            <b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>
+                        @endif
                     </div>
                     <div class="title-news">{{ $article->title }}</div>
                     <div class="news-short-text">{{ $article->excerpt ?: Str::limit(strip_tags($article->body), 100) }}</div>
