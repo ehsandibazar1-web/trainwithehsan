@@ -5,10 +5,13 @@ namespace App\Providers;
 use App\Models\Article;
 use App\Models\ContentPlan;
 use App\Models\KnowledgeEntry;
+use App\Models\KnowledgeEntryAttachment;
 use App\Models\Page;
 use App\Services\AiAssistant\Contracts\AiProvider;
 use App\Services\AiAssistant\Providers\AnthropicProvider;
 use App\Services\AiAssistant\Providers\NullProvider;
+use App\Services\Rag\Contracts\VectorStore;
+use App\Services\Rag\VectorStores\EloquentCosineVectorStore;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -32,6 +35,10 @@ class AppServiceProvider extends ServiceProvider
                 default => new AnthropicProvider,
             };
         });
+
+        // انتخاب پیاده‌سازیِ VectorStore — تنها جایی که مهاجرت به یک پایگاه‌داده‌ی برداریِ دیگر
+        // (مثلاً pgvector) لازم است تغییر کند؛ نگاه کنید به App\Services\Rag\Contracts\VectorStore
+        $this->app->bind(VectorStore::class, EloquentCosineVectorStore::class);
     }
 
     /**
@@ -47,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
             'Page' => Page::class,
             'ContentPlan' => ContentPlan::class,
             'KnowledgeEntry' => KnowledgeEntry::class,
+            'KnowledgeEntryAttachment' => KnowledgeEntryAttachment::class,
         ]);
 
         // محدودیت نرخ فرم خبرنامه — جلوی ثبت‌نام انبوه/اسپم را می‌گیرد

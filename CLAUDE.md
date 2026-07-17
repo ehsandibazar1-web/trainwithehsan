@@ -37,6 +37,7 @@ app/
   Console/Commands/BackfillMediaLibrary.php  One-off `media:backfill` — registers pre-DAM article/page images in the Media Library
   Console/Commands/NotifyApproachingDeadlines.php   `content-plans:notify-deadlines`, hourly — warns about `ContentPlan.due_at` within 24h, see Section 25
   Console/Commands/AgentAudit.php           `agent:audit`, weekly — runs synchronously (like `articles:publish-due`) so it doesn't depend on a queue worker, see Section 29
+  Console/Commands/RagReindex.php           `rag:reindex [--entry=ID]` — synchronous (like `media:backfill`), for local/staging CLI use; the production "Rebuild All Indexes" button dispatches the queued `RebuildKnowledgeIndex` job instead, see Section 27
   Filament/
     Resources/Articles/                     ArticleResource + Schemas/ArticleForm.php, Tables/ArticlesTable.php, Pages/
     Resources/Pages/                        PageResource (standalone site pages: privacy, terms, FAQ, ...) — same layout as Articles
@@ -62,12 +63,12 @@ app/
     Pages/SeoCenter.php                      Read-only SEO audit dashboard: 10 issue categories, filters, CSV export, quick edit links — see Section 8
     Pages/InternalLinkingCenter.php          Internal-linking dashboard, rule-based link suggestions, link graph — see Section 22
     Pages/AiContentAssistant.php             Thin ~15-line shell mounting App\Livewire\AiAssistantPanel for one Article/Page — kept as a standalone full-page fallback/deep link; the primary UX is the embedded sidebar (EditArticle/EditPage) — see Section 23
-    Pages/AiActionRouting.php                Global default/failover provider + per-ActionRegistry-field provider override, grouped under collapsible sections (SEO/Content/Translation/Media/Links/Schema) — see Section 24
+    Pages/AiActionRouting.php                Global default/failover provider + per-ActionRegistry-field provider override, grouped under collapsible sections (SEO/Content/Translation/Media/Links/Schema), plus an "Embeddings" section picking the active RAG embedding provider (`ai_provider_settings.embedding_provider_config_id`, OpenAI/Gemini only) — see Sections 24 and 27
     Pages/BrandMemory.php                    Central brand knowledge every AI Studio prompt reads automatically — grouped sections, EN/TR/FA value tabs, version history, Preview Prompt — see Section 26
     Pages/AiAgentDashboard.php               "AI Agent" — sixteen-category proactive audit dashboard (category sidebar/counts, filters, per-finding Review/Preview Fix/Approve/Reject), reuses SeoAuditService/LinkGraphService/ContentReviewService for detection and RunAiContentGeneration/TranslateArticleDraft/GenerationApplier for one-click fixes — see Section 29
-    Resources/AiProviderConfigs/             AiProviderConfigResource — List/Edit only (5 rows seeded, slug-bound to ProviderManager::DRIVERS, so no Create/Delete): encrypted API key (blank = keep unchanged), base URL/model/tokens/temperature/timeout, admin-maintained model-catalog repeater, Test Connection + Set as Default row actions — see Section 24
+    Resources/AiProviderConfigs/             AiProviderConfigResource — List/Edit only (5 rows seeded, slug-bound to ProviderManager::DRIVERS, so no Create/Delete): encrypted API key (blank = keep unchanged), base URL/model/tokens/temperature/timeout, admin-maintained model-catalog repeater, Test Connection + Set as Default row actions — see Section 24. Also an `embedding_model` field, visible only on the OpenAI/Gemini rows — see Section 27
     Resources/AiUsageLogs/                   AiUsageLogResource — fully read-only (canCreate/canEdit/canDelete all false), filters (provider/status/action/user/date), per-row error detail modal, Export CSV bulk action — see Section 24
-    Resources/KnowledgeEntries/               KnowledgeEntryResource (nav "Knowledge Entries", its own "Knowledge Base" nav group) — full CRUD: title/category (free text with a suggested-category datalist)/locale/content/source/status/priority/pinning/expiry/tags + document attachments, see Section 27
+    Resources/KnowledgeEntries/               KnowledgeEntryResource (nav "Knowledge Entries", its own "Knowledge Base" nav group) — full CRUD: title/category (free text with a suggested-category datalist)/locale/content/source/status/priority/pinning/expiry/tags + document attachments + "add a website page by URL", a per-row/per-record "Reindex" action, and a list-level "Rebuild All Indexes" action, see Section 27
     Pages/SystemMaintenance.php              Admin-auth-gated "run pending migrations" / "clear cache" buttons — replaces the old public unauthenticated maintenance routes, see Security Rules
     Widgets/ArticleStatsOverview.php         Dashboard stats widget
   Http/Controllers/
@@ -82,7 +83,9 @@ app/
   Jobs/ImportAiArticle.php                   Queued API import — calls the same ArticleImportService::import()
   Jobs/GenerateInternalLinkSuggestions.php   Queued — calls SuggestionEngine::generateAndPersist() (O(n²) scoring, kept off the request cycle)
   Jobs/RunAgentAudit.php                     Queued — calls AgentAuditService::generateAndPersist('manual'), for the AI Agent dashboard's "Run audit now" button; the weekly automatic audit instead runs synchronously via agent:audit, see Section 29
-  Jobs/RunAiContentGeneration.php            Queued — thin dispatch wrapper over ContentAssistantService::generate(), $tries=1, with two cancellation checkpoints — see Section 23; on success also syncs generate()'s returned knowledge_entry_ids onto the AiGeneration via the ai_generation_knowledge_entry pivot — see Section 27
+  Jobs/RunAiContentGeneration.php            Queued — thin dispatch wrapper over ContentAssistantService::generate(), $tries=1, with two cancellation checkpoints — see Section 23; on success also syncs generate()'s returned knowledge_entry_ids onto the AiGeneration via the ai_generation_knowledge_entry pivot, and persists retrieved_chunks — see Section 27
+  Jobs/IndexKnowledgeContent.php             Queued — indexes one KnowledgeEntry or KnowledgeEntryAttachment (IndexingService), dispatched by their model `booted()` hooks and by the Reindex actions in the admin panel; never throws, catches+report()s so a missing embedding provider can never break a save — see Section 27
+  Jobs/RebuildKnowledgeIndex.php             Queued — re-extracts/re-chunks/re-embeds every KnowledgeEntry and KnowledgeEntryAttachment, for the "Rebuild All Indexes" button and after an embedding provider change — see Section 27
   Jobs/ProcessAiChatMessage.php              Queued — classifies a chat message's intent (ContentAssistantService::classifyIntent) and routes it to RunAiContentGeneration, TranslateArticleDraft, or a plain reply — see Section 23
   Jobs/TranslateArticleDraft.php             Queued — builds a real translated draft Article (via ArticleImportService::import()) or Page (direct Eloquent create), always status=draft — see Section 23
   Notifications/WorkflowStageChanged.php, ReviewRequested.php, PublishingCompleted.php, DeadlineApproaching.php   Channel-agnostic (`via()` filtered through NotificationPreference), in-app-only today via `toDatabase()` → `Filament\Notifications\Notification`, see Section 25
@@ -101,13 +104,13 @@ app/
     MediaFolder.php                          Nested media folder (self-referential `parent_id`); a folder can only be deleted while empty (checked in the app layer, not just the DB)
     Keyword.php                              Target-keyword for an Article/Page (polymorphic `keywordable`) — see Section 22
     InternalLinkSuggestion.php               A persisted "source should link to target" suggestion — pending/approved/dismissed, `origin` rule_based|ai — see Sections 22 and 23
-    AiGeneration.php                          One AI Content Assistant run for one field — status/result/input_snapshot for restore, status can also be `cancelled` — see Section 23; also `knowledgeEntries(): BelongsToMany` (`ai_generation_knowledge_entry` pivot) recording which KnowledgeEntry rows were used for this run, see Section 27
+    AiGeneration.php                          One AI Content Assistant run for one field — status/result/input_snapshot for restore, status can also be `cancelled` — see Section 23; also `knowledgeEntries(): BelongsToMany` (`ai_generation_knowledge_entry` pivot) recording which KnowledgeEntry rows were used for this run, plus a `retrieved_chunks` JSON column (chunk-level detail: text/score/source, for the sidebar's "Retrieved chunks" display) — see Section 27
     AiChatMessage.php                         One message in a record's AI Assistant chat thread — user|assistant, optionally linked to the AiGeneration it triggered — see Section 23
-    AiProviderConfig.php                      One vendor's connection settings — encrypted `api_key`, `is_usable` computed accessor (enabled AND has a key) — see Section 24
+    AiProviderConfig.php                      One vendor's connection settings — encrypted `api_key`, `is_usable` computed accessor (enabled AND has a key) — see Section 24; also `embedding_model` (nullable, meaningful only on the OpenAI/Gemini rows — `EMBEDDING_CAPABLE_SLUGS`) and an `is_usable_for_embeddings` computed accessor (usable AND embedding-capable slug AND embedding_model set) — see Section 27
     AiProviderModel.php                       Admin-maintained model catalog per provider (label/model ID/optional per-million-token pricing) — see Section 24
     AiActionOverride.php                      Per-ActionRegistry-field provider/model override — unique on `action_key`; no row for a field means "use the default provider" — see Section 24
     AiUsageLog.php                             One row per ProviderManager::respond() call, success or failure — denormalized provider_slug/model (no FK) so deleting a config never breaks usage history — see Section 24
-    AiProviderSetting.php                     Singleton settings row (default/failover/fallback provider) — `current()` is the only read path — see Section 24
+    AiProviderSetting.php                     Singleton settings row (default/failover/fallback provider) — `current()` is the only read path — see Section 24; also `embedding_provider_config_id` (the active provider for RAG embeddings, `embeddingProvider(): BelongsTo`) — see Section 27
     AiAuditRun.php                            One AI Agent audit run (manual or scheduled) — status + found/new/resolved counts, see Section 29
     AiRecommendation.php                      One AI Agent finding — pending/applied/rejected, optional one-click-fix routing (`fix_type`/`fix_field`/`fix_mode`), linked to the `AiGeneration` that produced its fix preview, see Section 29
     Tag.php                                   Content-organization tag (auto-slug), `MorphToMany` on Article/Page (and, since Section 27, KnowledgeEntry) via `taggables` — deliberately separate from Keyword, see Section 25
@@ -118,8 +121,9 @@ app/
     NotificationPreference.php                Per-user/event/channel opt-out row — no row means enabled — see Section 25
     BrandMemorySection.php                    A labeled slot of brand knowledge (Mission, Forbidden Words, ...) — 25 seeded (is_system=true, undeletable) + admin-addable custom ones — see Section 26
     BrandMemoryValue.php                      One section's content in one language (en/tr/fa — fa is value-only, not a site locale); LogsActivity for version history — see Section 26
-    KnowledgeEntry.php                        One retrievable fact/document about the brand (title/category/locale/content/source/status/priority/pinning/expiry), one-row-per-language like Article — not Brand Memory's per-field-per-locale shape; LogsActivity for version history (surfaced in the existing ActivityLogPage, no bespoke history UI) — see Section 27
-    KnowledgeEntryAttachment.php              A PDF/document attached to a KnowledgeEntry — plain file storage, deliberately bypasses MediaProcessor (image-only pipeline) — see Section 27
+    KnowledgeEntry.php                        One retrievable fact/document about the brand (title/category/locale/content/source/status/priority/pinning/expiry), one-row-per-language like Article — not Brand Memory's per-field-per-locale shape; LogsActivity for version history (surfaced in the existing ActivityLogPage, no bespoke history UI) — see Section 27. `chunks(): MorphMany` (this entry's own content chunks) and `allChunks(): HasMany` (content + every attachment's chunks, denormalized `knowledge_entry_id`); a `booted()` hook dispatches `App\Jobs\IndexKnowledgeContent` on create or whenever `content` changes (RAG, see Section 27)
+    KnowledgeEntryAttachment.php              A PDF/DOCX/TXT/HTML/Markdown document, or a website-page URL (`source_type`/`source_url`), attached to a KnowledgeEntry — plain file storage, deliberately bypasses MediaProcessor (image-only pipeline) — see Section 27. `extraction_status`/`extracted_text`/`extracted_at`/`extraction_error` track `App\Services\Rag\TextExtractionService`'s output; `chunks(): MorphMany`; a `booted()` hook dispatches `IndexKnowledgeContent` on create only (never on update — extraction itself writes back to this same row, and re-triggering on that write would loop)
+    KnowledgeChunk.php                        One embedded, retrievable text chunk — polymorphic `chunkable` (a KnowledgeEntry's own content, or a KnowledgeEntryAttachment's extracted text) + denormalized `knowledge_entry_id` for fast filtering without a join; `embedding` (JSON float array) + `embedding_model`/`embedding_dims`; the only table `App\Services\Rag\VectorStores\EloquentCosineVectorStore` touches — see Section 27
     User.php                                  Default Laravel auth user (admin login)
   Services/ArticleImport/ArticleImportService.php   UI-independent import pipeline (parse → validate → map → import) — the AiImport page and the AI Import API both call the same analyze()/preview()/import()/rollback() methods, now with five auto-detected formats (JSON/Markdown/HTML/XML/custom [[FIELD]] markers) and an $overrides parameter for manual corrections — see Section 28
   Services/Media/MediaProcessor.php          Image pipeline used by every upload path (Media Library, Article/Page featured image): stores the original untouched, generates WebP + thumbnail + responsive WebP variants; `replace()` overwrites content at the *same* disk_path so existing references never break
@@ -143,11 +147,16 @@ app/
   Services/AiAssistant/GenerationApplier.php  The shared write path for an AiGeneration's result — extracted from AiAssistantPanel so both the editor sidebar and the AI Agent dashboard call the exact same apply()/restore()/applyInternalLinkSuggestions(), no duplicated write logic — see Section 29
   Services/AiAgent/AgentAuditService.php     Detection engine for the AI Agent dashboard — sixteen categories, mostly thin wrappers over SeoAuditService/LinkGraphService/ContentReviewService, a handful of new small hand-rolled heuristics; generateAndPersist() upserts into ai_recommendations, never touches applied/rejected rows — see Section 29
   Services/AiAgent/AgentFixService.php       queueFix()/approveFix()/rejectFix() for one AiRecommendation — reuses RunAiContentGeneration/TranslateArticleDraft/GenerationApplier, adds no new write path — see Section 29
-  Services/KnowledgeBase/KnowledgeBaseService.php   retrieveRelevant(query, locale, limit): pinned entries always included, then a keyword/tag/priority pre-filter shortlists candidates for App\Services\AiAssistant\ProviderManager to rank by true relevance (falling back to the keyword ranking alone if no provider is available or the call fails) — no vector database, see Section 27
+  Services/KnowledgeBase/KnowledgeBaseService.php   retrieveChunks(query, locale, limit): the RAG entry point — pinned entries always included (one representative chunk each), then real vector similarity search via App\Services\Rag\Contracts\VectorStore for the rest, falling back to the pre-RAG keyword/tag/priority-scored + AI-ranked shortlist whenever no embedding provider is configured or nothing is indexed yet; retrieveRelevant(query, locale, limit) is the older entry-level wrapper (kept for the ai_generation_knowledge_entry pivot), now built on top of retrieveChunks() — see Section 27
+  Services/Rag/TextExtractionService.php     extractForAttachment()/extractFromPdf()/Docx()/Html()/Markdown()/Text()/Url(): plain-text extraction for every RAG-supported input (PDF via smalot/pdfparser, DOCX via ZipArchive+DOMDocument on word/document.xml, HTML via DOMDocument/DOMXPath, Markdown via regex stripping, a fetched website page via Http+HTML extraction) — see Section 27
+  Services/Rag/ChunkingService.php           chunk(text): hand-rolled sliding-word-window chunker (~220 words/chunk, 40-word overlap, tiny trailing remainders merged into the previous chunk) — no dependency, see Section 27
+  Services/Rag/IndexingService.php           indexKnowledgeEntry()/indexAttachment(): the extract→chunk→embed→VectorStore::upsert() orchestration — the one place all three RAG building blocks are called together; see Section 27
+  Services/Rag/Contracts/VectorStore.php     upsert()/deleteForOwner()/search()/count() — the swappable vector-storage abstraction business logic depends on instead of a concrete table, see Section 27
+  Services/Rag/VectorStores/EloquentCosineVectorStore.php   Today's only VectorStore implementation — knowledge_chunks (JSON embedding column) + brute-force PHP cosine similarity, bound in AppServiceProvider — see Section 27
   Providers/Filament/AdminPanelProvider.php   Filament panel configuration
 config/                                       Standard Laravel config (app, auth, cache, database, filesystems, livewire, logging, mail, queue, services incl. `anthropic`, session)
 database/
-  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications (`notifiable_type` explicitly `varchar(100)`, not `morphs()`'s default 255 — same MySQL/utf8mb4 index-key-length lesson as `ai_generations`/`taggables`) + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}), a fix-up migration for the `notifications` index on installs that hit the key-length error before this fix (2026_07_16_000033) — see Section 25, brand_memory_sections + brand_memory_values + a seed migration inserting the 25 default sections (2026_07_16_00003{4-6}) — see Section 26, knowledge_entries + knowledge_entry_attachments + ai_generation_knowledge_entry (2026_07_16_00003{7-9}) — see Section 27, a fix-up migration giving `ai_generation_knowledge_entry`'s unique index an explicit short name on installs that hit MySQL's 64-character identifier-length error (SQLSTATE 42000/1059) before this fix (2026_07_17_000000) — same key-length lesson as `ai_generations`/`taggables`/`notifications` above, missed for this one table when it first shipped, ai_audit_runs + ai_recommendations (2026_07_17_00000{1,2} — the latter's unique index is explicitly named `ai_recommendation_unique` from the start, applying that same lesson proactively) — see Section 29
+  migrations/                                users, cache, jobs (Laravel defaults) + articles (incl. faqs + seo_title/meta_description/og_title/og_description columns), media (+ DAM columns: disk, folder_id, alt_text, width, height, webp_path, thumbnail_path, responsive_paths), media_folders, site_settings, activity_log, pages (+ same seo/og columns), newsletter_subscribers, import_logs (incl. rollback columns), ai_templates/ai_prompts/ai_profiles, keywords (polymorphic), internal_link_suggestions (+ origin column), ai_generations (project-specific, dated 2026-07-xx), ai_chat_messages (project-specific, dated 2026-07-16_000017), ai_provider_configs (+ a seed migration inserting the 5 vendor rows), ai_provider_models, ai_action_overrides, ai_usage_logs, ai_provider_settings (all dated 2026-07-16_00001{8-23} — see Section 24), tags + taggables (2026_07_16_000024/025), workflow_stages (+ a seed migration inserting the 8 default stages) + content_plans + content_tasks + content_plan_stage_transitions (2026_07_16_00002{6-9}), notifications (`notifiable_type` explicitly `varchar(100)`, not `morphs()`'s default 255 — same MySQL/utf8mb4 index-key-length lesson as `ai_generations`/`taggables`) + notification_preferences + a `deadline_notified_at` column on content_plans (2026_07_16_00003{0-2}), a fix-up migration for the `notifications` index on installs that hit the key-length error before this fix (2026_07_16_000033) — see Section 25, brand_memory_sections + brand_memory_values + a seed migration inserting the 25 default sections (2026_07_16_00003{4-6}) — see Section 26, knowledge_entries + knowledge_entry_attachments + ai_generation_knowledge_entry (2026_07_16_00003{7-9}) — see Section 27, a fix-up migration giving `ai_generation_knowledge_entry`'s unique index an explicit short name on installs that hit MySQL's 64-character identifier-length error (SQLSTATE 42000/1059) before this fix (2026_07_17_000000) — same key-length lesson as `ai_generations`/`taggables`/`notifications` above, missed for this one table when it first shipped, ai_audit_runs + ai_recommendations (2026_07_17_00000{1,2} — the latter's unique index is explicitly named `ai_recommendation_unique` from the start, applying that same lesson proactively) — see Section 29, knowledge_chunks (unique index explicitly named `knowledge_chunk_unique` from the start, same lesson) + `embedding_model`/`embedding_provider_config_id`/`retrieved_chunks` columns added to ai_provider_configs/ai_provider_settings/ai_generations + `source_type`/`source_url`/`extraction_status`/`extracted_text`/`extracted_at`/`extraction_error` columns added to knowledge_entry_attachments (2026_07_17_00000{3,4,5} — the RAG upgrade; `disk_path` was deliberately left non-nullable rather than pulling in `doctrine/dbal` just to `change()` one column — a URL-sourced attachment stores `''` instead, the same "empty string means absent" convention used elsewhere in this codebase) — see Section 27
 lang/
   en/newsletter.php, tr/newsletter.php       ALL user-facing newsletter strings (form messages, result pages, emails) — the only lang files in the project
   factories/, seeders/
@@ -173,8 +182,9 @@ tests/
   Feature/TagsTest.php, ContentPlanTest.php, EditorialNotificationsTest.php, WorkflowStageResourceTest.php, ContentPlanResourceTest.php, ContentPlannerKanbanTest.php, ContentPlannerCalendarTest.php, ContentPlannerTableDashboardTest.php, ContentPlannerAiIntegrationTest.php   Editorial Workflow & Content Planner coverage — see Section 25
   Feature/AdminPanelResilienceTest.php      Asserts the admin panel (incl. System Maintenance) stays reachable even before this feature's migrations have run — see Section 25's `databaseNotifications()` guard
   Feature/BrandMemoryTest.php, BrandMemoryPageTest.php   Brand Memory coverage — see Section 26
-  Feature/KnowledgeBaseTest.php, KnowledgeBaseRetrievalTest.php, KnowledgeBaseGenerationIntegrationTest.php, KnowledgeEntryResourceTest.php   Knowledge Base coverage — see Section 27
+  Feature/KnowledgeBaseTest.php, KnowledgeBaseRetrievalTest.php, KnowledgeBaseGenerationIntegrationTest.php, KnowledgeEntryResourceTest.php   Knowledge Base coverage (pre-RAG behavior, still passing unmodified against the RAG rewrite) — see Section 27
   Feature/KnowledgeBaseMigrationFixTest.php   Asserts the `ai_generation_knowledge_entry` pair is actually unique at the DB level and that the `2026_07_17_000000` fix-up migration is idempotent — see Section 27
+  Feature/RagPipelineTest.php, RagIndexingTest.php, RagRetrievalTest.php, RagGenerationIntegrationTest.php, RagFilamentUiTest.php   RAG upgrade coverage — TextExtractionService/ChunkingService/VectorStore/ProviderManager::embed() building blocks, IndexingService + lifecycle hooks + jobs + rag:reindex, KnowledgeBaseService's semantic-search-with-keyword-fallback chain, ContentAssistantService's chunk-only prompt injection + AiGeneration.retrieved_chunks persistence, and the Filament UI (embedding_model field, AI Routing Embeddings section, website-URL attachments, Reindex/Rebuild actions) — see Section 27
   Feature/AiAgentTest.php, AiAgentDashboardTest.php   AI Agent coverage — every detector category, generateAndPersist()'s upsert/never-touch-decided-rows/stale-cleanup invariants, AgentFixService's three fix_type branches, the agent:audit command/RunAgentAudit job, and the dashboard's Livewire behavior — see Section 29
 ```
 
@@ -282,7 +292,7 @@ Rules going forward:
 - Farsi comments explaining *why* (not *what*) are the established convention in domain logic files — see Laravel Conventions above. New comments in these files should follow the same language and same "explain the non-obvious constraint" purpose, not restate the code.
 - Blade views: no component library, no `<x-component>` abstractions currently in use for the public site — sections are built as plain HTML/Blade with `@yield`/`@section`. Match this flat style rather than introducing Blade components mid-redesign unless asked to.
 - Every new public route/controller method must have an explicit EN and TR counterpart added in the same change (see Multilingual Architecture) — a PR/commit that adds only one locale is incomplete by this project's standard.
-- Do not add dependencies (Composer or npm) for something a few lines of first-party code can do — this project has stayed intentionally dependency-light (5 runtime Composer packages — `filament/filament`, `laravel/framework`, `laravel/tinker`, `spatie/laravel-activitylog`, and `intervention/image` for the Media Library's WebP/thumbnail/responsive pipeline, see Image Optimization Rules — no JS framework). Any new dependency should be justified against that baseline the way `intervention/image` was: a concrete, requested capability plain PHP/GD calls would otherwise reinvent badly.
+- Do not add dependencies (Composer or npm) for something a few lines of first-party code can do — this project has stayed intentionally dependency-light (6 runtime Composer packages — `filament/filament`, `laravel/framework`, `laravel/tinker`, `spatie/laravel-activitylog`, `intervention/image` for the Media Library's WebP/thumbnail/responsive pipeline (see Image Optimization Rules), and `smalot/pdfparser` for RAG's PDF text extraction (see Section 27) — no JS framework). Any new dependency should be justified against that baseline the way `intervention/image`/`smalot/pdfparser` were: a concrete, requested capability plain PHP (or PHP+GD) calls would otherwise reinvent badly — DOCX/HTML/Markdown extraction, by contrast, were deliberately kept dependency-free (`ZipArchive`+`DOMDocument`, `DOMDocument`+`DOMXPath`, regex) because PHP's built-ins were genuinely sufficient there.
 
 ## 14. Development Principles
 
@@ -768,86 +778,234 @@ inside `ContentAssistantService::generate()`.
 - **Tags are the exact same `Tag` model/`taggables` pivot Article/Page/ContentPlan already use** —
   `KnowledgeEntry::tags(): MorphToMany` / `Tag::knowledgeEntries(): MorphToMany`, no new tagging
   system, matching Section 25's "don't build a second tagging mechanism" precedent.
-- **`App\Services\KnowledgeBase\KnowledgeBaseService::retrieveRelevant(query, locale, limit = 5)`**
-  is the only retrieval entry point, and this is where "no vector database" was solved without
-  reinventing search from scratch:
-  1. **Pinned entries for that locale are always included first**, regardless of relevance — for
-     must-know facts (business name, core policy) that should never depend on a scoring heuristic
-     guessing right.
-  2. If pinned entries alone don't fill `limit`, the remaining `active`, non-expired, non-pinned
-     entries in that locale are **cheaply pre-filtered** by a hand-rolled keyword-overlap score
-     (significant-word intersection between the query and the entry's title/category/content, plus a
-     tag-match bonus and a priority weight — the same small, self-built scoring style as
-     `SuggestionEngine`'s Jaccard-style internal-link scoring, Section 22 — not extracted/shared from
-     it, since it's a genuinely different scoring problem; a new, independent implementation was
-     simpler and more honest than forcing reuse of private methods built for link suggestions). This
-     shortlist is capped at 15 candidates.
-  3. That shortlist (never the whole table) is handed to the **existing**
-     `App\Services\AiAssistant\ProviderManager` — the same abstraction every other AI feature already
-     goes through (Section 24) — with a small system prompt asking it to return only the genuinely
-     relevant entry IDs as JSON, most relevant first. **This is what "semantic retrieval" means in
-     this codebase**: the already-configured AI provider judges relevance over a cheap pre-filtered
-     list, instead of adding a vector-embedding pipeline and a new dependency — directly consistent
-     with this project's established anti-dependency stance (`DiffService`'s hand-rolled diff,
-     `SuggestionEngine`'s hand-rolled scoring, Section 13's "no dependency for something a few lines
-     of code can do").
-  4. **If no AI provider is configured, or the call fails or returns unparseable output, retrieval
-     silently falls back to the keyword-only shortlist** — content generation must never be blocked
-     or degraded by a Knowledge Base retrieval failure. The AI explicitly returning an empty array
-     (genuinely "nothing here is relevant") is honored as a real, deliberate zero-result and is
-     **not** treated as a failure that triggers the fallback — the two cases are kept distinct on
-     purpose (see the two dedicated tests in `KnowledgeBaseRetrievalTest.php`).
-- **Injection point: `ContentAssistantService::generate()`, and only there** — not `classifyIntent()`
-  (the AI Chat router, Section 23) and not `buildTranslationPayload()`/`buildTranslateSystemPrompt()`
-  (translation must preserve the *source* content's facts exactly, not have new fact candidates from
-  a different retrieval pass mixed in). A private `relevantKnowledgeFor()` builds the retrieval query
-  from the record's title + the field's label (e.g. "Guard Passing Basics — SEO Title"), skips
-  retrieval entirely for `content_review_summary` (it only summarizes existing findings, it isn't
-  writing new content that needs supporting facts) and for any locale outside `en`/`tr`. A private
-  `withKnowledgeContext()` appends a `## Relevant Knowledge Base Facts` block to the system prompt
-  only when entries were actually found — an install with an empty Knowledge Base produces a
-  byte-identical prompt to before this feature, the same backward-compatibility posture Brand Memory
-  established in Section 26. `generate()`'s return shape gained one new key,
-  `knowledge_entry_ids: int[]`, alongside the existing `result`/`warnings`.
-- **"Which knowledge was used" is tracked per generation, not just logged.** A new pivot table,
-  `ai_generation_knowledge_entry` (mirrors `taggables`'s own shape: plain `id` + two FKs + timestamps
-  + a unique constraint on the pair — **the unique index needs an explicit short name**, since the
-  auto-generated one for this table+column combination exceeds MySQL's 64-character identifier
-  limit (SQLSTATE 42000/1059); this was missed when the table first shipped and fixed by a
-  `2026_07_17_000000` fix-up migration, same "give it a short name / add a corrective migration for
-  already-affected installs" lesson as `internal_link_suggestions` and `notifications` elsewhere in
-  this file — do not remove the explicit name from either migration), backs
-  `AiGeneration::knowledgeEntries(): BelongsToMany` / `KnowledgeEntry::generations(): BelongsToMany`.
-  `App\Jobs\RunAiContentGeneration` syncs `generate()`'s returned `knowledge_entry_ids` onto the
-  `AiGeneration` via this pivot immediately after a successful completion (never on failure/
-  cancellation) — a small, additive step in the same job, not a second poller. `AiAssistantPanel`'s
-  Generate-tab field cards and the History tab both render a "📚 Knowledge used: ..." line whenever
-  a generation's `knowledgeEntries` relation is non-empty, so an admin can always see *why* the AI
-  wrote what it wrote, not just the output — this was an explicit requirement ("display which
-  knowledge entries were used for every AI generation"), not a nice-to-have.
+### RAG upgrade (2026-07-17) — real semantic retrieval, chunk-level, provider-agnostic storage
+
+The paragraphs above describe the Knowledge Base as it originally shipped. On 2026-07-17 the user
+gave an explicit, detailed instruction to upgrade retrieval into a production-grade RAG (Retrieval-
+Augmented Generation) pipeline — **extract → chunk → embed → index → retrieve only relevant
+chunks**, never send the whole Knowledge Base to the AI — with three binding constraints set via
+`AskUserQuestion` before any code was written (see Important Project Decisions for the full
+quotes): (1) embeddings only from **OpenAI or Gemini**, admin-selected; (2) the vector index must
+sit behind a swappable storage interface, not a hardcoded SQLite dependency; (3) **extend**
+`KnowledgeEntry`/`KnowledgeEntryAttachment` — no separate Documents system, no duplicated
+models/storage/UI. This reverses the earlier "AI-ranking over a keyword shortlist, no vector
+database" decision — the reasoning for *that* decision is preserved above for historical context,
+but it is superseded; do not re-read it as still-current guidance. Nothing about
+`ActionRegistry`/`ProviderManager`'s `respond()` path, Brand Memory, or any of the three AI jobs'
+existing behavior was rebuilt — this is additive, the same posture the original Knowledge Base
+feature itself followed.
+
+- **`App\Models\KnowledgeChunk`** is the new unit of retrieval — a `chunkable` polymorphic relation
+  (`'KnowledgeEntry'`/`'KnowledgeEntryAttachment'`, both in the morph map, same short-string
+  convention as `Article`/`Page`/`ContentPlan`) plus a denormalized `knowledge_entry_id` (even for
+  attachment-sourced chunks, so filtering/counting never needs to join through `chunkable`),
+  `chunk_index`, `text`, `char_count`, `embedding` (JSON float array), `embedding_model`,
+  `embedding_dims`, `locale`. Unique on `(chunkable_type, chunkable_id, chunk_index)`, with an
+  **explicit short index name** (`knowledge_chunk_unique`) from the start — the same MySQL
+  64-character identifier lesson already applied proactively for `ai_recommendations` (Section 29),
+  not repeated as a later fix-up migration this time. `knowledge_entry_id` has `cascadeOnDelete()`,
+  so deleting a `KnowledgeEntry` cleans up every chunk (its own content's and every attachment's)
+  automatically — no explicit cleanup code needed anywhere.
+- **`App\Services\Rag\Contracts\VectorStore`** is the swappable storage abstraction the second
+  `AskUserQuestion` constraint required — `upsert(chunkableType, chunkableId, knowledgeEntryId,
+  chunks)`, `deleteForOwner(chunkableType, chunkableId)`, `search(queryEmbedding, limit, filters)`,
+  `count()`. **No business logic (`IndexingService`, `KnowledgeBaseService`) ever queries
+  `KnowledgeChunk` directly** — only through this interface, bound in `AppServiceProvider` to
+  `App\Services\Rag\VectorStores\EloquentCosineVectorStore`, today's only implementation
+  (brute-force cosine similarity computed in PHP after a filtered Eloquent query — acceptable at
+  this project's documented content volume, same performance posture as `LinkGraphService`'s O(n)
+  scan). A future PostgreSQL+pgvector/Qdrant migration is a **single line** — a different class
+  bound in that one `AppServiceProvider::register()` call — never a change to `IndexingService` or
+  `KnowledgeBaseService`. `search()`'s `filters` are deliberately minimal (`knowledge_entry_id_in`,
+  `locale`) — every `KnowledgeEntry`-specific business rule (active/expired/pinned) stays in
+  `KnowledgeBaseService`, not leaked into the storage layer.
+- **Embeddings — a second, separate provider contract, OpenAI/Gemini only.**
+  `App\Services\AiAssistant\Contracts\EmbeddingProvider` (`embed(string[] $texts): float[][]`,
+  `lastEmbeddingUsage()`) is implemented by `OpenAiProvider` (`POST /v1/embeddings`) and
+  `GeminiProvider` (`POST /models/{model}:batchEmbedContents`) **in addition to** their existing
+  `AiProvider`/`UsageAwareProvider` implementations — `AnthropicProvider`/`GrokProvider`/
+  `DeepSeekProvider` do not implement it, because none of those vendors has a real embeddings API
+  (confirmed against the bundled `claude-api` skill's reference docs before this was designed —
+  Anthropic has no `/v1/embeddings`-equivalent endpoint). `AiProviderConfig::EMBEDDING_CAPABLE_SLUGS
+  = ['openai', 'gemini']` is the single source of truth for which rows can be picked as the
+  embedding provider — both in `AiActionRouting`'s "Embeddings" Select and in
+  `ProviderManager::resolveEmbeddingProvider()`. `App\Services\AiAssistant\ProviderManager::embed(
+  texts, ?contentType, ?contentId): float[][]` is the only call site any RAG code uses — it resolves
+  the configured embedding provider (`ai_provider_settings.embedding_provider_config_id`), builds
+  the vendor instance, calls `embed()`, and logs to `ai_usage_logs` (`action_key: 'embedding'`,
+  reusing the same table/`estimateCost()` every other AI call already uses). **Deliberately no
+  retry/failover chain** here (unlike `respond()`'s 2-attempt + fallback-provider logic) — every RAG
+  retrieval path already has its own keyword-only fallback (see `KnowledgeBaseService` below), so
+  the extra complexity isn't needed; `embed()` just throws on failure and the caller decides.
+  **Deliberately no `.env`-only fallback either** (unlike `respond()`'s permanent `ANTHROPIC_API_KEY`
+  fallback for chat, Section 24) — embeddings are a brand-new capability with no pre-existing
+  installs to preserve compatibility for, so "nothing configured" simply means `null`/"use the
+  keyword fallback," not a hidden default to wire up.
+- **Extraction — `App\Services\Rag\TextExtractionService`** turns any RAG-supported input into
+  plain text: PDF via `smalot/pdfparser` (this feature's one new, explicitly justified Composer
+  dependency — pure-PHP, no system binary, same "a concrete capability plain PHP can't reasonably
+  reinvent" bar `intervention/image` was held to, Section 21); DOCX via PHP's built-in `ZipArchive` +
+  `DOMDocument` reading `word/document.xml`'s `<w:p>`/`<w:t>` structure directly (no new dependency —
+  note `DOMDocument::getElementsByTagName()` does **not** match a namespaced prefix like `w:p`
+  once the document declares `xmlns:w`; `getElementsByTagNameNS()` with the official
+  wordprocessingml URI is required, a real bug caught during this feature's own development, not a
+  hypothetical); HTML via `DOMDocument`/`DOMXPath` walking block-level tags in document order
+  (broader in scope than the existing `App\Services\Seo\HtmlContentScanner`, which is purpose-built
+  for known RichEditor article bodies, not arbitrary uploaded/fetched HTML — the two are not merged);
+  Markdown via regex-based syntax stripping (not a full Markdown parser — deliberately, matching this
+  project's existing "hand-rolled over a heavy dependency" bar); TXT as-is; and a website page (a
+  fetched URL) via `Http::get()` + the same HTML extraction path, with a PDF-content-type branch for
+  when the URL itself points straight at a PDF.
+- **Chunking — `App\Services\Rag\ChunkingService::chunk(text): string[]`** — a hand-rolled sliding
+  word-window (~220 words/chunk, 40-word overlap so semantic context isn't lost at a chunk boundary,
+  a too-small trailing remainder merged into the previous chunk rather than left as its own
+  near-duplicate chunk), no dependency, same self-built-utility posture as `DiffService`/
+  `SuggestionEngine`.
+- **`App\Services\Rag\IndexingService`** is the orchestration layer tying extraction, chunking, and
+  embedding together — `indexKnowledgeEntry(KnowledgeEntry)` chunks/embeds the entry's own `content`
+  field; `indexAttachment(KnowledgeEntryAttachment)` extracts first (catching failure onto
+  `extraction_status='failed'`/`extraction_error`, a normal, visible-in-the-admin outcome, not a
+  thrown exception) then chunks/embeds the extracted text. Both funnel into a shared
+  `embedAndStore()` that calls `ProviderManager::embed()` once per owner (one API call for all of
+  that document's chunks, not one call per chunk) and always **fully replaces** the owner's prior
+  chunks via `VectorStore::upsert()` (delete-then-insert in one transaction) — this is also what
+  "rebuild index" means operationally, so a shrinking document never leaves stale trailing chunks
+  behind. Empty content produces zero chunks and clears any prior ones, without ever calling embed().
+- **Queued, and never allowed to break a save.** `App\Jobs\IndexKnowledgeContent` (accepts a
+  `KnowledgeEntry|KnowledgeEntryAttachment`, `$tries = 1`) wraps `IndexingService` in a `try/catch
+  (Throwable) { report($e); }` — an unconfigured/failing embedding provider must never propagate out
+  of the job, because two model `booted()` hooks dispatch it automatically: `KnowledgeEntry` on
+  `wasRecentlyCreated || wasChanged('content')` (not on every save — editing priority/title alone
+  must not trigger a fresh embedding call), and `KnowledgeEntryAttachment` on `created()` **only**
+  (never on `updated()` — `IndexingService::indexAttachment()` itself calls `->save()` on the same
+  row to record extraction results, and hooking `updated()` too would create an infinite dispatch
+  loop). This matters concretely, not just in theory: this project's test suite runs
+  `QUEUE_CONNECTION=sync`, so every `dispatch()` in these hooks executes synchronously inside the
+  same request/test — an uncaught exception here would fail unrelated tests and, in a real
+  `sync`-queue deployment, the actual admin save request. `App\Jobs\RebuildKnowledgeIndex` (also
+  `$tries = 1`, `$timeout = 3600`) re-indexes every `KnowledgeEntry` and `KnowledgeEntryAttachment`
+  in `chunkById(50, ...)` batches, catching and `report()`-ing per-item failures so one bad PDF or
+  unreachable URL never aborts the rest of the rebuild — for the "Rebuild All Indexes" button and for
+  whenever the embedding provider changes (vectors from different models/dimensions aren't
+  comparable, so a provider switch needs a full rebuild). **`php artisan rag:reindex [--entry=ID]`**
+  (`App\Console\Commands\RagReindex`) runs the same work **synchronously**, matching
+  `media:backfill`'s precedent — intended for local/dev/staging CLI use; the production "Rebuild All
+  Indexes" button dispatches the queued job instead, since this project's host has no SSH (Security
+  Rules) and the panel is the only reliably reachable surface.
+- **`App\Services\KnowledgeBase\KnowledgeBaseService::retrieveChunks(query, locale, limit = 8)`** is
+  now the primary retrieval entry point (chunk-level, for both prompt injection and the "Retrieved
+  chunks" UI display), with `retrieveRelevant(query, locale, limit = 5)` (the original, entry-level
+  signature — kept for the `ai_generation_knowledge_entry` pivot) now built as a thin wrapper
+  deriving unique `KnowledgeEntry` IDs from `retrieveChunks()`'s results. The full chain, in order:
+  1. **Pinned entries are still always included first** (unchanged product decision) — but at
+     **one representative chunk per entry**, not the whole document: if a query embedding is
+     available, `VectorStore::search()` picks that entry's single best-matching chunk; otherwise (or
+     if nothing is indexed yet) the entry's raw `content`, truncated, stands in as one pseudo-chunk.
+     This cap exists specifically so a large pinned document can never crowd out everything else —
+     the whole point of RAG is "never send the entire Knowledge Base," and unconditionally including
+     every chunk of every pinned entry would quietly reintroduce that exact problem.
+  2. For the remaining capacity: the query is embedded once (`ProviderManager::embed()`, wrapped in
+     its own try/catch — failure here is silent and falls through to step 3, never an exception the
+     caller sees), then `VectorStore::search()` runs real cosine-similarity search scoped to
+     `available()` (active, non-expired), correct-locale, non-pinned entries.
+  3. **If semantic search returns nothing** — no embedding provider configured, the embed call
+     failed, or (critically) **the content simply hasn't been indexed yet** (a pre-RAG install that
+     hasn't run `rag:reindex`, or an entry saved before an embedding provider was ever configured) —
+     retrieval falls back to the **original, unmodified** keyword-overlap + AI-ranking-over-shortlist
+     logic (`scoreByKeywordOverlap()`/`rankWithAi()`, verbatim, not rewritten), with each selected
+     entry wrapped as a pseudo-chunk so the return shape stays uniform. This is a **deliberately
+     different rule** than `rankWithAi()`'s own empty-array handling (an AI response explicitly
+     saying "nothing is relevant" is honored as a real zero-result, not a failure — see below): an
+     *empty semantic search result* always triggers this fallback, because "nothing indexed yet" and
+     "nothing relevant" are not the same situation, and only the keyword path can tell them apart.
+  4. Every returned chunk carries `{chunk_id, knowledge_entry_id, entry_title, source,
+     chunkable_type, chunkable_id, text, score, pinned}` — `chunk_id`/`chunkable_*` are `null` for a
+     pseudo-chunk (the fallback path never invented a real indexed row), `score` is a real cosine
+     similarity (0–1) for semantic results or a normalized keyword-score approximation for fallback
+     results, and `source` is the entry's `source` field (or its title if blank) — this is the
+     literal data the UI's "Sources used"/"Confidence score" display renders (see below).
+  5. The pre-existing keyword/AI-ranking building blocks (`scoreByKeywordOverlap()`,
+     `priorityWeight()`, `significantWords()`, `rankWithAi()`) are **untouched** — same code, same
+     tests (`KnowledgeBaseRetrievalTest.php` still passes unmodified against this rewrite), just
+     called one level deeper as the fallback rather than the only path.
+- **Injection point is unchanged: `ContentAssistantService::generate()`, and only there** — the
+  `classifyIntent()`/`buildTranslationPayload()` exclusions from the original feature still apply
+  unmodified (Section 27's original text above; translation must never mix in a fresh retrieval
+  pass). What changed is **what gets injected**: `withKnowledgeContext()` now renders each chunk's
+  own `text` (not the whole entry's `content`) — this is the literal mechanism behind "never send the
+  entire Knowledge Base to the AI." `generate()`'s return shape gained `retrieved_chunks` (the full
+  chunk array from `retrieveChunks()`) alongside the existing `knowledge_entry_ids` (now derived from
+  the chunks' unique `knowledge_entry_id`s) and `result`/`warnings`. An install with an empty
+  Knowledge Base (or nothing indexed) still produces a prompt that only differs from
+  pre-Knowledge-Base behavior when the keyword fallback actually finds something — the
+  byte-identical-when-nothing-configured guarantee established in Section 26/27's original build
+  still holds.
+- **`retrieved_chunks` is persisted per generation, not just returned.** `AiGeneration.retrieved_chunks`
+  (JSON) is written by `App\Jobs\RunAiContentGeneration` alongside the existing
+  `ai_generation_knowledge_entry` pivot sync — both happen only on successful completion, never on
+  failure/cancellation, the same invariant the pivot sync already had. `AiAssistantPanel`'s
+  Generate-tab field cards and History tab render a collapsible **"📚 Knowledge used"** block showing
+  every retrieved chunk's source, a pinned badge where relevant, a confidence-score percentage, and a
+  truncated preview of the chunk text itself — satisfying "Show: Retrieved documents, Retrieved
+  chunks, Confidence score, Sources used" directly from the stored data, with no separate query. A
+  generation from before this feature shipped (no `retrieved_chunks` recorded) still falls back to
+  the original plain `knowledgeEntries`-title line, so old history rows don't render as empty.
+- **Filament UI, all additive to existing screens — no new nav items.** `AiProviderConfigForm` gained
+  an `embedding_model` `TextInput`, visible only on the OpenAI/Gemini rows (`EMBEDDING_CAPABLE_SLUGS`).
+  `AiActionRouting` gained an "Embeddings" `Section` with one Select for the active embedding
+  provider (options limited to embedding-capable configs, each labeled "not ready" until it has both
+  an API key and an `embedding_model` set), writing to
+  `ai_provider_settings.embedding_provider_config_id`. `KnowledgeEntryForm` gained a
+  `new_website_url` `TextInput` ("add a website page by URL") alongside the existing `new_attachments`
+  upload — both `CreateKnowledgeEntry`/`EditKnowledgeEntry` now also call
+  `KnowledgeEntryAttachment::createFromUrl()` when it's filled; the `new_attachments` upload's
+  accepted file types were extended to include HTML/Markdown (RAG's format list), matching what
+  `TextExtractionService` actually supports. `KnowledgeEntriesTable` gained a "RAG chunks" count
+  column and a per-row "Reindex" action (re-dispatches `IndexKnowledgeContent` for the entry and all
+  its attachments); `EditKnowledgeEntry` gained the same "Reindex for AI" as a header action;
+  `ListKnowledgeEntries` gained a confirmation-gated "Rebuild All Indexes" header action dispatching
+  `RebuildKnowledgeIndex`.
 - **`App\Filament\Resources\KnowledgeEntries\KnowledgeEntryResource`** (nav "Knowledge Entries", its
   own "Knowledge Base" nav group — deliberately not nested under "AI Studio", since this is a content
   library an admin curates directly, not an AI Studio pipeline screen) — an ordinary CRUD resource
   following `TagResource`'s exact file layout (`Schemas/KnowledgeEntryForm.php`,
   `Tables/KnowledgeEntriesTable.php`, `Pages/{List,Create,Edit}KnowledgeEntry.php`), the first feature
   in this project's Knowledge/AI Studio family that needed **no** custom Livewire page — a standard
-  Filament Resource was sufficient. Table filters: locale, category (dynamic, built from distinct
-  values actually in use — same pattern as `ContentPlanTable`'s category filter), status, priority,
-  tag, and a pinned `TernaryFilter`.
+  Filament Resource was sufficient, and the RAG upgrade above didn't change that. Table filters:
+  locale, category (dynamic, built from distinct values actually in use — same pattern as
+  `ContentPlanTable`'s category filter), status, priority, tag, and a pinned `TernaryFilter`.
 - **Testing**: `tests/Feature/KnowledgeBaseTest.php` (model behavior — defaults, the `available`
   scope, `isExpired()`, the `Tag`/attachment relations, activity-log version history, the
-  `AiGeneration` pivot), `tests/Feature/KnowledgeBaseRetrievalTest.php`
-  (`KnowledgeBaseService::retrieveRelevant()` directly — pinned-always-included, expired/inactive
-  exclusion, locale scoping, the keyword fallback, AI ranking via `Http::fake()`, the
-  empty-array-vs-failure distinction, limit handling across pinned+ranked entries),
+  `AiGeneration` pivot), `tests/Feature/KnowledgeBaseRetrievalTest.php` (the original
+  keyword/AI-ranking behavior, verbatim, still passing unmodified against the RAG-rewritten
+  service — pinned-always-included, expired/inactive exclusion, locale scoping, the keyword
+  fallback, AI ranking via `Http::fake()`, the empty-array-vs-failure distinction, limit handling),
   `tests/Feature/KnowledgeBaseGenerationIntegrationTest.php` (`ContentAssistantService::generate()`
-  actually injecting relevant knowledge into the outbound prompt and returning the right
-  `knowledge_entry_ids`, the `content_review_summary`/cross-locale exclusions,
-  `RunAiContentGeneration` persisting — or correctly not persisting — the usage pivot),
-  `tests/Feature/KnowledgeEntryResourceTest.php` (the Filament resource: list/create/edit/delete,
-  attachment upload registering a real `KnowledgeEntryAttachment` row, the locale filter), and
-  `tests/Feature/KnowledgeBaseMigrationFixTest.php` (the `ai_generation_knowledge_entry` pair is
-  actually unique at the DB level, and the `2026_07_17_000000` fix-up migration is idempotent).
+  injecting relevant knowledge and returning the right `knowledge_entry_ids`, the
+  `content_review_summary`/cross-locale exclusions, `RunAiContentGeneration` persisting — or
+  correctly not persisting — the usage pivot), `tests/Feature/KnowledgeEntryResourceTest.php` (the
+  Filament resource: list/create/edit/delete, attachment upload registering a real
+  `KnowledgeEntryAttachment` row, the locale filter), and `tests/Feature/KnowledgeBaseMigrationFixTest.php`
+  (the `ai_generation_knowledge_entry` pair is actually unique at the DB level, and the
+  `2026_07_17_000000` fix-up migration is idempotent) all predate the RAG upgrade and pass
+  unmodified against it, confirming the upgrade really was additive. The RAG upgrade itself adds:
+  `tests/Feature/RagPipelineTest.php` (`TextExtractionService` for every supported format incl. the
+  DOCX namespace bug and a PDF fixture, `ChunkingService`'s overlap/empty-input behavior,
+  `EloquentCosineVectorStore`'s upsert/replace/delete/search/count directly, `ProviderManager::embed()`
+  against `Http::fake()` for both OpenAI and Gemini including failure logging and the
+  no-provider-configured throw), `tests/Feature/RagIndexingTest.php` (`IndexingService` end-to-end for
+  both entries and attachments incl. extraction failure handling, the `KnowledgeEntry`/
+  `KnowledgeEntryAttachment` auto-index lifecycle hooks incl. the "unrelated field doesn't reindex"
+  and "no provider configured doesn't throw" cases, cascade-delete of chunks, both queued jobs, and
+  the `rag:reindex` command), `tests/Feature/RagRetrievalTest.php`
+  (`KnowledgeBaseService::retrieveChunks()`'s new semantic path, its fallback-to-keyword behavior
+  both when nothing is indexed and when no provider is configured, the pinned-single-chunk cap, and
+  locale/status/expiry scoping), `tests/Feature/RagGenerationIntegrationTest.php` (confirming the
+  outbound prompt contains only chunk text — not whole-entry content — and that `retrieved_chunks` is
+  both returned by `generate()` and persisted by `RunAiContentGeneration`), and
+  `tests/Feature/RagFilamentUiTest.php` (the `embedding_model` field's visibility, the AI Routing
+  Embeddings section, the website-URL attachment flow, and all three Reindex/Rebuild actions
+  dispatching the right jobs).
 
 ## 28. One Click Publish (AI Import)
 
@@ -1138,7 +1296,7 @@ These are decisions already made — do not silently reverse them:
 - **`BrandMemorySection` is deliberately separate from `AiProfile`, confirmed by design, not a naming collision** — `AiProfile` fills blank *import-time* fields on a manually-pasted article (language/status/category/author), it is opt-in per import and never touches a live AI prompt; `BrandMemory` is read automatically by every live generation call. Do not merge them or let one page manage the other's data.
 - **Building a newsletter/social-media AI-generation feature was explicitly out of scope for Brand Memory (Section 26)** — `newsletter_tone`/`social_media_tone` are reserved sections only, ready for whenever such a feature is built, by the user's own confirmed choice ("just reserve the section"). Do not add a newsletter/social AI-assist action as a side effect of an unrelated task; that is a separate, explicitly-scoped feature.
 - **`KnowledgeEntry` (Section 27) is deliberately separate from `BrandMemorySection`/`BrandMemoryValue`, not a duplicate feature** — Brand Memory is one fixed block of brand-identity knowledge always appended in full; Knowledge Base is a growing, filterable library of individual facts that only some of are relevant to any one generation, retrieved on demand. Do not merge the two models or their Filament screens.
-- **Knowledge Base retrieval ("semantic retrieval") is AI-ranking over a keyword pre-filtered shortlist via the existing `ProviderManager` — not a vector database, and no vector database should be added for it** — this was a deliberate reuse of already-configured infrastructure, consistent with this project's dependency-light stance (see Coding Standards). If retrieval quality ever becomes a real, measured problem at a much larger content volume, that would be a separate, explicitly-scoped decision, not a default upgrade path.
+- **Superseded (2026-07-17): Knowledge Base retrieval is now a real RAG pipeline (extract → chunk → embed → index → retrieve-only-relevant-chunks) — the earlier "AI-ranking over a keyword shortlist, no vector database" decision was explicitly reversed by the user.** See Section 27's RAG subsection for the full design. This was a deliberate, explicit new instruction from the user (not a default upgrade the project chose on its own), with three binding constraints set at the time: (1) embeddings come from **OpenAI or Gemini only** (the only two already-integrated providers with a real embeddings API — Anthropic/Grok/DeepSeek have none), admin-selected in AI Routing; (2) the vector index lives in SQLite today (`knowledge_chunks`, brute-force cosine similarity in PHP) but **only behind a swappable `App\Services\Rag\Contracts\VectorStore` interface** — business logic never touches the table directly, so a future pgvector/Qdrant migration only replaces the one bound implementation class; (3) it **extends** `KnowledgeEntry`/`KnowledgeEntryAttachment` — no separate Documents system, no duplicated models/storage/UI. The old keyword-only ranking code was **not deleted** — it is the permanent, load-bearing fallback whenever no embedding provider is configured or nothing is indexed yet (see "Must Never Be Changed" below). If retrieval quality ever needs to improve further, that is a separate, explicitly-scoped decision — this RAG upgrade is now the current baseline, not a stopping point to revert to the old behavior from.
 - **`KnowledgeEntry.locale` is restricted to `en`/`tr`, deliberately narrower than Brand Memory's `en`/`tr`/`fa`** — Knowledge Base content is retrieved directly into generated site content (only ever en/tr), unlike Brand Memory's `fa` carve-out, which is reference-only and never retrieval-scored. Do not widen Knowledge Base's locale set to include `fa` as a side effect of an unrelated task.
 - **One Click Publish (Section 28) deliberately does not persist Schema, Image Caption, Call To Action, Twitter Card, or Featured Image Prompt anywhere — confirmed with the user, not an oversight.** These are detected and reported in the mapping/preview for reference only. Do not add new `articles` columns or a new table for any of these as a side effect of an unrelated task; if one is ever wanted, it needs the same explicit sign-off any other schema change does.
 - **`newsletter_summary` was explicitly ruled out for One Click Publish, by the user's own "stop it completely, don't continue" instruction** — it is not in `ArticleImportService::ALIASES` and has no special handling anywhere in the importer; a pasted response containing it is treated exactly like any other unrecognized key. Do not add newsletter-summary parsing/mapping/storage to the importer as a side effect of an unrelated task.
@@ -1173,7 +1331,10 @@ These are decisions already made — do not silently reverse them:
 - Do not write to `BrandMemoryValue.content` via the query builder (e.g. `BrandMemoryValue::whereKey(...)->update(...)`) — always go through the Eloquent model instance so `LogsActivity` fires and version history stays complete, including for restores (`restoreVersion()` itself must remain a logged, undoable write, not a silent overwrite) (see Section 26).
 - Do not build a live newsletter/social-media AI-generation feature as a side effect of touching Brand Memory's reserved `newsletter_tone`/`social_media_tone` sections — that was explicitly deferred (see Important Project Decisions).
 - Do not make `ContentAssistantService::classifyIntent()` or `buildTranslationPayload()`/`buildTranslateSystemPrompt()` pull from the Knowledge Base — retrieval only happens inside `generate()` (see Section 27); chat-intent classification doesn't need supporting facts, and translation must preserve only the source content's own facts, not have new candidates mixed in from a fresh retrieval pass.
-- Do not let a failed or unconfigured Knowledge Base retrieval ever block, delay, or degrade content generation — `KnowledgeBaseService::retrieveRelevant()`'s fallback to keyword-only ranking (see Section 27) must stay; do not make the AI-ranking step a hard dependency.
+- Do not let a failed or unconfigured Knowledge Base retrieval ever block, delay, or degrade content generation — `KnowledgeBaseService::retrieveChunks()`'s fallback chain (semantic search → keyword/AI-ranking shortlist → empty) must stay; a missing embedding provider, an un-indexed entry, or an embedding API failure must always degrade gracefully to the pre-RAG keyword behavior, never throw into `ContentAssistantService::generate()` (see Section 27).
+- Do not make any RAG business logic (`App\Services\Rag\IndexingService`, `App\Services\KnowledgeBase\KnowledgeBaseService`) depend on `App\Models\KnowledgeChunk` or the `knowledge_chunks` table directly — always go through `App\Services\Rag\Contracts\VectorStore` (bound to `EloquentCosineVectorStore` in `AppServiceProvider`). This is what keeps a future pgvector/Qdrant migration a one-line container-binding change instead of a rewrite (see Section 27 and Important Project Decisions).
+- Do not add a `.env`-only fallback for embeddings the way `ProviderManager::respond()` has one for chat (`ANTHROPIC_API_KEY`) — embeddings are a brand-new capability with no pre-existing installs to stay compatible with; `resolveEmbeddingProvider()` returning `null` (→ keyword fallback) when nothing is configured in the database is the correct, complete behavior, not a gap to fill.
+- Do not let `IndexKnowledgeContent`/`RebuildKnowledgeIndex` (or the `KnowledgeEntry`/`KnowledgeEntryAttachment` model hooks that dispatch them) throw an uncaught exception — every embedding/extraction failure must be caught and `report()`-ed inside the job, never bubble up into the request that saved the record (this matters concretely because tests, and any environment with `QUEUE_CONNECTION=sync`, run these jobs synchronously in the same request/process).
 - Do not let `KnowledgeEntryAttachment` uploads go through `App\Services\Media\MediaProcessor` — that pipeline is image-only (WebP/thumbnail/responsive generation); Knowledge Base attachments are plain documents stored as-is (see Section 27 and Image Optimization Rules).
 - Do not remove the explicit `'ai_gen_knowledge_entry_unique'` name from either the `ai_generation_knowledge_entry` table's unique index or the `2026_07_17_000000` fix-up migration that adds it on already-affected installs — the auto-generated name for this table+column pair exceeds MySQL's 64-character identifier limit (SQLSTATE 42000/1059), a real production failure this fix-up migration exists to correct (see Section 27).
 - Do not dispatch `App\Jobs\GenerateInternalLinkSuggestions` from `ArticleImportService::import()` (or any other path that just wrote `origin=ai` `internal_link_suggestions` rows in the same request) — `SuggestionEngine::generateAndPersist()` deletes any `pending` suggestion its rule-based rescoring doesn't reconfirm, regardless of `origin`, so this would delete the AI-declared rows before an admin ever sees them (see Section 28).
@@ -1210,7 +1371,7 @@ Ordered roughly by impact:
 19. **Enable additional notification channels (mail/Slack/Telegram/push) once needed** — the four `App\Notifications\*` classes (Section 25) were built channel-agnostic on purpose (`via()` filtered through `NotificationPreference`); adding a channel is purely additive (one `toMail()`/`toSlack()` method + extending `AVAILABLE_CHANNELS`), no call-site changes required.
 20. **Build a real newsletter/social-media AI-assist feature** on top of Brand Memory's reserved `newsletter_tone`/`social_media_tone` sections (Section 26) once wanted — a new `ActionRegistry` field plus a compose-screen AI-assist button would automatically inherit the full Brand Memory context through the same `ContentAssistantService` path every other field already uses; no new composition logic needed, just a new caller.
 21. **`fa` (Persian) as a full third site content locale** is a legitimate future feature but a much larger, separate decision than Brand Memory's value-only Persian support (Section 26) — would touch routes, `Article`/`Page` locale columns, the `translate` target list, and every EN/TR-duplicated view. Revisit only alongside (or after) the EN/TR duplication question in item 8 above, with explicit sign-off — don't infer it from `BrandMemory::LOCALES` already listing `fa`.
-22. **Knowledge Base attachment content isn't parsed into the AI prompt yet** (Section 27) — an uploaded PDF/document is stored for admin/AI *reference* only; the AI never reads its contents, only the entry's own `content` text field. Extracting text from attachments (and feeding it into retrieval/generation) is a legitimate future enhancement, but a genuinely separate piece of work (PDF/document parsing) from what shipped here — don't build it as a side effect of an unrelated task.
+22. ~~Knowledge Base attachment content isn't parsed into the AI prompt~~ — **done** (Section 27's RAG upgrade): every uploaded PDF/DOCX/TXT/HTML/Markdown attachment (and every added website-page URL) is now extracted, chunked, embedded, and retrievable exactly like an entry's own `content` field, via `App\Services\Rag\TextExtractionService` + `IndexingService`. What's still a legitimate future enhancement: OCR for scanned/image-only PDFs (the current PDF path is text-layer extraction only, via `smalot/pdfparser`) and richer DOCX handling (tables/embedded images are currently ignored, only paragraph text is extracted).
 23. **A dedicated "Knowledge used" filter/report on top of `ai_generation_knowledge_entry`** (Section 27) — e.g. "which entries are never used" or "which generations relied most on Knowledge Base facts" — would be a natural read-only dashboard addition once real usage volume exists, mirroring `AiUsageLogResource`'s read-only shape (Section 24). Speculative today; don't build it preemptively.
 24. **Wire Schema/Twitter Card/CTA/Image Caption into the actual templates** (Section 28) if the current detect-and-report-only posture ever proves not enough — this is the same "template-level gap, needs explicit sign-off" stance already documented for AI-suggested schema (item 16 above); don't wire any of them in as a side effect of an unrelated task.
 25. **A real newsletter/social-media summary feature for One Click Publish** — `newsletter_summary` was explicitly ruled out for this round (see Important Project Decisions); if wanted later, it's a separate, explicitly-scoped feature, potentially built on Brand Memory's already-reserved `newsletter_tone` section (item 20 above) the same way any other new `ActionRegistry` field would be.

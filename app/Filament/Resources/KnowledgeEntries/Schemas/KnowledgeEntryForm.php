@@ -126,10 +126,18 @@ class KnowledgeEntryForm
                     ->disk('public')
                     ->directory('knowledge-base')
                     ->preserveFilenames()
-                    ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'])
+                    ->acceptedFileTypes(['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain', 'text/html', 'text/markdown'])
                     ->columnSpanFull()
                     ->dehydrated()
-                    ->helperText('Upload PDFs or documents (brochures, policy docs, etc.) for AI/admin reference — images belong in the Media Library instead.'),
+                    ->helperText('Upload PDFs, Word docs, TXT, HTML, or Markdown files for AI/admin reference — images belong in the Media Library instead. Every file is automatically extracted and indexed for AI retrieval (RAG).'),
+
+                TextInput::make('new_website_url')
+                    ->label('Or add a website page by URL')
+                    ->url()
+                    ->nullable()
+                    ->columnSpanFull()
+                    ->dehydrated()
+                    ->helperText('The page is fetched, its text extracted, and indexed for AI retrieval — same as an uploaded document, just sourced from a live URL.'),
             ]);
     }
 }

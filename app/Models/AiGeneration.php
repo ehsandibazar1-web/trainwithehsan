@@ -17,11 +17,13 @@ class AiGeneration extends Model
     protected $fillable = [
         'user_id', 'content_type', 'content_id', 'field', 'mode', 'provider', 'status',
         'input_snapshot', 'result', 'error', 'applied_at', 'applied_by', 'restored_at', 'restored_by',
+        'retrieved_chunks',
     ];
 
     protected $casts = [
         'input_snapshot' => 'array',
         'result' => 'array',
+        'retrieved_chunks' => 'array',
         'applied_at' => 'datetime',
         'restored_at' => 'datetime',
     ];

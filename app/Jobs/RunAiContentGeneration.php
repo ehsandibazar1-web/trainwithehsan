@@ -51,6 +51,7 @@ class RunAiContentGeneration implements ShouldQueue
             $generation->update([
                 'status' => 'completed',
                 'result' => $outcome['result'],
+                'retrieved_chunks' => $outcome['retrieved_chunks'] ?? [],
             ]);
 
             if (! empty($outcome['knowledge_entry_ids'])) {

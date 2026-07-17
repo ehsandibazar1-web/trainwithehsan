@@ -3,13 +3,10 @@
 namespace App\Services\AiAssistant;
 
 use App\Models\Article;
-use App\Models\KnowledgeEntry;
 use App\Models\Page;
 use App\Services\BrandMemory\BrandMemoryService;
 use App\Services\KnowledgeBase\KnowledgeBaseService;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Collection;
-use Illuminate\Support\Str;
 
 /**
  * ساخت پرامپت برای یک فیلد/حالت مشخص، فراخوانی ProviderManager (که بر اساس action_key تصمیم
@@ -51,7 +48,7 @@ class ContentAssistantService
     }
 
     /**
-     * @return array{result: mixed, warnings: string[], knowledge_entry_ids: int[]}
+     * @return array{result: mixed, warnings: string[], knowledge_entry_ids: int[], retrieved_chunks: array}
      */
     public function generate(Model $record, string $field, string $mode, array $options = []): array
     {
@@ -67,10 +64,10 @@ class ContentAssistantService
         }
 
         $locale = $record->locale ?? 'en';
-        $knowledgeEntries = $this->relevantKnowledgeFor($record, $field, $definition, $locale);
+        $knowledgeChunks = $this->relevantKnowledgeFor($record, $field, $definition, $locale);
 
         $raw = $this->providerManager->respond(
-            $this->withKnowledgeContext($this->buildSystemPrompt($definition, $mode, $locale), $knowledgeEntries),
+            $this->withKnowledgeContext($this->buildSystemPrompt($definition, $mode, $locale), $knowledgeChunks),
             $this->buildUserPrompt($record, $field, $definition),
             $this->imagesFor($record, $field),
             array_merge(['max_tokens' => $definition['max_tokens'] ?? 2048], $options),
@@ -80,41 +77,47 @@ class ContentAssistantService
         );
 
         $result = $this->parseResponse($raw, $definition['response_shape']);
-        $result['knowledge_entry_ids'] = $knowledgeEntries->pluck('id')->all();
+        $result['knowledge_entry_ids'] = collect($knowledgeChunks)->pluck('knowledge_entry_id')->unique()->values()->all();
+        $result['retrieved_chunks'] = $knowledgeChunks;
 
         return $result;
     }
 
     /**
-     * قبل از تولید هر فیلد، فقط ورودی‌های واقعاً مرتبطِ حافظه‌ی دانش را (نه یک بلوک ثابت مثل
-     * Brand Memory) از App\Services\KnowledgeBase\KnowledgeBaseService می‌گیرد — «content review
-     * summary» صرفاً یافته‌های موجود را خلاصه می‌کند و به دانش زمینه‌ای نیاز ندارد، پس معاف است.
+     * قبل از تولید هر فیلد، فقط chunkهای واقعاً مرتبطِ حافظه‌ی دانش را (نه کل ورودی، و نه یک بلوک
+     * ثابت مثل Brand Memory) از App\Services\KnowledgeBase\KnowledgeBaseService می‌گیرد — «content
+     * review summary» صرفاً یافته‌های موجود را خلاصه می‌کند و به دانش زمینه‌ای نیاز ندارد، پس معاف
+     * است.
      *
-     * @return Collection<int, KnowledgeEntry>
+     * @return array<int, array{chunk_id: ?int, knowledge_entry_id: int, entry_title: string, source: string, chunkable_type: string, chunkable_id: int, text: string, score: float, pinned: bool}>
      */
-    private function relevantKnowledgeFor(Model $record, string $field, array $definition, string $locale): Collection
+    private function relevantKnowledgeFor(Model $record, string $field, array $definition, string $locale): array
     {
         if ($field === 'content_review_summary' || ! in_array($locale, ['en', 'tr'], true)) {
-            return collect();
+            return [];
         }
 
         $query = trim(($record->title ?? '').' — '.$definition['label']);
 
-        return $this->knowledgeBase->retrieveRelevant($query, $locale);
+        return $this->knowledgeBase->retrieveChunks($query, $locale);
     }
 
     /**
-     * @param  Collection<int, KnowledgeEntry>  $entries
+     * فقط متنِ خودِ chunkهای انتخاب‌شده به پرامپت اضافه می‌شود، نه کل content ورودی — این همان
+     * چیزی است که «هرگز کل Knowledge Base را به هوش مصنوعی نفرست» یعنی (نگاه کنید به CLAUDE.md،
+     * بخش RAG).
+     *
+     * @param  array<int, array{text: string, source: string, score: float}>  $chunks
      */
-    private function withKnowledgeContext(string $prompt, Collection $entries): string
+    private function withKnowledgeContext(string $prompt, array $chunks): string
     {
-        if ($entries->isEmpty()) {
+        if ($chunks === []) {
             return $prompt;
         }
 
-        $block = $entries
-            ->map(fn (KnowledgeEntry $entry) => '- ['.$entry->category.'] '.$entry->title.': '.Str::limit(strip_tags($entry->content), 500))
-            ->implode("\n");
+        $block = collect($chunks)
+            ->map(fn (array $chunk) => '- ['.$chunk['source'].']: '.$chunk['text'])
+            ->implode("\n\n");
 
         return "{$prompt}\n\n## Relevant Knowledge Base Facts\nUse only the facts below where genuinely relevant — never fabricate details not present here or elsewhere in this prompt.\n{$block}";
     }

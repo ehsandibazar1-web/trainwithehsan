@@ -13,6 +13,7 @@ class AiProviderSetting extends Model
 {
     protected $fillable = [
         'default_provider_config_id', 'failover_enabled', 'fallback_provider_config_id',
+        'embedding_provider_config_id',
     ];
 
     protected function casts(): array
@@ -30,6 +31,11 @@ class AiProviderSetting extends Model
     public function fallbackProvider(): BelongsTo
     {
         return $this->belongsTo(AiProviderConfig::class, 'fallback_provider_config_id');
+    }
+
+    public function embeddingProvider(): BelongsTo
+    {
+        return $this->belongsTo(AiProviderConfig::class, 'embedding_provider_config_id');
     }
 
     // تک ردیف تنظیمات را برمی‌گرداند — اگر به هر دلیلی (مثلاً یک نصب خیلی قدیمی بدون seed) وجود

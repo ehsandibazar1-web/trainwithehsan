@@ -3,6 +3,7 @@
 namespace App\Services\AiAssistant\Providers;
 
 use App\Services\AiAssistant\Contracts\AiProvider;
+use App\Services\AiAssistant\Contracts\EmbeddingProvider;
 use App\Services\AiAssistant\Contracts\UsageAwareProvider;
 use App\Services\AiAssistant\Support\ProviderCredentials;
 use Illuminate\Support\Facades\Http;
@@ -12,11 +13,13 @@ use Illuminate\Support\Facades\Http;
  * جدا از contents، کلید API به‌جای هدر در query string، تصویرها به‌صورت inline_data باید ارسال
  * شوند نه یک URL عمومی)، برای همین پایه‌ی OpenAiCompatibleProvider را به اشتراک نمی‌گذارد.
  */
-class GeminiProvider implements AiProvider, UsageAwareProvider
+class GeminiProvider implements AiProvider, EmbeddingProvider, UsageAwareProvider
 {
     private const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
 
     private ?array $lastUsage = null;
+
+    private ?array $lastEmbeddingUsage = null;
 
     public function __construct(private readonly ProviderCredentials $credentials) {}
 
@@ -79,6 +82,55 @@ class GeminiProvider implements AiProvider, UsageAwareProvider
     public function lastUsage(): ?array
     {
         return $this->lastUsage;
+    }
+
+    // POST /models/{model}:batchEmbedContents — Gemini چند متن را در یک تماس embed می‌کند
+    // (برخلاف OpenAI که یک آرایه‌ی «input» ساده می‌گیرد)؛ usageMetadata رسمی برای این endpoint
+    // مستند نیست، پس هزینه هرگز حدس زده نمی‌شود — null صادقانه، هم‌روح ProviderManager::estimateCost
+    public function embed(array $texts): array
+    {
+        $key = $this->credentials->apiKey;
+
+        if (blank($key)) {
+            throw new \RuntimeException('Google Gemini API key is not configured — set it on the Gemini row in AI Studio → Provider Settings.');
+        }
+
+        $model = $this->credentials->model;
+
+        if (blank($model)) {
+            throw new \RuntimeException('No embedding model is configured for Gemini — set one on the Gemini row in AI Studio → Provider Settings.');
+        }
+
+        $baseUrl = rtrim($this->credentials->baseUrl ?: self::DEFAULT_BASE_URL, '/');
+        $timeout = $this->credentials->timeoutSeconds ?? 60;
+
+        $requests = array_map(fn (string $text) => [
+            'model' => "models/{$model}",
+            'content' => ['parts' => [['text' => $text]]],
+        ], array_values($texts));
+
+        $response = Http::timeout($timeout)
+            ->connectTimeout(10)
+            ->post("{$baseUrl}/models/{$model}:batchEmbedContents?key={$key}", ['requests' => $requests]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException('Gemini embeddings request failed: '.$response->status().' '.$response->body());
+        }
+
+        $embeddings = collect($response->json('embeddings', []));
+
+        if ($embeddings->count() !== count($texts)) {
+            throw new \RuntimeException('Gemini embeddings response did not return one vector per input text.');
+        }
+
+        $this->lastEmbeddingUsage = null;
+
+        return $embeddings->map(fn (array $item) => $item['values'])->all();
+    }
+
+    public function lastEmbeddingUsage(): ?array
+    {
+        return $this->lastEmbeddingUsage;
     }
 
     /** @return array{mime_type: string, data: string}|null */

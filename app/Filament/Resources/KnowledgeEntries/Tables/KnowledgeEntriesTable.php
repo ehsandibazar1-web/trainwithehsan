@@ -2,10 +2,14 @@
 
 namespace App\Filament\Resources\KnowledgeEntries\Tables;
 
+use App\Jobs\IndexKnowledgeContent;
 use App\Models\KnowledgeEntry;
 use App\Models\Tag;
+use Filament\Actions\Action;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
+use Filament\Notifications\Notification;
+use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
@@ -65,6 +69,13 @@ class KnowledgeEntriesTable
                     ->label('Files')
                     ->counts('attachments'),
 
+                TextColumn::make('all_chunks_count')
+                    ->label('RAG chunks')
+                    ->counts('allChunks')
+                    ->badge()
+                    ->color(fn (?int $state): string => $state ? 'success' : 'gray')
+                    ->tooltip('How many indexed vector chunks this entry (and its attachments) currently has — 0 means it has not been indexed yet, e.g. no embedding provider is configured.'),
+
                 TextColumn::make('expires_at')
                     ->label('Expires')
                     ->dateTime('Y-m-d')
@@ -113,6 +124,22 @@ class KnowledgeEntriesTable
             ])
             ->recordActions([
                 EditAction::make(),
+                Action::make('reindex')
+                    ->label('Reindex')
+                    ->icon(Heroicon::OutlinedArrowPath)
+                    ->color('gray')
+                    ->action(function (KnowledgeEntry $record): void {
+                        dispatch(new IndexKnowledgeContent($record));
+
+                        foreach ($record->attachments as $attachment) {
+                            dispatch(new IndexKnowledgeContent($attachment));
+                        }
+
+                        Notification::make()
+                            ->success()
+                            ->title('Reindexing queued')
+                            ->send();
+                    }),
                 DeleteAction::make(),
             ])
             ->emptyStateHeading('No knowledge entries yet')

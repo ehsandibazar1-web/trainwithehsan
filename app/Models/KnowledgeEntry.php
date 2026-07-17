@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Jobs\IndexKnowledgeContent;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\Relations\MorphToMany;
 use Spatie\Activitylog\Models\Concerns\LogsActivity;
 use Spatie\Activitylog\Support\LogOptions;
@@ -57,9 +59,37 @@ class KnowledgeEntry extends Model
         ];
     }
 
+    // ایندکسِ RAG (App\Services\Rag\IndexingService، از طریق App\Jobs\IndexKnowledgeContent صف‌شده)
+    // فقط وقتی content واقعاً عوض شده یا ورودی تازه ساخته شده دوباره صف می‌شود — نه روی هر
+    // ذخیره‌ای؛ تغییر priority/title/status به‌تنهایی نباید یک تماس embedding تازه بسازد. حذفِ
+    // ورودی نیازی به دیسپچ ندارد — knowledge_chunks.knowledge_entry_id با cascadeOnDelete پاک‌سازی
+    // می‌شود (نگاه کنید به migration مربوطه).
+    protected static function booted(): void
+    {
+        static::saved(function (KnowledgeEntry $entry) {
+            if ($entry->wasRecentlyCreated || $entry->wasChanged('content')) {
+                dispatch(new IndexKnowledgeContent($entry));
+            }
+        });
+    }
+
     public function attachments(): HasMany
     {
         return $this->hasMany(KnowledgeEntryAttachment::class);
+    }
+
+    // قطعه‌های خودِ فیلد content این ورودی (chunkable_type=KnowledgeEntry) — قطعه‌های پیوست‌ها از
+    // طریق KnowledgeEntryAttachment::chunks() هستند، نه اینجا؛ برای «همه‌ی قطعه‌های این ورودی
+    // صرف‌نظر از منبع» از knowledgeEntry_id روی KnowledgeChunk استفاده کنید (allChunks())
+    public function chunks(): MorphMany
+    {
+        return $this->morphMany(KnowledgeChunk::class, 'chunkable');
+    }
+
+    // همه‌ی قطعه‌ها (خودِ content + همه‌ی پیوست‌ها) — برای شمارش/نمایش در UI
+    public function allChunks(): HasMany
+    {
+        return $this->hasMany(KnowledgeChunk::class);
     }
 
     public function tags(): MorphToMany
