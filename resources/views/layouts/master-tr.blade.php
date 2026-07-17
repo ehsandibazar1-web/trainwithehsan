@@ -551,12 +551,27 @@
             if (!GTM_ID || window.__gtmLoaded) return;
             window.__gtmLoaded = true;
             window.dataLayer = window.dataLayer || [];
-            window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-            var f = document.getElementsByTagName('script')[0];
-            var j = document.createElement('script');
-            j.async = true;
-            j.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
-            f.parentNode.insertBefore(j, f);
+
+            // کانتینر کلاسیک Tag Manager همیشه با «GTM-» شروع می‌شود و از طریق gtm.js لود می‌شود.
+            // هر شناسه‌ی دیگر («Google tag» با پیشوند GT-، یا شناسه‌ی مستقیم GA4/Ads با پیشوند
+            // G-/AW-) محصول ساده‌شده‌ی جدید گوگل است و باید از طریق لودر gtag.js فعال شود — این
+            // دو مکانیزم متفاوت‌اند، gtm.js برای شناسه‌ی GT-/G- کار نمی‌کند.
+            if (GTM_ID.indexOf('GTM-') === 0) {
+                window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+                var f = document.getElementsByTagName('script')[0];
+                var j = document.createElement('script');
+                j.async = true;
+                j.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+                f.parentNode.insertBefore(j, f);
+            } else {
+                var g = document.createElement('script');
+                g.async = true;
+                g.src = 'https://www.googletagmanager.com/gtag/js?id=' + GTM_ID;
+                document.head.appendChild(g);
+                function gtag() { window.dataLayer.push(arguments); }
+                gtag('js', new Date());
+                gtag('config', GTM_ID);
+            }
         }
 
         function loadClarity() {

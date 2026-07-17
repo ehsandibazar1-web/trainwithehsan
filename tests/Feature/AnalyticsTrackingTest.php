@@ -61,6 +61,22 @@ class AnalyticsTrackingTest extends TestCase
         $response->assertDontSee('ns.html', false);
     }
 
+    public function test_non_classic_google_tag_id_uses_the_gtag_loader_not_gtm_js(): void
+    {
+        // «Google tag» (فرمت GT-XXXXXXX از tagmanager.google.com → Google tags) یا شناسه‌ی مستقیم
+        // GA4/Ads (G-/AW-) کانتینر کلاسیک GTM نیستند — gtm.js برایشان کار نمی‌کند، باید از لودر
+        // gtag.js استفاده شود. کانتینر کلاسیک (پیشوند GTM-) در تست دیگری پوشش داده شده است.
+        config(['services.google_tag_manager.id' => 'GT-MB8JLBLT']);
+        config(['services.microsoft_clarity.id' => null]);
+
+        $response = $this->get('/');
+
+        $response->assertOk();
+        $response->assertSee('id="cookieConsent" hidden', false);
+        $response->assertSee('GT-MB8JLBLT', false);
+        $response->assertSee('googletagmanager.com/gtag/js', false);
+    }
+
     public function test_consent_banner_renders_when_only_clarity_is_configured(): void
     {
         config(['services.google_tag_manager.id' => null]);
