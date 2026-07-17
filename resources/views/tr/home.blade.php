@@ -183,6 +183,9 @@
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
         display:flex;align-items:center;justify-content:center;
     }
+    {{-- کارت‌های محصولات روی موبایل خیلی کشیده بودند و حین اسکرول افقی حس ناپایداری می‌داد —
+         فقط نسبت تصویر را روی موبایل کوتاه‌تر می‌کنیم (عرض/طرح/رنگ کارت دست‌نخورده می‌ماند) --}}
+    @@media (max-width:600px){.img-learn{aspect-ratio:362/190}}
     .img-learn b{font-weight:800;font-size:24px;color:rgba(255,255,255,.35);letter-spacing:.04em}
     /* افکت هاور سفید wipe مثل .img-learn::before/::after */
     .img-learn::before{
@@ -195,6 +198,7 @@
         display:block;color:#1e1e1e;background-color:var(--gold);font-weight:600;letter-spacing:.01em;
         font-size:15px;min-height:50px;padding-top:7px;text-align:center;
     }
+    @@media (max-width:600px){.l-title{min-height:42px;padding-top:6px}}
 
     /* ===== مقالات — پس‌زمینهٔ بافت دیوار/بتنِ روشن، عیناً مطابق ehsandibazar.com؛ چون کارت‌های
        خبر خودشان پس‌زمینهٔ سفید مجزا دارند (.news-card{background:#fff})، نیازی به گرادیان
@@ -232,11 +236,16 @@
         display:flex;align-items:center;justify-content:center;
     }
     .img-news b{font-weight:800;font-size:26px;color:rgba(0,0,0,.2)}
-    @@media (max-width:767px){.img-news{height:220px}}
+    {{-- قبلاً روی موبایل ارتفاع تصویر را (220px) حتی از دسکتاپ (170px) هم بلندتر می‌کرد؛ همین
+         باعث کشیدگی بیش‌ازحد کارت‌های مقاله و حس ناپایدار هنگام اسکرول افقی می‌شد --}}
+    @@media (max-width:767px){.img-news{height:150px}}
     /* .title-news {color:#3e4949; font-weight:600; min-height:40px} */
     .title-news{color:#3e4949;padding:0 10px;font-weight:600;margin-top:15px;min-height:40px;line-height:1.5;font-size:14px}
     /* .news-short-text {color:#525050; 12px; justify; max-height:100px} */
     .news-short-text{color:#525050;padding:5px 10px;text-align:justify;font-size:12px;min-height:100px;max-height:100px;overflow:hidden;line-height:1.5}
+    {{-- خلاصه‌ی متن هم روی موبایل کوتاه‌تر می‌شود تا کارت کلی متناسب‌تر شود (عرض/رنگ/فونت
+         دست‌نخورده — فقط ارتفاع بلوک خلاصه) --}}
+    @@media (max-width:767px){.news-short-text{min-height:60px;max-height:60px}}
     /* .more-news {80×33; gold} hover: bg #000 / gold  — راست‌چین در LTR */
     .news-more-row{text-align:right}
     .more-news{
