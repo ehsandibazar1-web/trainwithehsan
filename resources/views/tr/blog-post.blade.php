@@ -9,6 +9,19 @@
 @section('og_title', ($article->og_title ?: $article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
 @section('og_description', $article->og_description ?: $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
 
+{{-- hreflang اختصاصی: اسلاگ EN/TR یک مقاله لزوماً یکی نیست (مثلاً dovus-zekasi در برابر
+     combat-intelligence)، پس نمی‌توان مثل صفحات ثابت از یک path_suffix مشترک استفاده کرد. اگر
+     ترجمه‌ای برای این مقاله ثبت نشده باشد، اصلاً ادعای hreflang به زبان دیگر نمی‌کنیم (بهتر از
+     لینک‌دادن به یک اسلاگ حدسی که وجود ندارد) --}}
+@php($translation = $article->translation ?: $article->translations->first())
+@section('hreflang')
+@if($translation)
+<link rel="alternate" hreflang="en" href="{{ url($translation->path()) }}">
+@endif
+<link rel="alternate" hreflang="tr" href="{{ url($article->path()) }}">
+<link rel="alternate" hreflang="x-default" href="{{ url($translation ? $translation->path() : $article->path()) }}">
+@endsection
+
 @section('json-ld')
 <script type="application/ld+json">
 {

@@ -16,10 +16,18 @@
     <link rel="icon" type="image/png" href="{{ asset('storage/homepage/logo.header.png') }}">
     <link rel="apple-touch-icon" href="{{ asset('storage/homepage/logo.header.png') }}">
 
-    {{-- hreflang: فعال‌سازی بعد از آماده شدن نسخهٔ ترکی --}}
-    {{-- <link rel="alternate" hreflang="en" href="https://trainwithehsan.com@yield('path_suffix')"> --}}
-    {{-- <link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr@yield('path_suffix')"> --}}
-    {{-- <link rel="alternate" hreflang="x-default" href="https://trainwithehsan.com@yield('path_suffix')"> --}}
+    {{-- پیش‌فرض: مسیر فعلی با پیشوند tr/ حذف‌شده (برای صفحات ثابتی مثل about/blog که مسیر EN و TR
+         فقط با پیشوند فرق دارند). صفحات مقاله (که اسلاگ EN/TR‌شان لزوماً یکی نیست) این بخش را
+         کامل با @@section('hreflang', ...) خودشان override می‌کنند — نگاه کنید به blog-post.blade.php --}}
+    @php($__hreflangPath = trim(preg_replace('#^tr/?#', '', request()->path() === '/' ? '' : request()->path()), '/'))
+    @php($pathSuffix = $__hreflangPath !== '' ? '/'.$__hreflangPath : '')
+    @hasSection('hreflang')
+        @yield('hreflang')
+    @else
+    <link rel="alternate" hreflang="en" href="https://trainwithehsan.com{{ $pathSuffix }}">
+    <link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr{{ $pathSuffix }}">
+    <link rel="alternate" hreflang="x-default" href="https://trainwithehsan.com{{ $pathSuffix }}">
+    @endif
 
     <meta property="og:site_name" content="Train with Ehsan">
     <meta property="og:type" content="@yield('og_type', 'website')">
@@ -320,7 +328,7 @@
 
 {{-- منو: از پنل مدیریت (Menu Settings) — در صورت خالی بودن، منوی پیش‌فرض --}}
 @php($menuItems = \App\Models\SiteSetting::getJson('menu.en.items'))
-@php($menuItems = !empty($menuItems) ? $menuItems : [['label' => 'Home', 'url' => '/', 'highlight' => false], ['label' => 'About', 'url' => '/about', 'highlight' => false], ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence', 'highlight' => false], ['label' => 'Courses', 'url' => '/courses', 'highlight' => false], ['label' => 'Blog', 'url' => '/blog', 'highlight' => false], ['label' => 'Contact', 'url' => '/contact', 'highlight' => true]])
+@php($menuItems = !empty($menuItems) ? $menuItems : [['label' => 'Home', 'url' => '/', 'highlight' => false], ['label' => 'About', 'url' => '/about', 'highlight' => false], ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence', 'highlight' => false], ['label' => 'Courses', 'url' => '/blog', 'highlight' => false], ['label' => 'Blog', 'url' => '/blog', 'highlight' => false], ['label' => 'Contact', 'url' => '/contact', 'highlight' => true]])
 @php($isActive = fn ($u) => ($p = ltrim($u ?? '', '/')) === '' ? request()->is('/') : (request()->is($p) || request()->is($p . '/*')))
 
 <div class="panel-overlay" id="panelOverlay"></div>
@@ -391,7 +399,7 @@
                 ['label' => 'Contact', 'url' => '/contact'],
             ]],
             ['title' => 'Training', 'links' => [
-                ['label' => 'Courses', 'url' => '/courses'],
+                ['label' => 'Courses', 'url' => '/blog'],
             ]],
             ['title' => 'Resources', 'links' => [
                 ['label' => 'Blog', 'url' => '/blog'],
