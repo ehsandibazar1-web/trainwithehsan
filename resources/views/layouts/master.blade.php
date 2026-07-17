@@ -241,7 +241,7 @@
         .footer-contact span{margin:0 8px}
 
         /* ===== انیمیشن ورود هنگام اسکرول (fade-in-up) — سراسر سایت؛ فقط opacity/transform (GPU)، یک‌بار با IntersectionObserver ===== */
-        .reveal{opacity:0;transform:translateY(40px);transition:opacity .7s ease-out,transform .7s ease-out;will-change:transform,opacity}
+        .reveal{opacity:0;transform:translateY(40px);transition:opacity 1s ease,transform 1s ease;will-change:transform,opacity}
         .reveal.is-visible{opacity:1;transform:translateY(0)}
         .reveal-group>.reveal:nth-child(1){transition-delay:0ms}
         .reveal-group>.reveal:nth-child(2){transition-delay:90ms}
