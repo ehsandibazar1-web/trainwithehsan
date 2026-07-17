@@ -223,12 +223,48 @@
         .reveal-group>.reveal:nth-child(7){transition-delay:540ms}
         .reveal-group>.reveal:nth-child(8){transition-delay:630ms}
         @@media (prefers-reduced-motion: reduce){.reveal{opacity:1!important;transform:none!important}}
+
+        /* ===== بنر رضایت کوکی (GA4/Clarity) — طبق KVKK/GDPR: تا کلیک «Accept» هیچ اسکریپت ردیابی لود نمی‌شود ===== */
+        .cookie-consent{
+            position:fixed;left:0;right:0;bottom:0;z-index:999997;
+            background:#171717;color:#fff;padding:16px 20px;
+            display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:16px;
+            box-shadow:0 -2px 10px rgba(0,0,0,.25);
+        }
+        .cookie-consent[hidden]{display:none}
+        .cookie-consent__text{font-size:13px;line-height:1.6;flex:1 1 320px;max-width:640px}
+        .cookie-consent__text a{color:var(--gold);text-decoration:underline}
+        .cookie-consent__actions{display:flex;gap:10px;flex-shrink:0}
+        .cookie-consent__btn{
+            border:0;border-radius:25px;padding:10px 22px;font-size:13px;font-weight:600;
+            cursor:pointer;font-family:inherit;background:var(--gold);color:#000;
+        }
+        .cookie-consent__btn--ghost{background:transparent;border:1px solid #555;color:#fff}
+        .cookie-consent__btn:hover{opacity:.85}
+        @@media (max-width:600px){.cookie-consent{flex-direction:column;align-items:stretch;text-align:center}.cookie-consent__actions{justify-content:center}}
     </style>
     {{-- بدون جاوااسکریپت: محتوا هرگز نباید مخفی بماند --}}
     <noscript><style>.reveal{opacity:1!important;transform:none!important}</style></noscript>
     @yield('page-css')
 </head>
 <body>
+
+{{-- بنر رضایت کوکی (KVKK/GDPR) — اگر هیچ‌کدام از این دو env تنظیم نشده باشد اصلاً رندر نمی‌شود
+     و هیچ اسکریپت ردیابی‌ای هم لود نمی‌شود (نگاه کنید به config/services.php) --}}
+@php($gaId = config('services.google_analytics.id'))
+@php($clarityId = config('services.microsoft_clarity.id'))
+@if($gaId || $clarityId)
+<div class="cookie-consent" id="cookieConsent" hidden role="dialog" aria-live="polite" aria-label="Cookie consent">
+    <div class="cookie-consent__text">
+        We use cookies to understand how visitors use this site (Google Analytics, Microsoft Clarity). You can accept or decline non-essential cookies.
+        <a href="{{ url('/privacy-policy') }}">Learn more</a>
+    </div>
+    <div class="cookie-consent__actions">
+        <button type="button" id="cookieDecline" class="cookie-consent__btn cookie-consent__btn--ghost">Decline</button>
+        <button type="button" id="cookieAccept" class="cookie-consent__btn">Accept</button>
+    </div>
+</div>
+@endif
 
 {{-- منو: از پنل مدیریت (Menu Settings) — در صورت خالی بودن، منوی پیش‌فرض --}}
 @php($menuItems = \App\Models\SiteSetting::getJson('menu.en.items'))
@@ -446,6 +482,69 @@
         }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
         items.forEach(function (el) { io.observe(el); });
     })();
+
+    // ===== رضایت کوکی (GA4/Clarity) — طبق KVKK/GDPR: تا کلیک «Accept» هیچ اسکریپت ردیابی لود
+    // نمی‌شود؛ تصمیم قبلی (accepted/declined) در localStorage نگه داشته می‌شود تا بنر دوباره
+    // برای همان بازدیدکننده نمایش داده نشود. کل این IIFE عمداً پشت همان @@if بالا است — نه فقط
+    // خودِ بنر — تا وقتی هیچ‌کدام تنظیم نشده حتی این کد بی‌اثر هم به بازدیدکننده فرستاده نشود =====
+    @if($gaId || $clarityId)
+    (function () {
+        var GA_ID = @json($gaId);
+        var CLARITY_ID = @json($clarityId);
+        if (!GA_ID && !CLARITY_ID) return;
+
+        var STORAGE_KEY = 'twe_cookie_consent';
+        var banner = document.getElementById('cookieConsent');
+
+        function loadGa() {
+            if (!GA_ID || window.__gaLoaded) return;
+            window.__gaLoaded = true;
+            var s = document.createElement('script');
+            s.async = true;
+            s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+            document.head.appendChild(s);
+            window.dataLayer = window.dataLayer || [];
+            window.gtag = function () { window.dataLayer.push(arguments); };
+            window.gtag('js', new Date());
+            window.gtag('config', GA_ID);
+        }
+
+        function loadClarity() {
+            if (!CLARITY_ID || window.__clarityLoaded) return;
+            window.__clarityLoaded = true;
+            (function (c, l, a, r, i, t, y) {
+                c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+                t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+                y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+            })(window, document, 'clarity', 'script', CLARITY_ID);
+        }
+
+        function loadTrackers() { loadGa(); loadClarity(); }
+
+        var consent = null;
+        try { consent = window.localStorage.getItem(STORAGE_KEY); } catch (e) {}
+
+        if (consent === 'accepted') {
+            loadTrackers();
+        } else if (consent !== 'declined' && banner) {
+            banner.hidden = false;
+        }
+
+        if (banner) {
+            var acceptBtn = document.getElementById('cookieAccept');
+            var declineBtn = document.getElementById('cookieDecline');
+            acceptBtn && acceptBtn.addEventListener('click', function () {
+                try { window.localStorage.setItem(STORAGE_KEY, 'accepted'); } catch (e) {}
+                banner.hidden = true;
+                loadTrackers();
+            });
+            declineBtn && declineBtn.addEventListener('click', function () {
+                try { window.localStorage.setItem(STORAGE_KEY, 'declined'); } catch (e) {}
+                banner.hidden = true;
+            });
+        }
+    })();
+    @endif
 </script>
 @yield('page-js')
 </body>
