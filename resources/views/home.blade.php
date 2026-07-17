@@ -262,102 +262,67 @@
     @@media (max-width:991px){.img-user{width:100px;height:100px;font-size:22px}}
     @@media (max-width:767px){.img-user{width:90px;height:90px;font-size:20px}}
 
-    /* ===== ویترین اینستاگرام (Instagram Showcase) — بازطراحی حرفه‌ای (۲۰۲۶-۰۷-۱۷، فقط
-       Front-end/CSS، بدون تغییر Blade/CMS/محتوا): دیگر دو ردیف آینه‌ی کامل هم نیستند تا حس
-       تکرار ایجاد نشود. ردیف اول «کارت‌جفت» است — متن هم داخل یک پنل قاب‌دار (بوردر طلایی
-       ظریف، سایه) قرار می‌گیرد تا از نظر وزن بصری با کارت تصویر عمودی برابری کند. ردیف دوم
-       ترکیب‌بندی «اسپاتلایت» دارد — کارت تصویر پهن‌تر/کوتاه‌تر (نزدیک به مربع، نه عمودی) و
-       بزرگ‌تر، ستون تصویر پهن‌تر از ستون متن، بدون قاب دور متن، دکمه با رنگ معکوس — تا هویت
-       بصری (رنگ/فونت/شکل دکمه) یکسان بماند اما دیگر مثل کپی‌ِ آینه‌ای ردیف اول به‌نظر نرسد.
-       Padding بالا/پایین هر دو ردیف یکسان شد (قبلاً فقط بالا داشت) و ارتفاع کلی هر ردیف
-       (padding + کارت) نسبت به نسخهٔ قبلی حدود ۲۰٪ کمتر است تا صفحه کشیده/خسته‌کننده نباشد.
-       یک روکش گرادیانی سفید-نیمه‌شفاف روی بافت پس‌زمینه اضافه شد تا تصویر پس‌زمینه کمتر شلوغ
-       دیده شود و کنتراست کارت‌ها بیشتر شود — خودِ فایل‌های تصویر پس‌زمینه دست‌نخورده ماندند ===== */
-    .insta-showcase{position:relative;background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') center/cover no-repeat;border-top:1px solid #c2c2c2;padding:2.75rem 0}
-    .insta-showcase--row2{background:#fff url('{{ asset('images/homepage/bg-instagram-row2.jpg') }}') center/cover no-repeat;border-top:0}
-    .insta-showcase::before{content:'';position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.58),rgba(255,255,255,.8));pointer-events:none}
-    .insta-showcase--row2::before{background:linear-gradient(180deg,rgba(255,255,255,.7),rgba(255,255,255,.9))}
-    .insta-showcase > .wrap{position:relative;z-index:1}
-    @@media (max-width:767px){.insta-showcase{padding:2.25rem 0}}
-
-    .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
-    /* ردیف دوم: ستون تصویر پهن‌تر از ستون متن — تصویر عنصر غالب ترکیب‌بندی می‌شود */
-    .insta-showcase--row2 .insta-showcase-grid{grid-template-columns:.86fr 1.14fr;gap:36px}
+    /* ===== ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ کارت پرمیوم
+       (گوشه‌ی گرد، سایه، بوردر ظریف طلایی) کنار متن در دسکتاپ، زیر متن در موبایل. قاب
+       امبد به نسبت تقریبی ۹:۱۶ (عمودی، مثل ریلز/پست‌های اینستاگرام) رزرو می‌شود — همان
+       ویژگی امبد رسمی/لیزی‌لود/فال‌بک قبلی، فقط با تناسب تصویر عمودی‌تر. دو ردیف مستقل
+       (برای دو پست/ریل/پیج جدا، مثل سایت مرجع ehsandibazar.com) با پس‌زمینه‌ی متناوب —
+       ردیف اول همیشه نمایش داده می‌شود (fallback در صورت غیرفعال بودن)، ردیف دوم کاملاً
+       اختیاری و پیش‌فرض مخفی است تا رفتار قبلی برای مدیرهایی که فقط ردیف اول را تنظیم
+       کرده‌اند بدون تغییر بماند ===== */
+    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding-top:3rem}
+    .insta-showcase--row2{background:#fff url('{{ asset('images/homepage/bg-instagram-row2.jpg') }}') 0 0/cover no-repeat;border-top:0}
+    @@media (max-width:767px){.insta-showcase{padding-bottom:2rem}}
+    .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
     /* تبلت هم مثل دسکتاپ دو ستونی بماند (متن یک طرف، کادر طرف دیگر) — فقط روی موبایل تک‌ستونی
        می‌شود؛ نقطهٔ شکست از ۹۰۰ به ۶۴۰ کاهش یافت تا تبلت‌ها (۷۶۸/۸۲۰/…px) کنارِهم بمانند */
-    @@media (max-width:900px){.insta-showcase-grid,.insta-showcase--row2 .insta-showcase-grid{gap:26px}}
-    @@media (max-width:640px){.insta-showcase-grid,.insta-showcase--row2 .insta-showcase-grid{grid-template-columns:1fr;gap:22px}}
-    /* ردیف دوم: کادر اینستاگرام سمت چپ، متن سمت راست (زیگزاگ). فقط در حالت دوستونی جای
-       ستون‌ها عوض می‌شود؛ روی موبایلِ تک‌ستونی، متن همیشه اول می‌آید */
+    @@media (max-width:900px){.insta-showcase-grid{gap:28px}}
+    @@media (max-width:640px){.insta-showcase-grid{grid-template-columns:1fr;gap:32px}}
+    /* ردیف دوم آینه‌ی ردیف اول است: کادر اینستاگرام سمت چپ، لوگو/متن سمت راست (زیگزاگ مثل سایت
+       مرجع). فقط در حالت دوستونی جای ستون‌ها عوض می‌شود؛ روی موبایلِ تک‌ستونی، متن همیشه اول می‌آید */
     @@media (min-width:641px){
         .insta-showcase--row2 .insta-showcase-card{order:1}
         .insta-showcase--row2 .insta-showcase-text{order:2}
     }
     /* محتوای ستون متن (لوگو/آیکون، تیتر، زیرتیتر، دکمه) همیشه زیرِ هم و وسط‌چین است —
-       چه در حالت دوستونیِ دسکتاپ/تبلت و چه در موبایلِ تک‌ستونی. ردیف اول در یک پنل قاب‌دار
-       قرار می‌گیرد تا هم‌وزنِ کارت تصویر شود؛ ردیف دوم بدون قاب می‌ماند (سبک‌تر/متفاوت) */
-    .insta-showcase-text{text-align:center;padding:34px 32px;border-radius:18px;background:rgba(255,255,255,.72);border:1px solid rgba(217,187,117,.35);box-shadow:0 16px 34px -22px rgba(20,16,8,.28)}
-    .insta-showcase--row2 .insta-showcase-text{padding:0;border:0;background:none;box-shadow:none}
-    .insta-showcase-text .insta-showcase-logo{width:60px;height:auto;margin:0 auto 16px}
-    .insta-showcase-text h2{font-size:24px;font-weight:700;color:var(--title);margin-bottom:10px;line-height:1.32}
-    .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.85;margin:0 auto 24px;max-width:360px}
+       چه در حالت دوستونیِ دسکتاپ/تبلت و چه در موبایلِ تک‌ستونی */
+    .insta-showcase-text{text-align:center}
+    .insta-showcase-text .insta-showcase-logo{width:100px;height:auto;margin:0 auto 20px}
+    .insta-showcase-text h2{font-size:24px;font-weight:700;color:var(--title);margin-bottom:10px;line-height:1.35}
+    .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.9;margin:0 auto 20px;max-width:420px}
     .insta-showcase-btn{
         display:inline-flex;align-items:center;gap:8px;background:#252525;color:var(--gold);
-        padding:12px 30px;border-radius:30px;font-weight:600;font-size:14px;
-        box-shadow:0 10px 24px -12px rgba(20,16,8,.5);
-        transition:background-color .25s linear,color .25s linear,transform .25s ease,box-shadow .25s ease;
+        padding:11px 28px;border-radius:30px;font-weight:600;font-size:14px;transition:.25s linear;
     }
-    .insta-showcase-btn::after{content:'→';font-size:15px;transition:transform .25s ease}
-    .insta-showcase-btn:hover{background-color:var(--gold);color:#252525;transform:translateY(-2px);box-shadow:0 14px 28px -12px rgba(20,16,8,.4)}
-    .insta-showcase-btn:hover::after{transform:translateX(3px)}
-    /* ردیف دوم: رنگ دکمه معکوس (پُر طلایی در حالت عادی) برای تنوع — دقیقاً همان دو رنگ برند */
-    .insta-showcase--row2 .insta-showcase-btn{background:var(--gold);color:#252525}
-    .insta-showcase--row2 .insta-showcase-btn:hover{background:#252525;color:var(--gold)}
-    @@media (prefers-reduced-motion: reduce){
-        .insta-showcase-btn,.insta-showcase-btn::after{transition:none}
-        .insta-showcase-btn:hover{transform:none}
-        .insta-showcase-btn:hover::after{transform:none}
-    }
+    .insta-showcase-btn:hover{background-color:var(--gold);color:#252525}
 
     .insta-showcase-card{display:flex;justify-content:center}
     .insta-embed-wrap{
-        position:relative;width:100%;max-width:300px;min-height:360px;
-        background:#f9f7f2;border:1px solid #e8e3d5;border-radius:18px;
-        box-shadow:0 20px 42px -20px rgba(37,32,15,.4);
+        position:relative;width:100%;max-width:270px;min-height:480px;
+        background:#f9f7f2;border:1px solid #e8e3d5;border-radius:16px;
+        box-shadow:0 18px 40px -18px rgba(37,32,15,.35);
         overflow:hidden;display:flex;align-items:center;justify-content:center;
         transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
     }
-    /* ردیف دوم: کارت پهن‌تر و کوتاه‌تر (نزدیک به مربع) به‌جای عمودی — شکل متفاوت، نه فقط آینه */
-    .insta-showcase--row2 .insta-embed-wrap{max-width:360px;min-height:300px;border-radius:22px}
-    .insta-embed-wrap:hover{transform:translateY(-4px);box-shadow:0 26px 50px -18px rgba(37,32,15,.42);border-color:var(--gold)}
-    .insta-embed-wrap iframe{border-radius:18px!important}
-    .insta-embed-wrap .instagram-media{margin:0 auto!important;min-width:300px!important}
-    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:360px}
-    .insta-showcase--row2 .insta-embed-placeholder{min-height:300px}
+    .insta-embed-wrap:hover{transform:translateY(-4px);box-shadow:0 24px 48px -16px rgba(37,32,15,.4);border-color:var(--gold)}
+    .insta-embed-wrap iframe{border-radius:16px!important}
+    .insta-embed-wrap .instagram-media{margin:0 auto!important;min-width:326px!important}
+    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:480px}
     .insta-embed-spinner{
-        width:30px;height:30px;border-radius:50%;
+        width:32px;height:32px;border-radius:50%;
         border:3px solid #e8e3d5;border-top-color:var(--gold);
         animation:insta-spin 1s linear infinite;
     }
     @@keyframes insta-spin{to{transform:rotate(360deg)}}
     @@media (prefers-reduced-motion: reduce){.insta-embed-spinner{animation-duration:2.5s}}
-    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;min-height:480px;object-fit:cover}
     .insta-embed-fallback-overlay{
         position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;
-        justify-content:center;width:100%;min-height:360px;padding:28px;text-align:center;
+        justify-content:center;width:100%;min-height:480px;padding:32px;text-align:center;
         background:linear-gradient(180deg,rgba(10,8,9,.15) 0%,rgba(10,8,9,.72) 100%);
     }
-    .insta-showcase--row2 .insta-embed-fallback-overlay{min-height:300px}
     .insta-embed-fallback-overlay .insta-showcase-logo{width:46px;height:auto}
     .insta-embed-fallback-overlay p{color:#f1f1f1;font-size:13px;margin:0}
-
-    @@media (max-width:479px){
-        .insta-embed-wrap,.insta-showcase--row2 .insta-embed-wrap{min-height:320px}
-        .insta-embed-placeholder,.insta-showcase--row2 .insta-embed-placeholder,
-        .insta-embed-fallback-overlay,.insta-showcase--row2 .insta-embed-fallback-overlay{min-height:320px}
-        .insta-embed-fallback-overlay{padding:24px}
-        .insta-showcase-text{padding:26px 22px}
-    }
 
     /* ===== مودال ویدیو ===== */
     .video-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
