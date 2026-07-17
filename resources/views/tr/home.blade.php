@@ -192,11 +192,10 @@
        خبر خودشان پس‌زمینهٔ سفید مجزا دارند (.news-card{background:#fff})، نیازی به گرادیان
        تیره‌کننده نیست. جلوهٔ پارالاکس با background-attachment:fixed بومی — دقیقاً همون تکنیک
        CSS واقعیِ ehsandibazar.com (.section-news{background:...fixed}) — طبق درخواست صریح کاربر
-       فقط همین بخش، نه ۳ بخش دیگر. عکس اکنون WebP با کیفیت بالاتر (۱۸۲۲×۸۶۳) است؛ لرزش/ری‌پینتِ
-       قبلاً گزارش‌شده عمدتاً به‌خاطر کشیده‌شدنِ عکسِ کوچک‌ترِ قبلی فراتر از رزولوشن واقعی‌اش بود —
-       با این عکس بزرگ‌تر، تکنیکِ ساده و اصلیِ سایت مرجع دوباره استفاده می‌شود (لایهٔ transform +
-       جاوااسکریپتِ جداگانه‌ای که قبلاً برای این مشکل اضافه شده بود، حذف شد) ===== */
-    .section-news{background:url('{{ asset('images/homepage/bg-articles.webp') }}') center/cover no-repeat fixed;padding:56px 0 64px}
+       فقط همین بخش، نه ۳ بخش دیگر. عکسِ اصلیِ JPG (۱۳۴۹×۶۳۷) نگه داشته شد — یک نسخهٔ WebP با
+       رزولوشنِ بالاترِ AI-upscale شده هم امتحان شد، ولی کاربر صراحتاً ظاهرِ عکسِ اصلی را ترجیح داد
+       و خواستِ برگشت به همین فایل (نه یک تصمیمِ کیفیت/رزولوشنِ فنی، بلکه یک ترجیحِ ظاهریِ مستقیم) ===== */
+    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat fixed;padding:56px 0 64px}
     /* .title-section {color:#000; font-size:20px; font-weight:500} */
     .title-section{color:#000;font-size:20px;font-weight:500;text-align:center;line-height:1.5}
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
