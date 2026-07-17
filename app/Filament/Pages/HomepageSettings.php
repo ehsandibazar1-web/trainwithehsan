@@ -44,10 +44,12 @@ class HomepageSettings extends Page implements HasForms
         'course1_label', 'course2_label', 'course3_label',
         'course1_link', 'course2_link', 'course3_link',
         'members_title', 'members_subtitle', 'members_button_label',
+        // insta_url = لینک پروفایل اینستاگرام؛ هنوز به‌عنوان fallback دکمهٔ Follow هر دو ردیف
+        // استفاده می‌شود، پس نگه داشته شده و داخل بخش «Instagram Showcase» ردیف اول نمایش داده
+        // می‌شود (بخش قدیمی «Instagram» و ۴ فیلد عکسِ بلااستفادهٔ آن به‌درخواست کاربر حذف شدند)
         'insta_url',
-        // ویترین اینستاگرام (Instagram Showcase) — فقط اضافه‌شده، هیچ‌کدام از کلیدهای بالا
-        // حذف/جابه‌جا/تغییرنام نشده‌اند؛ فیلدهای قدیمی insta1_image/insta2_image و... همچنان
-        // ذخیره/بازیابی می‌شوند حتی اگر دیگر در قالب عمومی رندر نشوند — نگاه کنید به Section 33
+        // ویترین اینستاگرام (Instagram Showcase) — ردیف اول. توجه: کلید آدرس embed به‌صورت
+        // تاریخی insta_embed_url است (بدون بخش showcase_) و باید در فرم دقیقاً همین کلید پاس شود
         'insta_showcase_enabled', 'insta_embed_url',
         'insta_showcase_title', 'insta_showcase_subtitle',
         'insta_showcase_button_text', 'insta_showcase_button_url',
@@ -65,8 +67,8 @@ class HomepageSettings extends Page implements HasForms
         'video1_thumb', 'video2_thumb', 'video3_thumb',
         'app_image',
         'course1_image', 'course2_image', 'course3_image',
-        'insta1_image', 'insta2_image',
-        'insta1_small_image', 'insta2_small_image',
+        // فیلدهای عکسِ قدیمیِ اینستاگرام (insta1_image/insta2_image/...) به‌درخواست کاربر حذف
+        // شدند — دیگر رندر نمی‌شدند و به هیچ‌جا وابسته نبودند؛ مقدارهای قدیمی در DB بی‌ضررند
         'insta_showcase_fallback_image',
         'insta_showcase2_fallback_image',
     ];
@@ -106,12 +108,9 @@ class HomepageSettings extends Page implements HasForms
                 Section::make('English — Member Results')
                     ->schema(self::membersFields('en'))
                     ->collapsed(),
-                Section::make('English — Instagram')
-                    ->schema(self::instaFields('en'))
-                    ->collapsed(),
                 Section::make('English — Instagram Showcase')
-                    ->description('The embedded Instagram post/reel shown next to the text on the homepage — replaces the old two photo bands above. Leave "Enable" off to show a simple fallback card instead.')
-                    ->schema(self::instaShowcaseFields('en'))
+                    ->description('The embedded Instagram post/reel shown next to the text on the homepage. Leave "Enable" off to show a simple fallback card instead.')
+                    ->schema(self::instaShowcaseFields('en', 'insta_showcase', 'insta_embed_url', includeProfileUrl: true))
                     ->collapsed(),
                 Section::make('English — Instagram Showcase — Row 2 (optional)')
                     ->description('An optional second Instagram row below the first — for a different post, Reel, or account. Off by default; nothing changes on the homepage until you enable it.')
@@ -133,12 +132,9 @@ class HomepageSettings extends Page implements HasForms
                 Section::make('Türkçe — Member Results')
                     ->schema(self::membersFields('tr'))
                     ->collapsed(),
-                Section::make('Türkçe — Instagram')
-                    ->schema(self::instaFields('tr'))
-                    ->collapsed(),
                 Section::make('Türkçe — Instagram Showcase')
-                    ->description('The embedded Instagram post/reel shown next to the text on the homepage — replaces the old two photo bands above. Leave "Enable" off to show a simple fallback card instead.')
-                    ->schema(self::instaShowcaseFields('tr'))
+                    ->description('The embedded Instagram post/reel shown next to the text on the homepage. Leave "Enable" off to show a simple fallback card instead.')
+                    ->schema(self::instaShowcaseFields('tr', 'insta_showcase', 'insta_embed_url', includeProfileUrl: true))
                     ->collapsed(),
                 Section::make('Türkçe — Instagram Showcase — Row 2 (optional)')
                     ->description('An optional second Instagram row below the first — for a different post, Reel, or account. Off by default; nothing changes on the homepage until you enable it.')
@@ -254,56 +250,35 @@ class HomepageSettings extends Page implements HasForms
         ];
     }
 
-    private static function instaFields(string $l): array
-    {
-        return [
-            TextInput::make("$l.insta_url")->label('Instagram URL')
-                ->helperText('Plain profile link only, e.g. https://instagram.com/ehsandibazar — not the share link with ?igsh=...'),
-            FileUpload::make("$l.insta1_image")
-                ->label('Band 1 — large photo')
-                ->image()
-                ->disk('public')
-                ->directory('homepage')
-                ->nullable(),
-            FileUpload::make("$l.insta1_small_image")
-                ->label('Band 1 — small square photo (next to the link)')
-                ->image()
-                ->disk('public')
-                ->directory('homepage')
-                ->nullable(),
-            FileUpload::make("$l.insta2_image")
-                ->label('Band 2 — large photo')
-                ->image()
-                ->disk('public')
-                ->directory('homepage')
-                ->nullable(),
-            FileUpload::make("$l.insta2_small_image")
-                ->label('Band 2 — small square photo (next to the link)')
-                ->image()
-                ->disk('public')
-                ->directory('homepage')
-                ->nullable(),
-        ];
-    }
-
     // یک ردیف کامل ویترین اینستاگرام — با پیشوند $prefix برای ردیف اول (insta_showcase، کلیدهای
     // بدون تغییر نسبت به نسخهٔ اول) یا ردیف دوم (insta_showcase2) قابل استفادهٔ مجدد است. کلید
-    // آدرس embed ردیف اول به‌صورت تاریخی insta_embed_url بوده (بدون بخش showcase_) — برای حفظ
-    // سازگاری کامل دست‌نخورده می‌ماند؛ ردیف دوم از الگوی یکدست‌تر {prefix}_embed_url استفاده می‌کند.
-    private static function instaShowcaseFields(string $l, string $prefix = 'insta_showcase', ?string $embedKey = null, bool $alwaysVisible = true): array
+    // آدرس embed ردیف اول به‌صورت تاریخی insta_embed_url است (بدون بخش showcase_) — باید صریحاً
+    // به‌عنوان $embedKey پاس شود؛ ردیف دوم از الگوی یکدست‌تر {prefix}_embed_url استفاده می‌کند.
+    // $includeProfileUrl فقط برای ردیف اول true است تا فیلد مشترک insta_url (لینک پروفایل،
+    // fallback دکمهٔ Follow هر دو ردیف) یک‌بار همین‌جا نمایش داده شود — جایگزین بخش قدیمیِ حذف‌شده.
+    private static function instaShowcaseFields(string $l, string $prefix = 'insta_showcase', ?string $embedKey = null, bool $alwaysVisible = true, bool $includeProfileUrl = false): array
     {
         $embedKey ??= "{$prefix}_embed_url";
 
-        return [
-            Toggle::make("$l.{$prefix}_enabled")
-                ->label('Enable Instagram Showcase')
-                ->helperText($alwaysVisible
-                    ? 'When off, a simple fallback card is shown instead and the Instagram embed script never loads.'
-                    : 'When off, this row is not shown on the homepage at all.'),
-            TextInput::make("$l.$embedKey")
-                ->label('Instagram Embed URL')
-                ->url()
-                ->helperText('Paste any public Instagram Post or Reel URL, e.g. https://www.instagram.com/p/ABC123/ or https://www.instagram.com/reel/ABC123/ — the correct embed is detected automatically.'),
+        $fields = [];
+
+        if ($includeProfileUrl) {
+            $fields[] = TextInput::make("$l.insta_url")
+                ->label('Instagram profile link')
+                ->helperText('Your Instagram profile, e.g. https://instagram.com/ehsandibazar — used for the "Follow" buttons whenever a row has no Button URL of its own. (This is the shared link for both rows.)');
+        }
+
+        $fields[] = Toggle::make("$l.{$prefix}_enabled")
+            ->label('Enable Instagram Showcase')
+            ->helperText($alwaysVisible
+                ? 'When off, a simple fallback card is shown instead and the Instagram embed script never loads.'
+                : 'When off, this row is not shown on the homepage at all.');
+        $fields[] = TextInput::make("$l.$embedKey")
+            ->label('Instagram Embed URL')
+            ->url()
+            ->helperText('Paste any public Instagram Post or Reel URL, e.g. https://www.instagram.com/p/ABC123/ or https://www.instagram.com/reel/ABC123/ — the correct embed is detected automatically.');
+
+        return array_merge($fields, [
             TextInput::make("$l.{$prefix}_title")->label('Section Title'),
             TextInput::make("$l.{$prefix}_subtitle")->label('Section Subtitle'),
             TextInput::make("$l.{$prefix}_button_text")
@@ -320,7 +295,7 @@ class HomepageSettings extends Page implements HasForms
                 ->disk('public')
                 ->directory('homepage')
                 ->nullable(),
-        ];
+        ]);
     }
 
     public function save(): void

@@ -251,11 +251,20 @@
     .insta-showcase{background:#ebebeb;border-top:1px solid #c2c2c2;padding:56px 0}
     .insta-showcase--row2{background:#fff;border-top:0}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
-    @@media (max-width:900px){.insta-showcase-grid{grid-template-columns:1fr;gap:32px}}
+    /* تبلت هم مثل دسکتاپ دو ستونی بماند (متن یک طرف، کادر طرف دیگر) — فقط روی موبایل تک‌ستونی
+       می‌شود؛ نقطهٔ شکست از ۹۰۰ به ۶۴۰ کاهش یافت تا تبلت‌ها (۷۶۸/۸۲۰/…px) کنارِهم بمانند */
+    @@media (max-width:900px){.insta-showcase-grid{gap:28px}}
+    @@media (max-width:640px){.insta-showcase-grid{grid-template-columns:1fr;gap:32px}}
+    /* ردیف دوم آینه‌ی ردیف اول است: کادر اینستاگرام سمت چپ، لوگو/متن سمت راست (زیگزاگ مثل سایت
+       مرجع). فقط در حالت دوستونی جای ستون‌ها عوض می‌شود؛ روی موبایلِ تک‌ستونی، متن همیشه اول می‌آید */
+    @@media (min-width:641px){
+        .insta-showcase--row2 .insta-showcase-card{order:1}
+        .insta-showcase--row2 .insta-showcase-text{order:2}
+    }
     .insta-showcase-text .insta-showcase-logo{width:100px;height:auto;margin-bottom:20px}
     .insta-showcase-text h2{font-size:24px;font-weight:700;color:var(--title);margin-bottom:10px;line-height:1.35}
     .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.9;margin-bottom:20px;max-width:420px}
-    @@media (max-width:900px){.insta-showcase-text{text-align:center}.insta-showcase-text p{margin-left:auto;margin-right:auto}.insta-showcase-text .insta-showcase-logo{margin-left:auto;margin-right:auto}}
+    @@media (max-width:640px){.insta-showcase-text{text-align:center}.insta-showcase-text p{margin-left:auto;margin-right:auto}.insta-showcase-text .insta-showcase-logo{margin-left:auto;margin-right:auto}}
     .insta-showcase-btn{
         display:inline-flex;align-items:center;gap:8px;background:#252525;color:var(--gold);
         padding:11px 28px;border-radius:30px;font-weight:600;font-size:14px;transition:.25s linear;
