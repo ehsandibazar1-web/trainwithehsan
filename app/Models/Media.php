@@ -113,4 +113,15 @@ class Media extends Model
 
         return self::where('disk_path', $record->image_path)->first();
     }
+
+    // جهت معکوسِ forRecord() — کدام Article/Page این تصویر را به‌عنوان تصویر شاخص استفاده می‌کند
+    // (اگر اصلا کسی استفاده کند). برای App\Services\AiAgent\AgentAuditService لازم است تا بفهمد
+    // یک یافته‌ی «ALT گمشده» روی یک Media، آیا واقعا رفع‌پذیر است (فیلد alt_text فقط روی تصویر
+    // شاخصِ یک رکورد کار می‌کند، نه هر استفاده‌ی دلخواهی — نگاه کنید به Media::forRecord() و
+    // App\Services\AiAssistant\ActionRegistry).
+    public function ownerRecord(): ?Model
+    {
+        return Article::where('image_path', $this->disk_path)->first()
+            ?? Page::where('image_path', $this->disk_path)->first();
+    }
 }
