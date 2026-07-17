@@ -8,6 +8,7 @@ use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\Toggle;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Notifications\Notification;
@@ -43,6 +44,12 @@ class HomepageSettings extends Page implements HasForms
         'course1_label', 'course2_label', 'course3_label',
         'members_title', 'members_subtitle', 'members_button_label',
         'insta_url',
+        // ویترین اینستاگرام (Instagram Showcase) — فقط اضافه‌شده، هیچ‌کدام از کلیدهای بالا
+        // حذف/جابه‌جا/تغییرنام نشده‌اند؛ فیلدهای قدیمی insta1_image/insta2_image و... همچنان
+        // ذخیره/بازیابی می‌شوند حتی اگر دیگر در قالب عمومی رندر نشوند — نگاه کنید به Section 33
+        'insta_showcase_enabled', 'insta_embed_url',
+        'insta_showcase_title', 'insta_showcase_subtitle',
+        'insta_showcase_button_text', 'insta_showcase_button_url',
     ];
 
     // کلیدهای فایل (عکس/ویدیو) — مقدارشان مسیر فایل روی دیسک public است
@@ -54,6 +61,7 @@ class HomepageSettings extends Page implements HasForms
         'course1_image', 'course2_image', 'course3_image',
         'insta1_image', 'insta2_image',
         'insta1_small_image', 'insta2_small_image',
+        'insta_showcase_fallback_image',
     ];
 
     public function mount(): void
@@ -94,6 +102,10 @@ class HomepageSettings extends Page implements HasForms
                 Section::make('English — Instagram')
                     ->schema(self::instaFields('en'))
                     ->collapsed(),
+                Section::make('English — Instagram Showcase')
+                    ->description('The single embedded Instagram post/reel shown next to the text on the homepage — replaces the old two photo bands above. Leave "Enable" off to show a simple fallback card instead.')
+                    ->schema(self::instaShowcaseFields('en'))
+                    ->collapsed(),
 
                 Section::make('Türkçe — Hero Slider')
                     ->schema(self::heroFields('tr'))
@@ -112,6 +124,10 @@ class HomepageSettings extends Page implements HasForms
                     ->collapsed(),
                 Section::make('Türkçe — Instagram')
                     ->schema(self::instaFields('tr'))
+                    ->collapsed(),
+                Section::make('Türkçe — Instagram Showcase')
+                    ->description('The single embedded Instagram post/reel shown next to the text on the homepage — replaces the old two photo bands above. Leave "Enable" off to show a simple fallback card instead.')
+                    ->schema(self::instaShowcaseFields('tr'))
                     ->collapsed(),
             ])
             ->statePath('data');
@@ -243,6 +259,35 @@ class HomepageSettings extends Page implements HasForms
                 ->nullable(),
             FileUpload::make("$l.insta2_small_image")
                 ->label('Band 2 — small square photo (next to the link)')
+                ->image()
+                ->disk('public')
+                ->directory('homepage')
+                ->nullable(),
+        ];
+    }
+
+    private static function instaShowcaseFields(string $l): array
+    {
+        return [
+            Toggle::make("$l.insta_showcase_enabled")
+                ->label('Enable Instagram Showcase')
+                ->helperText('When off, a simple fallback card is shown instead and the Instagram embed script never loads.'),
+            TextInput::make("$l.insta_embed_url")
+                ->label('Instagram Embed URL')
+                ->url()
+                ->helperText('Paste any public Instagram Post or Reel URL, e.g. https://www.instagram.com/p/ABC123/ or https://www.instagram.com/reel/ABC123/ — the correct embed is detected automatically.'),
+            TextInput::make("$l.insta_showcase_title")->label('Section Title'),
+            TextInput::make("$l.insta_showcase_subtitle")->label('Section Subtitle'),
+            TextInput::make("$l.insta_showcase_button_text")
+                ->label('Button Text')
+                ->helperText('Leave blank to keep the default "Follow us on Instagram".'),
+            TextInput::make("$l.insta_showcase_button_url")
+                ->label('Button URL')
+                ->url()
+                ->helperText('Leave blank to use the Instagram URL set above.'),
+            FileUpload::make("$l.insta_showcase_fallback_image")
+                ->label('Optional Fallback Image')
+                ->helperText('Shown if the Instagram embed is disabled, has no URL, or fails to load.')
                 ->image()
                 ->disk('public')
                 ->directory('homepage')

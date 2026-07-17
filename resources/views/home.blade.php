@@ -240,29 +240,48 @@
     }
     @@media (max-width:991px){.img-user{width:100px;height:100px;font-size:22px}}
 
-    /* ===== اینستاگرام — دو نوار: .inst2 {#ebebeb; border-top:#c2c2c2} و .inst {#fff} ===== */
-    .inst2{background:#ebebeb;border-top:1px solid #c2c2c2;padding:48px 0 32px}
-    .inst{background:#fff;padding:48px 0 32px}
-    .inst-grid{display:grid;grid-template-columns:1fr 1fr;gap:30px;align-items:center}
-    @@media (max-width:767px){.inst-grid{grid-template-columns:1fr}}
-    .bg-ins{
-        aspect-ratio:502/477;max-width:502px;width:100%;
-        background:linear-gradient(160deg,#2a2416,#8a6d1f);
-        border-radius:6px;
+    /* ===== ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ یک کارت پرمیوم
+       (گوشه‌ی گرد، سایه، بوردر ظریف طلایی) کنار متن در دسکتاپ، زیر متن در موبایل ===== */
+    .insta-showcase{background:#ebebeb;border-top:1px solid #c2c2c2;padding:56px 0}
+    .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
+    @@media (max-width:900px){.insta-showcase-grid{grid-template-columns:1fr;gap:32px}}
+    .insta-showcase-text .insta-showcase-logo{width:56px;height:auto;margin-bottom:16px}
+    .insta-showcase-text h2{font-size:24px;font-weight:700;color:var(--title);margin-bottom:10px;line-height:1.35}
+    .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.9;margin-bottom:20px;max-width:420px}
+    @@media (max-width:900px){.insta-showcase-text{text-align:center}.insta-showcase-text p{margin-left:auto;margin-right:auto}}
+    .insta-showcase-btn{
+        display:inline-flex;align-items:center;gap:8px;background:#252525;color:var(--gold);
+        padding:11px 28px;border-radius:30px;font-weight:600;font-size:14px;transition:.25s linear;
     }
-    .inst .bg-ins{aspect-ratio:646/424;max-width:646px}
-    .bg-ins-img{width:100%;max-width:502px;height:auto;border-radius:6px;display:block;margin:0 auto}
-    .inst .bg-ins-img{max-width:646px}
-    .insta-link{text-align:center}
-    .insta-logo-img{width:120px;height:auto;margin:0 auto;display:block}
-    .insta-small-img{width:149px;height:134px;object-fit:cover;border-radius:10px;margin:0 auto;display:block}
-    /* .text-link a {background:#252525; color:#d9bb75; padding:5px 31px} hover معکوس */
-    .text-link{margin-top:16px}
-    .text-link a{
-        display:inline-block;background-color:#252525;color:var(--gold);
-        padding:5px 31px;font-weight:500;transition:.2s linear;font-size:14px;
+    .insta-showcase-btn:hover{background-color:var(--gold);color:#252525}
+
+    .insta-showcase-card{display:flex;justify-content:center}
+    .insta-embed-wrap{
+        position:relative;width:100%;max-width:550px;min-height:460px;
+        background:#f9f7f2;border:1px solid #e8e3d5;border-radius:16px;
+        box-shadow:0 18px 40px -18px rgba(37,32,15,.35);
+        overflow:hidden;display:flex;align-items:center;justify-content:center;
+        transition:transform .3s ease,box-shadow .3s ease,border-color .3s ease;
     }
-    .text-link a:hover{background-color:var(--gold);color:#252525}
+    .insta-embed-wrap:hover{transform:translateY(-4px);box-shadow:0 24px 48px -16px rgba(37,32,15,.4);border-color:var(--gold)}
+    .insta-embed-wrap iframe{border-radius:16px!important}
+    .insta-embed-wrap .instagram-media{margin:0 auto!important;min-width:326px!important}
+    .insta-embed-placeholder{display:flex;align-items:center;justify-content:center;width:100%;min-height:460px}
+    .insta-embed-spinner{
+        width:32px;height:32px;border-radius:50%;
+        border:3px solid #e8e3d5;border-top-color:var(--gold);
+        animation:insta-spin 1s linear infinite;
+    }
+    @@keyframes insta-spin{to{transform:rotate(360deg)}}
+    @@media (prefers-reduced-motion: reduce){.insta-embed-spinner{animation-duration:2.5s}}
+    .insta-embed-fallback-img{position:absolute;inset:0;width:100%;height:100%;min-height:460px;object-fit:cover}
+    .insta-embed-fallback-overlay{
+        position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:14px;
+        justify-content:center;width:100%;min-height:460px;padding:32px;text-align:center;
+        background:linear-gradient(180deg,rgba(10,8,9,.15) 0%,rgba(10,8,9,.72) 100%);
+    }
+    .insta-embed-fallback-overlay .insta-showcase-logo{width:46px;height:auto}
+    .insta-embed-fallback-overlay p{color:#f1f1f1;font-size:13px;margin:0}
 
     /* ===== مودال ویدیو ===== */
     .video-modal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:9999;padding:20px}
@@ -450,43 +469,47 @@
         </div>
     </section>
 
-    {{-- ============ اینستاگرام — نوار اول ============ --}}
-    <section class="inst2">
+    {{-- ============ ویترین اینستاگرام (Instagram Showcase) — جایگزین دو نوار قدیمی؛ فعال‌سازی،
+         لینک embed و متن‌ها از پنل مدیریت (Homepage Settings → Instagram Showcase) می‌آید ============ --}}
+    @php($instaFollowUrl = $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'))
+    @php($instaFallbackImg = $v('insta_showcase_fallback_image') ? asset('storage/' . $v('insta_showcase_fallback_image')) : '')
+    <section class="insta-showcase">
         <div class="wrap">
-            <div class="inst-grid reveal-group">
-                <div class="insta-link reveal">
-                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
-                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-logo-img">
+            <div class="insta-showcase-grid reveal-group">
+                <div class="insta-showcase-text reveal">
+                    <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
+                    <h2>{{ $v('insta_showcase_title', 'Follow the Journey') }}</h2>
+                    <p>{{ $v('insta_showcase_subtitle', 'Real training moments, straight from Instagram.') }}</p>
+                    <a href="{{ $instaFollowUrl }}" class="insta-showcase-btn" rel="noopener" target="_blank">
+                        {{ $v('insta_showcase_button_text', 'Follow us on Instagram') }}
                     </a>
-                    <div class="text-link">
-                        <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">Follow us on Instagram</a>
-                    </div>
                 </div>
-                @if($v('insta1_image'))
-                    <img src="{{ asset('storage/' . $v('insta1_image')) }}" alt="Instagram" class="bg-ins-img reveal">
-                @else
-                    <div class="bg-ins reveal"></div>
-                @endif
-            </div>
-        </div>
-    </section>
 
-    {{-- ============ اینستاگرام — نوار دوم ============ --}}
-    <section class="inst">
-        <div class="wrap">
-            <div class="inst-grid reveal-group">
-                @if($v('insta2_image'))
-                    <img src="{{ asset('storage/' . $v('insta2_image')) }}" alt="Instagram" class="bg-ins-img reveal">
-                @else
-                    <div class="bg-ins reveal"></div>
-                @endif
-                <div class="insta-link reveal">
-                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">
-                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-logo-img">
-                    </a>
-                    <div class="text-link">
-                        <a href="{{ $v('insta_url', 'https://instagram.com') }}" rel="noopener">@@ehsandibazar</a>
-                    </div>
+                <div class="insta-showcase-card reveal">
+                    @if($v('insta_showcase_enabled') && $v('insta_embed_url'))
+                        {{-- امبد رسمی اینستاگرام فقط وقتی این بخش وارد نمای دستگاه می‌شود لود می‌شود
+                             (نگاه کنید به page-js پایین صفحه) — تا آن لحظه فقط یک placeholder با
+                             ارتفاع رزروشده اینجاست تا CLS ایجاد نشود --}}
+                        <div class="insta-embed-wrap js-insta-embed"
+                             data-insta-url="{{ $v('insta_embed_url') }}"
+                             data-follow-url="{{ $instaFollowUrl }}"
+                             data-fallback-img="{{ $instaFallbackImg }}"
+                             data-logo="{{ asset('storage/homepage/logo-inst.png') }}">
+                            <div class="insta-embed-placeholder">
+                                <span class="insta-embed-spinner" aria-hidden="true"></span>
+                            </div>
+                        </div>
+                    @else
+                        <div class="insta-embed-wrap">
+                            @if($instaFallbackImg)
+                                <img src="{{ $instaFallbackImg }}" alt="Instagram" class="insta-embed-fallback-img">
+                            @endif
+                            <div class="insta-embed-fallback-overlay">
+                                <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
+                                <a href="{{ $v('insta_url', 'https://instagram.com') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Watch on Instagram</a>
+                            </div>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
@@ -552,6 +575,94 @@
         });
         closeBtn.addEventListener('click', close);
         modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    })();
+
+    // ===== ویترین اینستاگرام — امبد رسمی (instagram.com/embed.js) فقط وقتی کارت وارد نمای
+    // دستگاه می‌شود لود می‌شود (IntersectionObserver، همون الگوی reveal سراسر سایت) — تا آن
+    // لحظه هیچ اسکریپت/درخواست شبکه‌ای اضافه‌ای ارسال نمی‌شود. اگر اسکریپت لود نشد یا در ۸
+    // ثانیه پاسخ نداد (مسدود/کند)، به‌جای جعبه‌ی خالی، عکس fallback + آیکون + دکمه‌ی «Watch on
+    // Instagram» نشان داده می‌شود =====
+    (function () {
+        var wraps = document.querySelectorAll('.js-insta-embed');
+        if (!wraps.length) return;
+
+        var scriptState = 'idle';
+
+        function renderFallback(wrap) {
+            var fallbackImg = wrap.getAttribute('data-fallback-img');
+            var followUrl = wrap.getAttribute('data-follow-url') || 'https://instagram.com';
+            var logo = wrap.getAttribute('data-logo');
+            wrap.innerHTML =
+                (fallbackImg ? '<img src="' + fallbackImg + '" alt="Instagram" class="insta-embed-fallback-img">' : '') +
+                '<div class="insta-embed-fallback-overlay">' +
+                (logo ? '<img src="' + logo + '" alt="Instagram" class="insta-showcase-logo">' : '') +
+                '<a href="' + followUrl + '" class="insta-showcase-btn" rel="noopener" target="_blank">Watch on Instagram</a>' +
+                '</div>';
+        }
+
+        function loadInstagramScript(cb) {
+            if (scriptState === 'loaded') { cb(true); return; }
+            if (scriptState === 'failed') { cb(false); return; }
+            if (scriptState === 'loading') {
+                document.addEventListener('insta-embed-script-ready', function handler(e) {
+                    document.removeEventListener('insta-embed-script-ready', handler);
+                    cb(e.detail.ok);
+                });
+                return;
+            }
+            scriptState = 'loading';
+            var s = document.createElement('script');
+            s.src = 'https://www.instagram.com/embed.js';
+            s.async = true;
+            var settled = false;
+            function settle(ok) {
+                if (settled) return;
+                settled = true;
+                scriptState = ok ? 'loaded' : 'failed';
+                cb(ok);
+                document.dispatchEvent(new CustomEvent('insta-embed-script-ready', { detail: { ok: ok } }));
+            }
+            s.onload = function () { settle(true); };
+            s.onerror = function () { settle(false); };
+            document.body.appendChild(s);
+            setTimeout(function () { settle(false); }, 8000);
+        }
+
+        function renderEmbed(wrap) {
+            var url = wrap.getAttribute('data-insta-url');
+            if (!url) { renderFallback(wrap); return; }
+
+            var bq = document.createElement('blockquote');
+            bq.className = 'instagram-media';
+            bq.setAttribute('data-instgrm-permalink', url);
+            bq.setAttribute('data-instgrm-version', '14');
+            var link = document.createElement('a');
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener';
+            bq.appendChild(link);
+            wrap.innerHTML = '';
+            wrap.appendChild(bq);
+
+            loadInstagramScript(function (ok) {
+                if (!ok) { renderFallback(wrap); return; }
+                if (window.instgrm && window.instgrm.Embeds) { window.instgrm.Embeds.process(); }
+            });
+        }
+
+        if (typeof IntersectionObserver === 'undefined') {
+            wraps.forEach(renderEmbed);
+        } else {
+            var io = new IntersectionObserver(function (entries, obs) {
+                entries.forEach(function (entry) {
+                    if (entry.isIntersecting) {
+                        renderEmbed(entry.target);
+                        obs.unobserve(entry.target);
+                    }
+                });
+            }, { rootMargin: '200px 0px', threshold: 0.01 });
+            wraps.forEach(function (w) { io.observe(w); });
+        }
     })();
 </script>
 @endsection
