@@ -56,14 +56,14 @@
         background:linear-gradient(135deg,#d8d3c4 0%,#cdb87f 80%,var(--gold) 160%);
         background-size:cover;background-position:center;
     }
-    .post-title h1{font-weight:700;font-size:26px;color:#222;margin-bottom:10px;line-height:1.4}
+    .post-title h1{font-weight:800;font-size:26px;color:#222;margin-bottom:10px;line-height:1.2;letter-spacing:-.01em}
 
     .article-meta{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:10px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:1.2rem;font-size:13px;color:#666}
     .article-meta span{display:flex;align-items:center;gap:5px}
     .lang-switch{margin-left:auto}
     .lang-switch a{color:var(--gold-dark,#c09d4c);font-weight:600}
 
-    .article-body p{text-align:justify;font-size:16px;font-weight:300;line-height:2;color:#555;margin-bottom:1.1rem}
+    .article-body p{text-align:justify;font-size:16px;font-weight:400;line-height:2;color:#555;margin-bottom:1.1rem}
     .article-body h2{font-size:20px;font-weight:700;color:#222;margin:2rem 0 1rem}
     .article-body h3{font-size:17px;font-weight:700;color:#333;margin:1.6rem 0 .8rem}
     .article-body img{max-width:100%;height:auto;border-radius:6px;margin:1rem 0}
@@ -83,7 +83,7 @@
     .hoosh-box{background:linear-gradient(135deg,#1a1a1a 0%,#2d2410 100%);border-radius:14px;padding:26px;margin:1.5rem 0;color:#eee}
     .hoosh-box p{color:#ccc;font-size:14px;line-height:1.9;margin-bottom:.8rem}
     .hoosh-avatar{width:60px;height:60px;border-radius:50%;flex-shrink:0;border:2px solid var(--gold);background:linear-gradient(135deg,#2a2416,var(--gold-dark));display:flex;align-items:center;justify-content:center;font-weight:800;color:#111}
-    .hoosh-btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:#1a1a1a;font-size:14px;font-weight:700;padding:11px 22px;border-radius:8px;margin-top:8px;transition:.2s}
+    .hoosh-btn{display:inline-flex;align-items:center;gap:7px;background:var(--gold);color:#1a1a1a;font-size:14px;font-weight:600;letter-spacing:.01em;padding:11px 22px;border-radius:8px;margin-top:8px;transition:.2s}
     .hoosh-btn:hover{background:#c9a227;color:#1a1a1a;transform:translateY(-2px)}
     /* عکس نویسنده (هیرو صفحه‌ی درباره) — برش طبیعی داخل دایره بدون کشیدگی */
     .hoosh-avatar--photo{background-size:cover;background-position:center;background-repeat:no-repeat}
@@ -197,7 +197,7 @@
                 @if($related->isNotEmpty())
                 <div class="site-blog__sidebar__item__header">
                     <fieldset style="border:0;border-bottom:4px solid var(--gold);padding:0 0 8px">
-                        <legend style="font-size:17px;font-weight:800;color:#000;padding:0">Related Articles</legend>
+                        <legend style="font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;padding:0">Related Articles</legend>
                     </fieldset>
                 </div>
                 <div class="related-grid reveal-group">
@@ -217,7 +217,7 @@
                 @if($latest->isNotEmpty())
                 <div class="site-blog__sidebar__item__header">
                     <fieldset style="border:0;border-bottom:4px solid var(--gold);padding:0 0 8px">
-                        <legend style="font-size:17px;font-weight:800;color:#000;padding:0">Latest Articles</legend>
+                        <legend style="font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;padding:0">Latest Articles</legend>
                     </fieldset>
                 </div>
                 <div class="reveal-group" style="margin-top:10px">

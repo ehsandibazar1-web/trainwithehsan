@@ -55,13 +55,13 @@
         aspect-ratio:800/450;margin-bottom:14px;border-radius:4px;overflow:hidden;
         background-size:cover;background-position:center;
     }
-    .page-title h1{font-weight:700;font-size:26px;color:#222;margin-bottom:10px;line-height:1.4}
+    .page-title h1{font-weight:800;font-size:26px;color:#222;margin-bottom:10px;line-height:1.2;letter-spacing:-.01em}
 
     .page-meta{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:10px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:1.2rem;font-size:13px;color:#666}
     .page-meta .lang-switch{margin-left:auto}
     .page-meta .lang-switch a{color:var(--gold-dark,#c09d4c);font-weight:600}
 
-    .page-body p{text-align:justify;font-size:16px;font-weight:300;line-height:2;color:#555;margin-bottom:1.1rem}
+    .page-body p{text-align:justify;font-size:16px;font-weight:400;line-height:2;color:#555;margin-bottom:1.1rem}
     .page-body h2{font-size:20px;font-weight:700;color:#222;margin:2rem 0 1rem}
     .page-body h3{font-size:17px;font-weight:700;color:#333;margin:1.6rem 0 .8rem}
     .page-body img{max-width:100%;height:auto;border-radius:6px;margin:1rem 0}

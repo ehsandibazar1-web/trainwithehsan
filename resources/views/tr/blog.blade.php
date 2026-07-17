@@ -12,7 +12,7 @@
 
     .site-blog__sidebar__item{margin-bottom:24px}
     .site-blog__sidebar__item__header fieldset{border:0;border-bottom:4px solid var(--gold);padding:0 0 8px}
-    .site-blog__sidebar__item__header legend{font-size:17px;font-weight:800;color:#000;padding:0}
+    .site-blog__sidebar__item__header legend{font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;padding:0}
     .cat-list{list-style:none;margin-top:10px}
     .cat-list li{display:flex;justify-content:space-between;border-bottom:1px dashed #d8d8d8;padding:10px 0}
     .cat-list li a{color:#888;font-size:14px}
@@ -45,7 +45,7 @@
         color:#1d1d1d;font-size:13px;padding:4px 10px;font-weight:600;
     }
     .post-item__desc{padding:12px 4px}
-    .post-item__desc__title{font-size:16px;font-weight:700;color:#3a3a3a;margin-bottom:6px}
+    .post-item__desc__title{font-size:16px;font-weight:600;color:#3a3a3a;margin-bottom:6px}
     .post-item__desc__title a:hover{color:var(--gold-dark,#c09d4c)}
     .post-item__desc__list{font-size:11px;color:#666;margin-bottom:8px}
     .post-item__desc__list span:not(:last-child)::after{content:"·";margin:0 5px}
@@ -58,7 +58,7 @@
 
     <div class="page-title-bar" style="background:#1d1d1d;padding:26px 0;color:#fff">
         <div class="wrap">
-            <h1 style="color:#fff;font-size:26px;font-weight:700">Blog</h1>
+            <h1 style="color:#fff;font-size:26px;font-weight:800">Blog</h1>
             <div style="color:#9a9a9a;font-size:13px;margin-top:6px">
                 <a href="{{ url('/tr') }}" style="color:#9a9a9a">Ana Sayfa</a>
                 <span style="margin:0 6px;color:#555">/</span>

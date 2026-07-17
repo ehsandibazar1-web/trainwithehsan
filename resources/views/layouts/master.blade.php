@@ -44,9 +44,13 @@
     @endif
     <meta name="theme-color" content="#d9bb75">
 
+    {{-- Manrope: فقط وزن‌های واقعاً استفاده‌شده در سیستم تایپوگرافی (۴۰۰/۵۰۰/۶۰۰/۷۰۰/۸۰۰) —
+         preload برای اولویت‌دهی به دانلود CSS فونت (کاهش تأخیر متن)، display=swap برای جلوگیری
+         از FOIT (متن نامرئی هنگام لود فونت) — همان الگوی preconnect قبلی، فقط با فونت جدید --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     @yield('json-ld')
 
@@ -77,14 +81,23 @@
         }
         body{
             background:#fff;color:var(--text);
-            font-family:'Poppins',system-ui,sans-serif;
-            font-size:14px;line-height:1.9;-webkit-font-smoothing:antialiased;
+            font-family:'Manrope',system-ui,sans-serif;
+            font-size:14px;font-weight:400;line-height:1.9;-webkit-font-smoothing:antialiased;
         }
         img{max-width:100%;display:block}
         a{text-decoration:none;color:inherit}
         a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
         .wrap{max-width:1140px;margin:0 auto;padding:0 15px}
-        h1,h2,h3{line-height:1.4;color:var(--title)}
+        /* ===== سیستم استاندارد وزن/فاصلهٔ تایپوگرافی (۲۰۲۶-۰۷-۱۷) — پیش‌فرضِ پایه برای هر
+           h1-h4 در کل سایت: H1=800, H2=700, H3=700, H4=600، هرکدام با line-height/letter-spacing
+           متناسب با اندازه‌ی خودشان (تیترهای بزرگ‌تر فشرده‌تر). کلاس‌های اختصاصیِ هر بخش که برای
+           match پیکسل-به-پیکسل با ehsandibazar.com تنظیم شده‌اند (اسپسیفیسیتی بالاتر) در همان
+           فایل‌های خودشان با همین اعداد هماهنگ شده‌اند — این‌جا فقط fallback سراسری است */
+        h1,h2,h3,h4{color:var(--title)}
+        h1{font-weight:800;line-height:1.2;letter-spacing:-.015em}
+        h2{font-weight:700;line-height:1.3;letter-spacing:-.01em}
+        h3{font-weight:700;line-height:1.35;letter-spacing:-.005em}
+        h4{font-weight:600;line-height:1.4}
 
         /* ===== Header — .c-header {background:#1d1d1d} ===== */
         .site-header{background:var(--header);position:sticky;top:0;z-index:100}
@@ -94,7 +107,7 @@
         /* .cssmenu>ul>li>a {color:#fff; font-size:15px; font-weight:500} + hover gold */
         .nav-links{display:flex;gap:2px;list-style:none;align-items:center;order:1}
         .nav-links>li>a{
-            display:block;color:#fff;font-size:14px;font-weight:500;
+            display:block;color:#fff;font-size:14px;font-weight:500;letter-spacing:.01em;
             padding:9px 13px;border-radius:9px;transition:.25s;
         }
         .nav-links>li>a:hover,.nav-links>li>a[aria-current="page"]{background-color:var(--gold);color:#fff}
@@ -120,7 +133,7 @@
         .panel-menu ul{list-style:none}
         /* .panel-menu ul li {background:#171717; border-bottom:1px solid #2a2929; color:#fff; font-size:14px} */
         .panel-menu li a{
-            display:block;padding:0 20px;line-height:50px;color:#fff;font-size:14px;font-weight:500;
+            display:block;padding:0 20px;line-height:50px;color:#fff;font-size:14px;font-weight:500;letter-spacing:.01em;
             background-color:#171717;border-bottom:1px solid #2a2929;
         }
         .panel-menu li a:hover,.panel-menu li a[aria-current="page"]{background:var(--gold);color:#000}
@@ -134,7 +147,7 @@
         .show-more{
             position:relative;display:inline-block;
             background-color:var(--gold);color:#000;
-            padding:12px 67px 12px 15px;font-weight:500;font-size:17px;
+            padding:12px 67px 12px 15px;font-weight:600;font-size:17px;letter-spacing:.01em;
             transition:.2s linear;
         }
         .show-more::after{content:"⟶";position:absolute;top:12px;right:14px;font-size:15px}

@@ -90,18 +90,18 @@ body{background:var(--dark)!important}
 .about-v5 .glass span{font-size:12px;color:#ccc}
 
 /* ===== تایم‌لاین ===== */
-.about-v5 .tl-wrap h2{text-align:center;font-size:24px;font-weight:800;margin-bottom:50px}
+.about-v5 .tl-wrap h2{text-align:center;font-size:24px;font-weight:700;margin-bottom:50px}
 .about-v5 .tl-wrap h2::after{content:"";display:block;width:60px;height:3px;background:var(--gold);margin:14px auto 0;border-radius:3px}
 .about-v5 .tl{position:relative;padding-left:26px;border-left:2px solid #2a2a2a;max-width:560px;margin:0 auto}
 .about-v5 .tl-item{position:relative;padding-bottom:38px;opacity:0;transform:translateY(40px);transition:opacity .7s ease-out,transform .7s ease-out}
 .about-v5 .tl-item.show{opacity:1;transform:translateY(0)}
 .about-v5 .tl-item::before{content:"";position:absolute;left:-33px;top:3px;width:14px;height:14px;border-radius:50%;background:var(--gold);box-shadow:0 0 0 4px rgba(217,187,117,.2)}
 .about-v5 .tl-year{color:var(--gold);font-weight:800;font-size:17px}
-.about-v5 .tl-label{font-weight:700;font-size:14.5px;margin:2px 0 4px;color:#fff}
+.about-v5 .tl-label{font-weight:600;font-size:14.5px;margin:2px 0 4px;color:#fff}
 .about-v5 .tl-desc{font-size:13px;color:#999;line-height:1.8}
 
 /* ===== مدارک ===== */
-.about-v5 .gallery h2{text-align:center;font-size:24px;font-weight:800;margin-bottom:40px}
+.about-v5 .gallery h2{text-align:center;font-size:24px;font-weight:700;margin-bottom:40px}
 .about-v5 .gallery h2::after{content:"";display:block;width:60px;height:3px;background:var(--gold);margin:14px auto 0}
 .about-v5 .masonry{column-count:1;column-gap:14px}
 @media(min-width:640px){.about-v5 .masonry{column-count:2}}
@@ -115,10 +115,10 @@ body{background:var(--dark)!important}
 
 /* ===== CTA مگنتیک ===== */
 .about-v5 .cta{background:linear-gradient(135deg,#1a1a1a,#000);text-align:center;background-size:cover;background-position:center}
-.about-v5 .cta h3{font-size:20px;font-weight:800;margin-bottom:20px;color:#fff}
+.about-v5 .cta h3{font-size:20px;font-weight:700;margin-bottom:20px;color:#fff}
 .about-v5 .cta p{color:#ccc;font-size:14px;line-height:1.8;max-width:480px;margin:0 auto 20px}
 .about-v5 .magnetic-wrap{display:flex;justify-content:center}
-.about-v5 .magnetic{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#111;padding:14px 34px;border-radius:32px;font-weight:800;text-decoration:none;font-size:15px;transition:transform .15s ease-out}
+.about-v5 .magnetic{position:relative;display:inline-flex;align-items:center;gap:8px;background:var(--gold);color:#111;padding:14px 34px;border-radius:32px;font-weight:600;letter-spacing:.01em;text-decoration:none;font-size:15px;transition:transform .15s ease-out}
 
 @media (prefers-reduced-motion: reduce){
     .about-v5 .glow{animation:none}
