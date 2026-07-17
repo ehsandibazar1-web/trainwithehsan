@@ -236,7 +236,7 @@
     /* ===== نتایج اعضا — .result-section {background:#fff} + واترمارک لوگوی سپر (ED)، عیناً
        مطابق ehsandibazar.com — عکس PNG شفاف است و خودش کم‌رنگ/کم‌کنتراست صادر شده، بدون تکرار،
        گوشهٔ پایین‌سمت‌راست، تا متن‌های تیره روی سفید خوانا بمانند ===== */
-    .result-section{background:#fff url('{{ asset('images/homepage/watermark-shield.png') }}') no-repeat right bottom / 260px auto;padding:70px 0 50px}
+    .result-section{background:#fff url('{{ asset('images/homepage/watermark-shield.png') }}') no-repeat right center / 426px 520px;padding:70px 0 50px}
     .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
     @@media (max-width:767px){.result-grid{grid-template-columns:1fr;text-align:center}}
     /* .user-list li {inline-block; 32%; center; color:#222020} + .img-user img {142px; دایره} */
