@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BlogController;
+use App\Http\Controllers\ContactController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PreviewController;
@@ -37,6 +38,11 @@ Route::post('/newsletter/resend', [NewsletterController::class, 'resend'])
 // تأیید و لغو اشتراک با توکن ۶۴کاراکتری اختصاصی هر مشترک — بدون نیاز به لاگین
 Route::get('/newsletter/verify/{token}', [NewsletterController::class, 'verify']);
 Route::get('/newsletter/unsubscribe/{token}', [NewsletterController::class, 'unsubscribe']);
+
+// فرم تماس صفحه‌ی Contact — همون الگوی ضدهرزنامه‌ی خبرنامه (هانی‌پات + سد زمانی + محدودیت نرخ).
+// GET /contact خودش از طریق مسیر کلی Page در پایین این فایل حل می‌شود؛ این فقط ارسال فرم است.
+Route::post('/contact', [ContactController::class, 'submit'])
+    ->middleware('throttle:contact');
 
 // صفحات مستقل (Privacy, Terms, FAQ, ...) — این دو مسیر باید همیشه آخرِ فایل بمانند تا
 // مسیرهای بالاتر (که زودتر ثبت می‌شوند) اول match شوند. lookahead هم به‌عنوان لایه‌ی دوم

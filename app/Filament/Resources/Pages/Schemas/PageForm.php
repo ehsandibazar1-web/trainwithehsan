@@ -66,7 +66,7 @@ class PageForm
                     ]),
 
                 Section::make('SEO & social preview (optional)')
-                    ->description('Leave blank to keep using the title/body automatically — only fill these in if you want different wording for Google or social shares. The AI Assistant (button at the top of this page once saved) can suggest all four.')
+                    ->description('Leave blank to keep using the title/body automatically — only fill these in if you want different wording for Google or social shares. The AI Assistant (button at the top of this page once saved) can suggest these.')
                     ->collapsed()
                     ->columnSpanFull()
                     ->schema([
@@ -77,6 +77,28 @@ class PageForm
                         TextInput::make('meta_description')
                             ->label('Meta description')
                             ->maxLength(160)
+                            ->nullable(),
+                        TextInput::make('meta_keywords')
+                            ->label('Meta keywords (optional)')
+                            ->helperText('Rarely used by search engines today, but some tools still read it. Comma-separated.')
+                            ->maxLength(255)
+                            ->nullable(),
+                        TextInput::make('canonical_url')
+                            ->label('Canonical URL (advanced)')
+                            ->helperText('Leave blank to use this page\'s own URL (recommended for almost every page). Only set this if this content is a duplicate of another page and you want search engines to credit that page instead.')
+                            ->url()
+                            ->maxLength(255)
+                            ->nullable(),
+                        Select::make('robots')
+                            ->label('Search engine indexing')
+                            ->helperText('Leave as "Default" unless you specifically want to hide this page from Google (e.g. a thank-you page).')
+                            ->options([
+                                'index,follow' => 'Default — index this page and follow its links',
+                                'noindex,follow' => 'Hide from search results, but still follow its links',
+                                'noindex,nofollow' => 'Hide from search results and don\'t follow its links',
+                                'index,nofollow' => 'Index this page but don\'t follow its links',
+                            ])
+                            ->native(false)
                             ->nullable(),
                         TextInput::make('og_title')
                             ->label('Social share title')

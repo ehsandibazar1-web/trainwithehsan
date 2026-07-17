@@ -29,10 +29,13 @@ class SeoAuditTest extends TestCase
         ], $overrides));
     }
 
+    // اسلاگ پیش‌فرض عمداً «privacy-policy» نیست — این اسلاگ الان توسط مهاجرت seed صفحات
+    // Contact/FAQ/Legal (۲۰۲۶_۰۷_۱۷_۰۰۰۰۱۱) واقعاً پر شده و روی هر اجرای RefreshDatabase موجود
+    // است؛ استفاده از همون اسلاگ اینجا با UNIQUE(slug, locale) تصادم می‌کرد
     private function makePage(array $overrides = []): Page
     {
         return Page::create(array_merge([
-            'locale' => 'en', 'title' => 'Privacy Policy', 'slug' => 'privacy-policy',
+            'locale' => 'en', 'title' => 'Sample Standalone Page', 'slug' => 'sample-standalone-page',
             'body' => '<p>'.str_repeat('Long enough legal body text. ', 10).'</p>', 'status' => 'published',
         ], $overrides));
     }
@@ -94,14 +97,17 @@ class SeoAuditTest extends TestCase
         $this->assertStringNotContainsString('unused.jpg', $combined);
     }
 
-    public function test_missing_schema_flags_pages_but_not_articles(): void
+    // از ۲۰۲۶-۰۷-۱۷ page.blade.php/tr/page.blade.php همیشه WebPage schema تولید می‌کنند (و در
+    // صورت وجود faqs، FAQPage هم) — پس صفحات مستقل دیگر در «Missing Schema» پرچم نمی‌خورند؛
+    // تنها شکاف واقعی باقی‌مانده ایندکس بلاگ است (blog.blade.php هنوز json-ld ندارد)
+    public function test_missing_schema_flags_only_the_blog_index_not_pages_or_articles(): void
     {
         $this->makeArticle();
         $this->makePage();
 
         $result = $this->service()->run();
 
-        $this->assertCount(1, collect($result['missing_schema'])->where('type', 'Page'));
+        $this->assertCount(0, collect($result['missing_schema'])->where('type', 'Page'));
         $this->assertCount(0, collect($result['missing_schema'])->where('type', 'Article'));
         $this->assertCount(2, collect($result['missing_schema'])->where('type', 'Blog index'));
     }
@@ -171,11 +177,17 @@ class SeoAuditTest extends TestCase
         Http::fake([
             'good.example.com*' => Http::response('ok', 200),
             'bad.example.com*' => Http::response('nope', 404),
+            // fallback موفق برای هر دامنه‌ی خارجی دیگر — این چک روی کل سایت اجرا می‌شود، پس با
+            // لینک‌های خارجی واقعیِ صفحات seed-شده (مثلا policies.google.com در Cookie Policy)
+            // هم برخورد می‌کند؛ اینجا فقط bad.example.com عمداً «خراب» فرض شده
+            '*' => Http::response('ok', 200),
         ]);
 
         $findings = $this->service()->checkExternalLinks();
 
-        $this->assertCount(1, $findings);
-        $this->assertStringContainsString('bad.example.com', $findings[0]['detail']);
+        $badLinkFindings = collect($findings)->filter(fn ($f) => str_contains($f['detail'], 'bad.example.com'))->values();
+
+        $this->assertCount(1, $badLinkFindings);
+        $this->assertStringContainsString('bad.example.com', $badLinkFindings[0]['detail']);
     }
 }

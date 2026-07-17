@@ -7,7 +7,11 @@
 
     <title>@yield('title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence Training in Istanbul')</title>
     <meta name="description" content="@yield('meta_description', 'Self-defense and Brazilian Jiu-Jitsu training in Istanbul for complete beginners. Learn to make the right decision under pressure — the Martial Intelligence method by Ehsan Dibazar.')">
-    <meta name="robots" content="index,follow">
+    @php($metaKeywords = trim($__env->yieldContent('meta_keywords')))
+    @if($metaKeywords)
+    <meta name="keywords" content="{{ $metaKeywords }}">
+    @endif
+    <meta name="robots" content="@yield('robots', 'index,follow')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
 
     {{-- hreflang: فعال‌سازی بعد از آماده شدن نسخهٔ ترکی --}}
@@ -334,20 +338,22 @@
 <footer class="site-footer">
     <div class="wrap">
         @php($footerColumnsList = !empty($footerColumns) ? $footerColumns : [
-            ['title' => 'Privacy Policy', 'links' => [
-                ['label' => 'Terms and Conditions', 'url' => '/terms-and-conditions'],
-                ['label' => 'Privacy Policy', 'url' => '/privacy-policy'],
+            ['title' => 'About', 'links' => [
+                ['label' => 'About', 'url' => '/about'],
+                ['label' => 'Contact', 'url' => '/contact'],
             ]],
-            ['title' => 'Courses', 'links' => [
+            ['title' => 'Training', 'links' => [
                 ['label' => 'Courses', 'url' => '/courses'],
-                ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence'],
             ]],
-            ['title' => 'Blog', 'links' => [
+            ['title' => 'Resources', 'links' => [
                 ['label' => 'Blog', 'url' => '/blog'],
+                ['label' => 'FAQ', 'url' => '/faq'],
             ]],
-            ['title' => 'Contact Us', 'links' => [
-                ['label' => 'Contact Us', 'url' => '/contact'],
-                ['label' => 'About Us', 'url' => '/about'],
+            ['title' => 'Legal', 'links' => [
+                ['label' => 'Privacy Policy', 'url' => '/privacy-policy'],
+                ['label' => 'Terms & Conditions', 'url' => '/terms-and-conditions'],
+                ['label' => 'Cookie Policy', 'url' => '/cookie-policy'],
+                ['label' => 'Disclaimer', 'url' => '/disclaimer'],
             ]],
         ])
         <div class="footer-grid">

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Page;
 
 class SeoController extends Controller
 {
@@ -22,6 +23,13 @@ class SeoController extends Controller
             ->orderByDesc('published_at')
             ->get();
 
+        // صفحات مستقل (Contact, FAQ, Privacy Policy, ...) — همه‌ی صفحات منتشرشده، نه فقط چند
+        // اسلاگ ثابت، تا هر صفحه‌ی جدیدی که ادمین از پنل بسازد خودکار وارد سایت‌مپ شود
+        // (همون رفتاری که مقالات از قبل دارند)
+        $pages = Page::published()
+            ->orderByDesc('updated_at')
+            ->get();
+
         $xml = '<?xml version="1.0" encoding="UTF-8"?>'."\n";
         $xml .= '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
 
@@ -32,6 +40,12 @@ class SeoController extends Controller
         foreach ($articles as $article) {
             $loc = url($article->path());
             $lastmod = optional($article->updated_at)->toAtomString();
+            $xml .= "\n  <url><loc>{$loc}</loc>".($lastmod ? "<lastmod>{$lastmod}</lastmod>" : '').'</url>';
+        }
+
+        foreach ($pages as $page) {
+            $loc = url($page->path());
+            $lastmod = optional($page->updated_at)->toAtomString();
             $xml .= "\n  <url><loc>{$loc}</loc>".($lastmod ? "<lastmod>{$lastmod}</lastmod>" : '').'</url>';
         }
 
