@@ -140,8 +140,12 @@
     }
     .img-about-box span{font-weight:800;font-size:34px;color:rgba(0,0,0,.18)}
 
-    /* ===== دوره‌ها — .counter {background:#363636; min-height:508px; color:#fff} ===== */
-    .counter{background:#363636;min-height:508px;color:#fff;padding:50px 0 60px}
+    /* ===== دوره‌ها — پس‌زمینهٔ عکسِ رینگ تیره‌شده، عیناً مطابق ehsandibazar.com؛ گرادیانِ تیره
+       روی عکس برای حفظِ کنتراستِ متن سفید (.title-counter/.sun-counter) اضافه شده ===== */
+    .counter{
+        background:linear-gradient(rgba(15,15,15,.72),rgba(15,15,15,.82)),url('{{ asset('images/homepage/bg-courses.jpg') }}') center/cover no-repeat;
+        min-height:508px;color:#fff;padding:50px 0 60px;
+    }
     /* .title-counter {font-size:2rem} centered */
     .title-counter{font-size:2rem;text-align:center;color:#fff;font-weight:700}
     @@media (max-width:767px){.title-counter{font-size:1.5rem}}
@@ -184,8 +188,10 @@
         font-size:15px;min-height:50px;padding-top:11px;text-align:center;
     }
 
-    /* ===== مقالات — .section-news {background:#e1e1e1} + کارت سفید ===== */
-    .section-news{background:#e1e1e1;padding:56px 0 64px}
+    /* ===== مقالات — پس‌زمینهٔ بافت دیوار/بتنِ روشن، عیناً مطابق ehsandibazar.com؛ چون کارت‌های
+       خبر خودشان پس‌زمینهٔ سفید مجزا دارند (.news-card{background:#fff})، نیازی به گرادیان
+       تیره‌کننده نیست ===== */
+    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat;padding:56px 0 64px}
     /* .title-section {color:#000; font-size:20px; font-weight:500} */
     .title-section{color:#000;font-size:20px;font-weight:500;text-align:center;line-height:1.5}
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
@@ -224,8 +230,10 @@
     }
     .news-card:hover .more-news{background-color:#000;color:var(--gold)}
 
-    /* ===== نتایج اعضا — .result-section {background:#fff} + عکس دایره‌ای 142px ===== */
-    .result-section{background:#fff;padding:70px 0 50px}
+    /* ===== نتایج اعضا — .result-section {background:#fff} + واترمارک لوگوی سپر (ED)، عیناً
+       مطابق ehsandibazar.com — عکس PNG شفاف است و خودش کم‌رنگ/کم‌کنتراست صادر شده، بدون تکرار،
+       گوشهٔ پایین‌سمت‌راست، تا متن‌های تیره روی سفید خوانا بمانند ===== */
+    .result-section{background:#fff url('{{ asset('images/homepage/watermark-shield.png') }}') no-repeat right bottom / 260px auto;padding:70px 0 50px}
     .result-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
     @@media (max-width:767px){.result-grid{grid-template-columns:1fr;text-align:center}}
     /* .user-list li {inline-block; 32%; center; color:#222020} + .img-user img {142px; دایره} */
@@ -247,8 +255,8 @@
        ردیف اول همیشه نمایش داده می‌شود (fallback در صورت غیرفعال بودن)، ردیف دوم کاملاً
        اختیاری و پیش‌فرض مخفی است تا رفتار قبلی برای مدیرهایی که فقط ردیف اول را تنظیم
        کرده‌اند بدون تغییر بماند ===== */
-    .insta-showcase{background:#ebebeb;border-top:1px solid #c2c2c2;padding:56px 0}
-    .insta-showcase--row2{background:#fff;border-top:0}
+    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') center/cover no-repeat;border-top:1px solid #c2c2c2;padding:56px 0}
+    .insta-showcase--row2{background:#fff url('{{ asset('images/homepage/bg-instagram-row2.jpg') }}') center/cover no-repeat;border-top:0}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
     /* تبلت هم مثل دسکتاپ دو ستونی بماند (متن یک طرف، کادر طرف دیگر) — فقط روی موبایل تک‌ستونی
        می‌شود؛ نقطهٔ شکست از ۹۰۰ به ۶۴۰ کاهش یافت تا تبلت‌ها (۷۶۸/۸۲۰/…px) کنارِهم بمانند */
