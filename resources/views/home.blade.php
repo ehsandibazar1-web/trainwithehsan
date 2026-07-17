@@ -191,8 +191,10 @@
 
     /* ===== مقالات — پس‌زمینهٔ بافت دیوار/بتنِ روشن، عیناً مطابق ehsandibazar.com؛ چون کارت‌های
        خبر خودشان پس‌زمینهٔ سفید مجزا دارند (.news-card{background:#fff})، نیازی به گرادیان
-       تیره‌کننده نیست ===== */
-    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat;padding:56px 0 64px}
+       تیره‌کننده نیست. background-attachment:fixed جلوهٔ پارالاکس می‌سازد (عکس هنگام اسکرول ثابت
+       می‌ماند) — دقیقاً مطابق CSS واقعیِ ehsandibazar.com (.section-news{background:...fixed}) —
+       طبق درخواست صریح کاربر فقط همین بخش، نه ۳ بخش دیگر ===== */
+    .section-news{background:url('{{ asset('images/homepage/bg-articles.jpg') }}') center/cover no-repeat fixed;padding:56px 0 64px}
     /* .title-section {color:#000; font-size:20px; font-weight:500} */
     .title-section{color:#000;font-size:20px;font-weight:500;text-align:center;line-height:1.5}
     /* .sub-title-section a {color:#353535; font-weight:500; 15px} */
