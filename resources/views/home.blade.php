@@ -65,7 +65,7 @@
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
     /* نقطه‌های اسلایدر — از پایین/چپ (که با ردیف ویدیوهای زیرش تداخل داشت) به بالا/راست
        منتقل شد و کوچک‌تر شد؛ همچنان یک ردیف افقی است */
-    .hero-dots{position:absolute;top:20px;right:20px;display:flex;justify-content:flex-end;gap:6px;z-index:2}
+    .hero-dots{position:absolute;top:20px;right:20px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
     .hero-dot{width:10px;height:10px;border-radius:50%;background:#a3a5a8;border:0;cursor:pointer;padding:0}
     .hero-dot.active{background:var(--gold)}
 
