@@ -25,14 +25,14 @@ class GenerationApplier
             return false;
         }
 
-        if ($generation->field === 'alt_text') {
+        if (in_array($generation->field, ActionRegistry::MEDIA_BACKED_FIELDS, true)) {
             $media = Media::forRecord($record);
 
             if (! $media) {
                 return false;
             }
 
-            $media->update(['alt_text' => $generation->result]);
+            $media->update([$generation->field => $generation->result]);
         } else {
             $record->update([$generation->field => $generation->result]);
         }
@@ -48,8 +48,8 @@ class GenerationApplier
             return false;
         }
 
-        if ($generation->field === 'alt_text') {
-            Media::forRecord($record)?->update(['alt_text' => $generation->input_snapshot]);
+        if (in_array($generation->field, ActionRegistry::MEDIA_BACKED_FIELDS, true)) {
+            Media::forRecord($record)?->update([$generation->field => $generation->input_snapshot]);
         } else {
             $record->update([$generation->field => $generation->input_snapshot]);
         }

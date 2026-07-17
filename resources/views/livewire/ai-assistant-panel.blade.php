@@ -493,30 +493,6 @@
                 </div>
             @endif
 
-            @if (isset($this->suggestionFields['caption']))
-                <div class="ai-ca-card">
-                    <h3>Image Caption</h3>
-                    <x-filament::button size="xs" color="gray" wire:click="generateField('caption', 'generate')" wire:loading.attr="disabled">
-                        Generate
-                    </x-filament::button>
-
-                    @php($latest = $this->suggestionFields['caption']['latest'])
-                    @if ($latest)
-                        @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">
-                                {{ ucfirst($latest->status) }}…
-                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
-                            </div>
-                        @elseif ($latest->status === 'failed')
-                            <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
-                        @elseif ($latest->status === 'completed')
-                            <div class="ai-ca-preview">{{ $latest->result }}</div>
-                            <div class="ai-ca-status">Suggestion only — copy under the image manually if you want to use it.</div>
-                        @endif
-                    @endif
-                </div>
-            @endif
-
             <div class="ai-ca-card">
                 <h3>Translate</h3>
                 <div class="ai-ca-modes">

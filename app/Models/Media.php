@@ -11,7 +11,7 @@ class Media extends Model
 {
     protected $fillable = [
         'original_name', 'disk', 'disk_path', 'url', 'type', 'mime_type', 'size',
-        'folder_id', 'alt_text', 'width', 'height', 'webp_path', 'thumbnail_path', 'responsive_paths',
+        'folder_id', 'alt_text', 'caption', 'description', 'width', 'height', 'webp_path', 'thumbnail_path', 'responsive_paths',
     ];
 
     protected $casts = [

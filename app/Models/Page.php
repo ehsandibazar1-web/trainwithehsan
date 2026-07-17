@@ -14,6 +14,7 @@ class Page extends Model
         'locale', 'translation_of', 'title', 'slug', 'body',
         'seo_title', 'meta_description', 'og_title', 'og_description',
         'image_path', 'status', 'published_at',
+        'hero_image_prompt', 'thumbnail_image_prompt', 'og_image_prompt', 'social_image_prompt',
     ];
 
     protected $casts = [

@@ -81,7 +81,9 @@ class AiAssistantPanel extends Component
 
             return array_merge($definition, [
                 'key' => $key,
-                'current_value' => $key === 'alt_text' ? $this->mediaForRecord()?->alt_text : $this->record->getAttribute($key),
+                'current_value' => in_array($key, ActionRegistry::MEDIA_BACKED_FIELDS, true)
+                    ? $this->mediaForRecord()?->getAttribute($key)
+                    : $this->record->getAttribute($key),
                 'latest' => $history->first(),
                 'history' => $history,
             ]);
@@ -92,7 +94,7 @@ class AiAssistantPanel extends Component
     // کدام کارت خودشان را در پایین تب Generate دارند (نگاه کنید به livewire/ai-assistant-panel.blade.php)
     public function getSuggestionFieldsProperty(): array
     {
-        return collect(['internal_links', 'external_links', 'schema', 'caption'])
+        return collect(['internal_links', 'external_links', 'schema'])
             ->mapWithKeys(function (string $key) {
                 $definition = ActionRegistry::for($key);
 
@@ -320,8 +322,11 @@ class AiAssistantPanel extends Component
 
     private function queueGeneration(string $field, string $mode): void
     {
-        // ALT روی رکورد Article/Page ذخیره نمی‌شود، روی Media متناظر — پس مقدار فعلی هم باید از آنجا خوانده شود
-        $inputSnapshot = $field === 'alt_text' ? $this->mediaForRecord()?->alt_text : $this->record->getAttribute($field);
+        // فیلدهای MEDIA_BACKED_FIELDS روی رکورد Article/Page ذخیره نمی‌شوند، روی Media متناظر —
+        // پس مقدار فعلی هم باید از آنجا خوانده شود
+        $inputSnapshot = in_array($field, ActionRegistry::MEDIA_BACKED_FIELDS, true)
+            ? $this->mediaForRecord()?->getAttribute($field)
+            : $this->record->getAttribute($field);
 
         $generation = AiGeneration::create([
             'user_id' => Auth::id(),
@@ -355,7 +360,7 @@ class AiAssistantPanel extends Component
             return;
         }
 
-        if ($generation->field === 'alt_text' && ! $this->mediaForRecord()) {
+        if (in_array($generation->field, ActionRegistry::MEDIA_BACKED_FIELDS, true) && ! $this->mediaForRecord()) {
             Notification::make()->danger()->title('No Media Library entry found for this image')->send();
 
             return;
