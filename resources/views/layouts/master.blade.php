@@ -190,6 +190,28 @@
         .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
         @@media (max-width:720px){.footer-grid{grid-template-columns:1fr 1fr;gap:24px}}
         @@media (max-width:480px){.footer-grid{grid-template-columns:1fr}}
+        /* دکمه‌ی آکاردئون هر ستون فوتر — دسکتاپ همیشه مخفی (دقیقاً مثل .nav-toggle)، فقط زیر
+           ۴۸۰px نمایش داده می‌شود؛ یعنی در دسکتاپ نه دیده می‌شود نه قابل کلیک/تب‌کردن است، پس
+           هیچ رفتاری آنجا تغییر نمی‌کند */
+        .footer-col-toggle{display:none}
+        /* ===== آکاردئون فوتر در موبایل — مطابق حالت موبایل ehsandibazar.com: با زدن روی هر
+           ستون، لینک‌هایش زیرش باز/بسته می‌شود؛ ترتیب/محتوای ستون‌ها دست نخورده می‌ماند ===== */
+        @@media (max-width:480px){
+            .footer-grid>div{border-bottom:1px solid rgba(255,255,255,.12)}
+            .footer-grid>div:first-child{border-top:1px solid rgba(255,255,255,.12)}
+            .footer-grid h4{
+                cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+                margin-bottom:0;padding:14px 0;
+            }
+            .footer-col-toggle{
+                display:inline-flex;align-items:center;justify-content:center;
+                background:none;border:0;padding:0;width:22px;height:22px;flex-shrink:0;cursor:pointer;
+            }
+            .footer-col-toggle::after{content:"\203A";color:var(--gold);font-size:20px;line-height:1;transition:transform .25s}
+            .footer-col-toggle[aria-expanded="true"]::after{transform:rotate(90deg)}
+            .footer-grid ul{max-height:0;overflow:hidden;transition:max-height .3s ease}
+            .footer-grid>div.open ul{max-height:400px;padding-bottom:14px}
+        }
         .footer-brand{text-align:center;margin-bottom:24px}
         .footer-logo-img{height:130px;width:auto;margin:0 auto;display:block}
         /* .title-footer span {font-size:15px; color:#fff; font-weight:500} */
@@ -359,8 +381,12 @@
         <div class="footer-grid">
             @foreach($footerColumnsList as $col)
             <div>
-                <h4>{{ $col['title'] ?? '' }}</h4>
-                <ul>
+                <h4>
+                    {{ $col['title'] ?? '' }}
+                    {{-- فقط زیر ۴۸۰px دیده/فعال می‌شود (CSS بالا) — در دسکتاپ نامرئی و غیرقابل‌تب‌کردن است --}}
+                    <button type="button" class="footer-col-toggle" aria-expanded="false" aria-controls="footer-col-{{ $loop->index }}" aria-label="{{ 'Toggle '.($col['title'] ?? 'section') }}"></button>
+                </h4>
+                <ul id="footer-col-{{ $loop->index }}">
                     @foreach($col['links'] ?? [] as $lnk)
                     <li><a href="{{ str_starts_with($lnk['url'] ?? '', 'http') ? $lnk['url'] : url($lnk['url'] ?? '/') }}">{{ $lnk['label'] ?? '' }}</a></li>
                     @endforeach
@@ -409,6 +435,20 @@
         toggle && toggle.addEventListener('click', open);
         close && close.addEventListener('click', shut);
         overlay && overlay.addEventListener('click', shut);
+    })();
+
+    // ===== آکاردئون ستون‌های فوتر — فقط زیر ۴۸۰px قابل‌دیدن/کلیک است (دکمه display:none در
+    // دسکتاپ)، پس این هندلر در دسکتاپ هیچ اثری ندارد و رفتار فعلی همان‌جا دست‌نخورده می‌ماند =====
+    (function () {
+        document.querySelectorAll('.footer-col-toggle').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var col = btn.closest('.footer-grid > div');
+                if (!col) return;
+                var expanded = btn.getAttribute('aria-expanded') === 'true';
+                btn.setAttribute('aria-expanded', String(!expanded));
+                col.classList.toggle('open', !expanded);
+            });
+        });
     })();
 
     (function () {
