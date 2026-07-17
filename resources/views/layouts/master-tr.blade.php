@@ -127,7 +127,8 @@
             background:#171717;z-index:999999;transition:.5s;overflow-y:auto;
         }
         .panel-menu.open{right:0;box-shadow:0 5px 15px 0 rgba(0,0,0,.3)}
-        .panel-menu-head{display:flex;justify-content:flex-end;padding:14px}
+        .panel-menu-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px}
+        .panel-menu-logo{height:44px;width:auto;display:block}
         .panel-close{background:none;border:0;color:#fff;font-size:28px;cursor:pointer}
         .panel-menu ul{list-style:none}
         /* .panel-menu ul li {background:#171717; border-bottom:1px solid #2a2929; color:#fff; font-size:14px} */
@@ -324,6 +325,7 @@
 <div class="panel-overlay" id="panelOverlay"></div>
 <nav class="panel-menu" id="panelMenu">
     <div class="panel-menu-head">
+        <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Defensive Tactics" class="panel-menu-logo">
         <button class="panel-close" id="panelClose" aria-label="Close menu">×</button>
     </div>
     <ul>
