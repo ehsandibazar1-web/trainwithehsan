@@ -261,10 +261,12 @@
         .insta-showcase--row2 .insta-showcase-card{order:1}
         .insta-showcase--row2 .insta-showcase-text{order:2}
     }
-    .insta-showcase-text .insta-showcase-logo{width:100px;height:auto;margin-bottom:20px}
+    /* محتوای ستون متن (لوگو/آیکون، تیتر، زیرتیتر، دکمه) همیشه زیرِ هم و وسط‌چین است —
+       چه در حالت دوستونیِ دسکتاپ/تبلت و چه در موبایلِ تک‌ستونی */
+    .insta-showcase-text{text-align:center}
+    .insta-showcase-text .insta-showcase-logo{width:100px;height:auto;margin:0 auto 20px}
     .insta-showcase-text h2{font-size:24px;font-weight:700;color:var(--title);margin-bottom:10px;line-height:1.35}
-    .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.9;margin-bottom:20px;max-width:420px}
-    @@media (max-width:640px){.insta-showcase-text{text-align:center}.insta-showcase-text p{margin-left:auto;margin-right:auto}.insta-showcase-text .insta-showcase-logo{margin-left:auto;margin-right:auto}}
+    .insta-showcase-text p{font-size:14px;color:var(--text);line-height:1.9;margin:0 auto 20px;max-width:420px}
     .insta-showcase-btn{
         display:inline-flex;align-items:center;gap:8px;background:#252525;color:var(--gold);
         padding:11px 28px;border-radius:30px;font-weight:600;font-size:14px;transition:.25s linear;
