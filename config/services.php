@@ -45,9 +45,12 @@ return [
 
     // مصرف‌شده در layouts/master.blade.php و master-tr.blade.php — بنر رضایت کوکی فقط وقتی رندر
     // می‌شود که حداقل یکی از این دو مقدار پر باشد؛ اگر خالی باشند نه بنری هست نه اسکریپت ردیابی‌ای
-    // لود می‌شود (رفتار امن پیش‌فرض روی هر نصب/محیطی که این دو env را تنظیم نکرده)
-    'google_analytics' => [
-        'id' => env('GOOGLE_ANALYTICS_ID'),
+    // لود می‌شود (رفتار امن پیش‌فرض روی هر نصب/محیطی که این دو env را تنظیم نکرده). GA4 دیگر
+    // مستقیم لود نمی‌شود — طبق تصمیم کاربر (۲۰۲۶-۰۷-۱۷)، GA4 حالا از *داخل* همین GTM container
+    // به‌عنوان یک تگ «GA4 Configuration» تنظیم می‌شود (در پنل tagmanager.google.com، نه در این
+    // کد)، پس یک ستون env جدا برای GOOGLE_ANALYTICS_ID دیگر لازم نیست.
+    'google_tag_manager' => [
+        'id' => env('GOOGLE_TAG_MANAGER_ID'),
     ],
 
     'microsoft_clarity' => [

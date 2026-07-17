@@ -249,10 +249,11 @@
 <body>
 
 {{-- بنر رضایت کوکی (KVKK/GDPR) — اگر هیچ‌کدام از این دو env تنظیم نشده باشد اصلاً رندر نمی‌شود
-     و هیچ اسکریپت ردیابی‌ای هم لود نمی‌شود (نگاه کنید به config/services.php) --}}
-@php($gaId = config('services.google_analytics.id'))
+     و هیچ اسکریپت ردیابی‌ای هم لود نمی‌شود (نگاه کنید به config/services.php). GA4 دیگر مستقیم
+     لود نمی‌شود — از داخل همین GTM container به‌عنوان یک تگ تنظیم می‌شود (در پنل GTM، نه این کد) --}}
+@php($gtmId = config('services.google_tag_manager.id'))
 @php($clarityId = config('services.microsoft_clarity.id'))
-@if($gaId || $clarityId)
+@if($gtmId || $clarityId)
 <div class="cookie-consent" id="cookieConsent" hidden role="dialog" aria-live="polite" aria-label="Çerez izni">
     <div class="cookie-consent__text">
         Bu siteyi nasıl kullandığınızı anlamak için çerezler kullanıyoruz (Google Analytics, Microsoft Clarity). Zorunlu olmayan çerezleri kabul edebilir veya reddedebilirsiniz.
@@ -482,30 +483,34 @@
         items.forEach(function (el) { io.observe(el); });
     })();
 
-    // ===== رضایت کوکی (GA4/Clarity) — طبق KVKK/GDPR: تا کلیک «Kabul Et» هیچ اسکریپت ردیابی لود
+    // ===== رضایت کوکی (GTM/Clarity) — طبق KVKK/GDPR: تا کلیک «Kabul Et» هیچ اسکریپت ردیابی لود
     // نمی‌شود؛ تصمیم قبلی (accepted/declined) در localStorage نگه داشته می‌شود تا بنر دوباره
     // برای همان بازدیدکننده نمایش داده نشود. کل این IIFE عمداً پشت همان @@if بالا است — نه فقط
-    // خودِ بنر — تا وقتی هیچ‌کدام تنظیم نشده حتی این کد بی‌اثر هم به بازدیدکننده فرستاده نشود =====
-    @if($gaId || $clarityId)
+    // خودِ بنر — تا وقتی هیچ‌کدام تنظیم نشده حتی این کد بی‌اثر هم به بازدیدکننده فرستاده نشود.
+    // GA4 دیگر جداگانه اینجا لود نمی‌شود — از داخل همین GTM container (به‌عنوان یک تگ «GA4
+    // Configuration»، تنظیم‌شده در پنل tagmanager.google.com) فعال می‌شود؛ عمداً هیچ <noscript>
+    // GTM اضافه نشده — بازدیدکننده‌ی بدون جاوااسکریپت اصلاً نمی‌تواند این بنر را ببیند/رضایت بدهد،
+    // پس فایر کردنِ بی‌قیدوشرطِ آن iframe برای او دقیقاً همان کاری است که این کل مکانیزم رضایت
+    // می‌خواهد از آن جلوگیری کند =====
+    @if($gtmId || $clarityId)
     (function () {
-        var GA_ID = @json($gaId);
+        var GTM_ID = @json($gtmId);
         var CLARITY_ID = @json($clarityId);
-        if (!GA_ID && !CLARITY_ID) return;
+        if (!GTM_ID && !CLARITY_ID) return;
 
         var STORAGE_KEY = 'twe_cookie_consent';
         var banner = document.getElementById('cookieConsent');
 
-        function loadGa() {
-            if (!GA_ID || window.__gaLoaded) return;
-            window.__gaLoaded = true;
-            var s = document.createElement('script');
-            s.async = true;
-            s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
-            document.head.appendChild(s);
+        function loadGtm() {
+            if (!GTM_ID || window.__gtmLoaded) return;
+            window.__gtmLoaded = true;
             window.dataLayer = window.dataLayer || [];
-            window.gtag = function () { window.dataLayer.push(arguments); };
-            window.gtag('js', new Date());
-            window.gtag('config', GA_ID);
+            window.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+            var f = document.getElementsByTagName('script')[0];
+            var j = document.createElement('script');
+            j.async = true;
+            j.src = 'https://www.googletagmanager.com/gtm.js?id=' + GTM_ID;
+            f.parentNode.insertBefore(j, f);
         }
 
         function loadClarity() {
@@ -518,7 +523,7 @@
             })(window, document, 'clarity', 'script', CLARITY_ID);
         }
 
-        function loadTrackers() { loadGa(); loadClarity(); }
+        function loadTrackers() { loadGtm(); loadClarity(); }
 
         var consent = null;
         try { consent = window.localStorage.getItem(STORAGE_KEY); } catch (e) {}
