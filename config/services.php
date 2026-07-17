@@ -43,4 +43,15 @@ return [
         'driver' => env('AI_ASSISTANT_DRIVER', 'anthropic'),
     ],
 
+    // مصرف‌شده در layouts/master.blade.php و master-tr.blade.php — بنر رضایت کوکی فقط وقتی رندر
+    // می‌شود که حداقل یکی از این دو مقدار پر باشد؛ اگر خالی باشند نه بنری هست نه اسکریپت ردیابی‌ای
+    // لود می‌شود (رفتار امن پیش‌فرض روی هر نصب/محیطی که این دو env را تنظیم نکرده)
+    'google_analytics' => [
+        'id' => env('GOOGLE_ANALYTICS_ID'),
+    ],
+
+    'microsoft_clarity' => [
+        'id' => env('MICROSOFT_CLARITY_ID'),
+    ],
+
 ];
