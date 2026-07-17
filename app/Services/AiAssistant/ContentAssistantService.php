@@ -355,7 +355,7 @@ class ContentAssistantService
      */
     private function imagesFor(Model $record, string $field): array
     {
-        if (! in_array($field, ['alt_text', 'caption'], true) || blank($record->image_path)) {
+        if (! in_array($field, ActionRegistry::MEDIA_BACKED_FIELDS, true) || blank($record->image_path)) {
             return [];
         }
 

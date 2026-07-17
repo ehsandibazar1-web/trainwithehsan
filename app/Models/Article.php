@@ -19,6 +19,7 @@ class Article extends Model
         'seo_title', 'meta_description', 'og_title', 'og_description',
         'faqs', 'image_path', 'author_name', 'reading_time', 'views',
         'status', 'published_at',
+        'hero_image_prompt', 'thumbnail_image_prompt', 'og_image_prompt', 'social_image_prompt',
     ];
 
     protected $casts = [

@@ -4,11 +4,13 @@ namespace App\Livewire;
 
 use App\Filament\Resources\Articles\ArticleResource;
 use App\Filament\Resources\Pages\PageResource;
+use App\Jobs\GenerateHeroImage;
 use App\Jobs\ProcessAiChatMessage;
 use App\Jobs\RunAiContentGeneration;
 use App\Jobs\TranslateArticleDraft;
 use App\Models\AiChatMessage;
 use App\Models\AiGeneration;
+use App\Models\AiImageGeneration;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\Page as PageModel;
@@ -16,6 +18,7 @@ use App\Services\AiAssistant\ActionRegistry;
 use App\Services\AiAssistant\ContentReviewService;
 use App\Services\AiAssistant\DiffService;
 use App\Services\AiAssistant\GenerationApplier;
+use App\Services\AiAssistant\ProviderManager;
 use App\Services\Seo\SeoAuditService;
 use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
@@ -81,7 +84,9 @@ class AiAssistantPanel extends Component
 
             return array_merge($definition, [
                 'key' => $key,
-                'current_value' => $key === 'alt_text' ? $this->mediaForRecord()?->alt_text : $this->record->getAttribute($key),
+                'current_value' => in_array($key, ActionRegistry::MEDIA_BACKED_FIELDS, true)
+                    ? $this->mediaForRecord()?->getAttribute($key)
+                    : $this->record->getAttribute($key),
                 'latest' => $history->first(),
                 'history' => $history,
             ]);
@@ -92,7 +97,7 @@ class AiAssistantPanel extends Component
     // کدام کارت خودشان را در پایین تب Generate دارند (نگاه کنید به livewire/ai-assistant-panel.blade.php)
     public function getSuggestionFieldsProperty(): array
     {
-        return collect(['internal_links', 'external_links', 'schema', 'caption'])
+        return collect(['internal_links', 'external_links', 'schema'])
             ->mapWithKeys(function (string $key) {
                 $definition = ActionRegistry::for($key);
 
@@ -151,7 +156,10 @@ class AiAssistantPanel extends Component
         return AiGeneration::where('content_type', $this->recordType)
             ->where('content_id', $this->record->id)
             ->whereIn('status', ['queued', 'processing'])
-            ->exists();
+            ->exists()
+            || AiImageGeneration::forRecord($this->recordType, $this->record->id)
+                ->whereIn('status', ['queued', 'processing'])
+                ->exists();
     }
 
     // ============ AI Chat ============
@@ -288,6 +296,61 @@ class AiAssistantPanel extends Component
             ->get();
     }
 
+    // ============ Hero Image Generation (App\Jobs\GenerateHeroImage — see CLAUDE.md, AI Image Pipeline) ============
+
+    // آیا اصلاً یک ارائه‌دهنده‌ی تولید تصویرِ قابل‌استفاده تنظیم شده — دکمه‌ی «Generate Hero Image»
+    // فقط وقتی این true است فعال می‌شود، وگرنه یک پیام راهنما به‌جایش نشان داده می‌شود
+    public function getCanGenerateImagesProperty(): bool
+    {
+        return app(ProviderManager::class)->resolveImageProvider() !== null;
+    }
+
+    public function getHeroImageGenerationsProperty(): Collection
+    {
+        return AiImageGeneration::forRecord($this->recordType, $this->record->id)
+            ->with('media')
+            ->latest()
+            ->take(5)
+            ->get();
+    }
+
+    // برخلاف generateField/queueGeneration (که یک AiGeneration دو-مرحله‌ای preview-then-apply
+    // می‌سازد)، اینجا یک AiImageGeneration جداگانه است — تصویر همان لحظه که جاب تمام شود ذخیره و
+    // featured image می‌شود، بدون کلیک Apply جدا (هم‌روحِ Translate بالا)
+    public function generateHeroImage(): void
+    {
+        if (! $this->canGenerateImages) {
+            Notification::make()->danger()->title('No image-generation provider is configured')->body('Set one up in AI Studio → AI Routing → Image Generation.')->send();
+
+            return;
+        }
+
+        $generation = AiImageGeneration::create([
+            'content_type' => $this->recordType,
+            'content_id' => $this->record->id,
+            'prompt_field' => 'hero_image_prompt',
+            'status' => 'queued',
+            'user_id' => Auth::id(),
+        ]);
+
+        GenerateHeroImage::dispatch($generation->id);
+
+        $this->notifyQueued('Hero image generation');
+    }
+
+    public function cancelImageGeneration(int $id): void
+    {
+        $generation = AiImageGeneration::find($id);
+
+        if (! $generation || ! $generation->isCancellable()) {
+            return;
+        }
+
+        $generation->update(['status' => 'cancelled']);
+
+        Notification::make()->success()->title('Image generation cancelled')->send();
+    }
+
     // ============ Cancellation ============
 
     // این سقفِ واقعیِ چیزی است که روی صف database ممکن است — نمی‌شود یک تماس HTTP در حال اجرا را
@@ -320,8 +383,11 @@ class AiAssistantPanel extends Component
 
     private function queueGeneration(string $field, string $mode): void
     {
-        // ALT روی رکورد Article/Page ذخیره نمی‌شود، روی Media متناظر — پس مقدار فعلی هم باید از آنجا خوانده شود
-        $inputSnapshot = $field === 'alt_text' ? $this->mediaForRecord()?->alt_text : $this->record->getAttribute($field);
+        // فیلدهای MEDIA_BACKED_FIELDS روی رکورد Article/Page ذخیره نمی‌شوند، روی Media متناظر —
+        // پس مقدار فعلی هم باید از آنجا خوانده شود
+        $inputSnapshot = in_array($field, ActionRegistry::MEDIA_BACKED_FIELDS, true)
+            ? $this->mediaForRecord()?->getAttribute($field)
+            : $this->record->getAttribute($field);
 
         $generation = AiGeneration::create([
             'user_id' => Auth::id(),
@@ -355,7 +421,7 @@ class AiAssistantPanel extends Component
             return;
         }
 
-        if ($generation->field === 'alt_text' && ! $this->mediaForRecord()) {
+        if (in_array($generation->field, ActionRegistry::MEDIA_BACKED_FIELDS, true) && ! $this->mediaForRecord()) {
             Notification::make()->danger()->title('No Media Library entry found for this image')->send();
 
             return;

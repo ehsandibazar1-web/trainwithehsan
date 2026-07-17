@@ -9,6 +9,7 @@ use App\Models\AiProviderSetting;
 use App\Models\AiUsageLog;
 use App\Services\AiAssistant\Contracts\AiProvider;
 use App\Services\AiAssistant\Contracts\EmbeddingProvider;
+use App\Services\AiAssistant\Contracts\ImageProvider;
 use App\Services\AiAssistant\Contracts\UsageAwareProvider;
 use App\Services\AiAssistant\Providers\AnthropicProvider;
 use App\Services\AiAssistant\Providers\DeepSeekProvider;
@@ -292,6 +293,163 @@ class ProviderManager
                 'completion_tokens' => null,
                 'total_tokens' => $promptTokens,
                 'estimated_cost_usd' => $this->estimateCost($config->slug, $config->embedding_model, $promptTokens, 0),
+                'response_time_ms' => $elapsedMs,
+                'status' => $status,
+                'error_message' => $error,
+                'user_id' => Auth::id(),
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * ارائه‌دهنده‌ی فعلاً پیکربندی‌شده‌ی پیش‌فرض برای تولید تصویر — یا null. هم‌روحِ
+     * resolveEmbeddingProvider()، برای این‌که UI (مثلا دکمه‌ی «Generate Hero Image») بتواند بدون
+     * صدازدنِ متد خصوصیِ resolveImageCandidates() چک کند که اصلاً چیزی تنظیم شده یا نه.
+     */
+    public function resolveImageProvider(): ?AiProviderConfig
+    {
+        $config = AiProviderSetting::current()->defaultImageProvider;
+
+        return $config?->is_usable_for_image_generation ? $config : null;
+    }
+
+    /**
+     * تولید یک تصویر — بر خلاف embed() (که عمداً failover ندارد چون بازیابیِ دانش خودش یک
+     * fallback کلمه‌ای دارد)، اینجا واقعاً باید failover کند: هیچ مسیر جایگزینی برای «این تصویر
+     * تولید نشد» وجود ندارد، پس دقیقاً همان الگوی چندکاندیدِ respond() تکرار می‌شود (پیش‌فرض، سپس
+     * fallback در صورت فعال‌بودن image_failover_enabled) — طبق درخواستِ صریح کاربر: «یک معماریِ
+     * کاملاً مشابهِ ارائه‌دهنده‌ی متنی». هیچ مسیر پشتیبان .env ای وجود ندارد (تولید تصویر یک
+     * قابلیت کاملاً تازه است، هیچ نصب قدیمی‌ای برایش نگه‌داشتنیِ سازگاری لازم ندارد).
+     *
+     * @param  array<string, mixed>  $options
+     * @return array{bytes: string, mime_type: string, revised_prompt: ?string, provider_slug: string}
+     *
+     * @throws \RuntimeException اگر هیچ ارائه‌دهنده‌ی تولید تصویری پیکربندی نشده باشد یا همه شکست بخورند
+     */
+    public function generateImage(string $prompt, array $options = [], ?string $contentType = null, ?int $contentId = null): array
+    {
+        $candidates = $this->resolveImageCandidates();
+
+        if ($candidates === []) {
+            throw new \RuntimeException('No image-generation provider is configured — set one in AI Studio → AI Routing → Image Generation.');
+        }
+
+        $lastException = null;
+
+        foreach ($candidates as $candidate) {
+            [$result, $exception] = $this->attemptImage($candidate, $prompt, $options, $contentType, $contentId);
+
+            if ($result !== null) {
+                return array_merge($result, ['provider_slug' => $candidate['provider_slug'], 'model' => $candidate['model']]);
+            }
+
+            $lastException = $exception;
+        }
+
+        throw new \RuntimeException(
+            'All configured image-generation providers failed. '.($lastException?->getMessage() ?? 'Unknown error.'),
+            previous: $lastException
+        );
+    }
+
+    /**
+     * @return array{0: ?array, 1: ?Throwable}
+     */
+    private function attemptImage(array $candidate, string $prompt, array $options, ?string $contentType, ?int $contentId): array
+    {
+        $exception = null;
+
+        for ($attempt = 1; $attempt <= 2; $attempt++) {
+            $start = microtime(true);
+
+            try {
+                $result = $candidate['provider']->generateImage($prompt, $options);
+                $elapsedMs = (int) round((microtime(true) - $start) * 1000);
+                $usage = $candidate['provider']->lastImageUsage();
+
+                $this->logImageUsage($candidate, $contentType, $contentId, $elapsedMs, $usage, 'success', null);
+
+                return [$result, null];
+            } catch (Throwable $e) {
+                $exception = $e;
+
+                if ($attempt < 2) {
+                    usleep(300_000);
+                }
+            }
+        }
+
+        $elapsedMs = (int) round((microtime(true) - $start) * 1000);
+        $this->logImageUsage($candidate, $contentType, $contentId, $elapsedMs, null, 'failed', $this->sanitizeError($exception));
+
+        return [null, $exception];
+    }
+
+    /** @return array<int, array{provider: ImageProvider, provider_slug: string, model: ?string}> */
+    private function resolveImageCandidates(): array
+    {
+        $settings = AiProviderSetting::current();
+        $primaryConfig = $this->resolveImageProvider();
+
+        if (! $primaryConfig) {
+            return [];
+        }
+
+        $candidates = [[
+            'provider' => $this->buildImageProvider($primaryConfig),
+            'provider_slug' => $primaryConfig->slug,
+            'model' => $primaryConfig->image_model,
+        ]];
+
+        if ($settings->image_failover_enabled
+            && $settings->fallbackImageProvider?->is_usable_for_image_generation
+            && $settings->fallback_image_provider_config_id !== $primaryConfig->id) {
+            $candidates[] = [
+                'provider' => $this->buildImageProvider($settings->fallbackImageProvider),
+                'provider_slug' => $settings->fallbackImageProvider->slug,
+                'model' => $settings->fallbackImageProvider->image_model,
+            ];
+        }
+
+        return $candidates;
+    }
+
+    private function buildImageProvider(AiProviderConfig $config): ImageProvider
+    {
+        $class = self::DRIVERS[$config->slug] ?? null;
+
+        if (! $class || ! is_subclass_of($class, ImageProvider::class)) {
+            throw new \RuntimeException("Provider \"{$config->slug}\" does not support image generation.");
+        }
+
+        $credentials = new ProviderCredentials(
+            apiKey: $config->api_key,
+            baseUrl: $config->base_url,
+            model: $config->image_model,
+            timeoutSeconds: $config->timeout_seconds,
+        );
+
+        return new $class($credentials);
+    }
+
+    // هزینه‌ی تولید تصویر امروز هرگز تخمین زده نمی‌شود — کاتالوگ AiProviderModel بر اساس قیمتِ
+    // هر میلیون توکن است (متنی)، نه قیمتِ ثابتِ هر تصویر؛ null صادقانه به‌جای یک عدد حدسی، هم‌روحِ
+    // logEmbeddingUsage/estimateCost بالا
+    private function logImageUsage(array $candidate, ?string $contentType, ?int $contentId, int $elapsedMs, ?array $usage, string $status, ?string $error): void
+    {
+        try {
+            AiUsageLog::create([
+                'provider_slug' => $candidate['provider_slug'],
+                'model' => $candidate['model'],
+                'action_key' => 'image_generation',
+                'content_type' => $contentType,
+                'content_id' => $contentId,
+                'prompt_tokens' => $usage['prompt_tokens'] ?? null,
+                'completion_tokens' => $usage['completion_tokens'] ?? null,
+                'total_tokens' => null,
+                'estimated_cost_usd' => null,
                 'response_time_ms' => $elapsedMs,
                 'status' => $status,
                 'error_message' => $error,

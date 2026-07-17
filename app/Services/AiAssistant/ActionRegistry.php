@@ -12,6 +12,11 @@ class ActionRegistry
 {
     public const MODES = ['generate', 'improve', 'rewrite', 'expand', 'shorten', 'simplify'];
 
+    // این سه فیلد روی خودِ Article/Page ذخیره نمی‌شوند — روی رکورد Media متناظر با image_path
+    // (کتابخانه‌ی رسانه)، دقیقاً هم‌روحِ alt_text از قبل. GenerationApplier و AiAssistantPanel هر
+    // دو از همین ثابت استفاده می‌کنند تا این استثنا فقط یک‌جا تعریف شده باشد.
+    public const MEDIA_BACKED_FIELDS = ['alt_text', 'caption', 'description'];
+
     private const FIELDS = [
         'seo_title' => [
             'label' => 'SEO Title',
@@ -145,8 +150,42 @@ class ActionRegistry
             'appliable' => false,
             'instruction' => 'Suggest additional structured-data (JSON-LD schema.org) content this page could benefit from — e.g. extra FAQ entries, or fields for its existing Article/Person schema. Return the suggestion as a readable, formatted JSON snippet the site owner can hand to a developer. Return ONLY the JSON snippet as text — no explanation outside it.',
         ],
-        // ALT روی خود مقاله/صفحه ذخیره نمی‌شود — روی رکورد Media متناظر با image_path
-        // (کتابخانه‌ی رسانه)؛ AiContentAssistant::applyGeneration() این فیلد را ویژه مدیریت می‌کند
+        // چهار prompt جداگانه برای AI Image Pipeline — روی خودِ Article/Page ذخیره می‌شوند (ستون
+        // واقعی، نه Media، چون قبل از تولید هیچ تصویری هنوز وجود ندارد). امروز فقط
+        // hero_image_prompt واقعاً به App\Jobs\GenerateHeroImage می‌رسد (تصمیم تأییدشده‌ی کاربر:
+        // «فقط یک تصویر با کیفیت بالا»)؛ سه‌تای دیگر همین حالا قابل‌تولید/ویرایش‌اند تا نسخه‌های
+        // بعدی بتوانند تولید تصویرِ جداگانه برای هرکدام را بدون تغییر schema اضافه کنند.
+        'hero_image_prompt' => [
+            'label' => 'Hero Image Prompt',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['generate', 'improve', 'rewrite', 'expand', 'shorten'],
+            'response_shape' => 'text',
+            'instruction' => 'Write a detailed, vivid image-generation prompt (1-3 sentences) for this content\'s main hero/featured image — describe subject, setting, mood, and style (photorealistic, professional, editorial). Return ONLY the prompt text — no quotes, no explanation.',
+        ],
+        'thumbnail_image_prompt' => [
+            'label' => 'Thumbnail Image Prompt',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['generate', 'improve', 'rewrite', 'expand', 'shorten'],
+            'response_shape' => 'text',
+            'instruction' => 'Write a detailed image-generation prompt for a simplified, clearly-legible thumbnail version of this content\'s image — bold subject, minimal background clutter, works well at a small size (blog listing card). Return ONLY the prompt text — no quotes, no explanation.',
+        ],
+        'og_image_prompt' => [
+            'label' => 'Open Graph Image Prompt',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['generate', 'improve', 'rewrite', 'expand', 'shorten'],
+            'response_shape' => 'text',
+            'instruction' => 'Write a detailed image-generation prompt for a social-share preview image (Open Graph, 1200x630-ish) — leave clear negative space for a title overlay, avoid small text baked into the image itself. Return ONLY the prompt text — no quotes, no explanation.',
+        ],
+        'social_image_prompt' => [
+            'label' => 'Social Image Prompt',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['generate', 'improve', 'rewrite', 'expand', 'shorten'],
+            'response_shape' => 'text',
+            'instruction' => 'Write a detailed image-generation prompt for a square social-media share image (Instagram/Twitter) — eye-catching, on-brand, works well cropped to a square. Return ONLY the prompt text — no quotes, no explanation.',
+        ],
+        // این سه فیلد روی خود مقاله/صفحه ذخیره نمی‌شوند — روی رکورد Media متناظر با image_path
+        // (کتابخانه‌ی رسانه)، نگاه کنید به MEDIA_BACKED_FIELDS بالا و
+        // App\Services\AiAssistant\GenerationApplier
         'alt_text' => [
             'label' => 'Image ALT Text',
             'applicable_to' => ['Article', 'Page'],
@@ -154,14 +193,19 @@ class ActionRegistry
             'response_shape' => 'text',
             'instruction' => 'Write concise, descriptive ALT text (max 125 characters) for this content\'s featured image, based on what the content is about. Return ONLY the ALT text — no quotes, no explanation.',
         ],
-        // بدون ستون ذخیره‌سازی امروز (نه روی Article/Page نه روی Media) — عمداً suggestion-only
         'caption' => [
             'label' => 'Image Caption',
             'applicable_to' => ['Article', 'Page'],
             'modes' => ['generate', 'improve'],
             'response_shape' => 'text',
-            'appliable' => false,
             'instruction' => 'Write a short, engaging caption (max 20 words) for this content\'s featured image, suitable to show underneath it. Return ONLY the caption — no quotes, no explanation.',
+        ],
+        'description' => [
+            'label' => 'Image Description',
+            'applicable_to' => ['Article', 'Page'],
+            'modes' => ['generate', 'improve', 'expand'],
+            'response_shape' => 'text',
+            'instruction' => 'Write a longer, plain-language description (2-3 sentences) of this content\'s featured image, describing what is visible and its relevance to the content — more detail than ALT text, for internal/SEO reference. Return ONLY the description text — no quotes, no explanation.',
         ],
         // ترجمه‌ی کامل — بر خلاف بقیه‌ی فیلدها، مسیر تولیدش ContentAssistantService::generate()
         // نیست (که یک مقدار متنی/لیستی برمی‌گرداند)، بلکه ::buildTranslationPayload() +

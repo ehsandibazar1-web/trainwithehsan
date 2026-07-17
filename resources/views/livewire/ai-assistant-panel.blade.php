@@ -493,29 +493,37 @@
                 </div>
             @endif
 
-            @if (isset($this->suggestionFields['caption']))
-                <div class="ai-ca-card">
-                    <h3>Image Caption</h3>
-                    <x-filament::button size="xs" color="gray" wire:click="generateField('caption', 'generate')" wire:loading.attr="disabled">
-                        Generate
-                    </x-filament::button>
+            <div class="ai-ca-card">
+                <h3>Hero Image</h3>
 
-                    @php($latest = $this->suggestionFields['caption']['latest'])
-                    @if ($latest)
-                        @if (in_array($latest->status, ['queued', 'processing']))
-                            <div class="ai-ca-status processing">
-                                {{ ucfirst($latest->status) }}…
-                                <button type="button" class="ai-ca-cancel" wire:click="cancelGeneration({{ $latest->id }})" wire:confirm="Cancel this generation?">Cancel</button>
-                            </div>
-                        @elseif ($latest->status === 'failed')
-                            <div class="ai-ca-status failed">Failed: {{ $latest->error }}</div>
-                        @elseif ($latest->status === 'completed')
-                            <div class="ai-ca-preview">{{ $latest->result }}</div>
-                            <div class="ai-ca-status">Suggestion only — copy under the image manually if you want to use it.</div>
+                @if (! $this->canGenerateImages)
+                    <div class="ai-ca-current empty">No image-generation provider configured — set one up in AI Studio → AI Routing → Image Generation.</div>
+                @else
+                    <x-filament::button size="xs" wire:click="generateHeroImage" wire:loading.attr="disabled" wire:confirm="Generate a new hero image and set it as the featured image? This also auto-fills ALT text, caption, description, and any blank SEO fields.">
+                        ✨ Generate Hero Image
+                    </x-filament::button>
+                @endif
+
+                @forelse ($this->heroImageGenerations as $imageGeneration)
+                    <div class="ai-ca-history-item">
+                        @if (in_array($imageGeneration->status, ['queued', 'processing']))
+                            <span>{{ ucfirst($imageGeneration->status) }}…</span>
+                            <button type="button" class="ai-ca-cancel" wire:click="cancelImageGeneration({{ $imageGeneration->id }})" wire:confirm="Cancel this image generation?">Cancel</button>
+                        @elseif ($imageGeneration->status === 'failed')
+                            <span style="color:#b91c1c">Failed: {{ $imageGeneration->error }}</span>
+                        @elseif ($imageGeneration->status === 'completed')
+                            <span>
+                                @if ($imageGeneration->media?->thumbnail_url)
+                                    <img src="{{ $imageGeneration->media->thumbnail_url }}" alt="" style="width:2rem;height:2rem;object-fit:cover;border-radius:.25rem;vertical-align:middle;margin-right:.35rem">
+                                @endif
+                                Generated via {{ ucfirst($imageGeneration->provider_slug) }} — set as featured image
+                            </span>
                         @endif
-                    @endif
-                </div>
-            @endif
+                    </div>
+                @empty
+                    <div class="ai-ca-current empty">No hero image generated yet.</div>
+                @endforelse
+            </div>
 
             <div class="ai-ca-card">
                 <h3>Translate</h3>

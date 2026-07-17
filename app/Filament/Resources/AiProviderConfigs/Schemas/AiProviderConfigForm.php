@@ -81,6 +81,14 @@ class AiProviderConfigForm
                             ->nullable()
                             ->visible(fn (?AiProviderConfig $record): bool => in_array($record?->slug, AiProviderConfig::EMBEDDING_CAPABLE_SLUGS, true))
                             ->helperText('The embedding model ID, e.g. "text-embedding-3-small" (OpenAI) or "text-embedding-004" (Gemini). Required before this provider can be picked in AI Routing → Embeddings.'),
+
+                        // فقط OpenAI/Gemini واقعاً یک API عمومیِ تولید تصویر دارند (نگاه کنید به
+                        // AiProviderConfig::IMAGE_GENERATION_CAPABLE_SLUGS) — همان الگوی embedding_model بالا
+                        TextInput::make('image_model')
+                            ->label('Image model')
+                            ->nullable()
+                            ->visible(fn (?AiProviderConfig $record): bool => in_array($record?->slug, AiProviderConfig::IMAGE_GENERATION_CAPABLE_SLUGS, true))
+                            ->helperText('The image-generation model ID, e.g. "gpt-image-1" or "dall-e-3" (OpenAI), "imagen-3.0-generate-002" (Gemini). Required before this provider can be picked in AI Routing → Image Generation.'),
                     ])
                     ->columns(2),
 
