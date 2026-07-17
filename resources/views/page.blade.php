@@ -45,7 +45,7 @@
 
         <div class="site-page__box">
             @if($page->image_path)
-            <div class="page-hero-image" style="background-image:url('{{ asset('storage/' . $page->image_path) }}')"></div>
+            <div class="page-hero-image" style="background-image:url('{{ $page->optimized_image_url ?? asset('storage/' . $page->image_path) }}')"></div>
             @endif
 
             <div class="page-title"><h1>{{ $page->title }}</h1></div>

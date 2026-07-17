@@ -126,7 +126,7 @@
 
         <div class="site-blog-post__box">
             <div>
-                <div class="post-hero-image" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}')" @endif></div>
+                <div class="post-hero-image" @if($article->image_path) style="background-image:url('{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}')" @endif></div>
 
                 <div class="post-title"><h1>{{ $article->title }}</h1></div>
 
@@ -204,7 +204,7 @@
                 <div class="related-grid reveal-group">
                     @foreach($related as $rel)
                     <a href="{{ url('/tr/blog/' . $rel->slug) }}" class="related-card reveal">
-                        <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ asset('storage/' . $rel->image_path) }}')" @endif></div>
+                        <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ $rel->optimized_image_url ?? asset('storage/' . $rel->image_path) }}')" @endif></div>
                         <h4>{{ $rel->title }}</h4>
                         <p>{{ Str::limit($rel->excerpt, 80) }}</p>
                     </a>
@@ -224,7 +224,7 @@
                 <div class="reveal-group" style="margin-top:10px">
                     @foreach($latest as $item)
                     <div class="sidebar-last-item reveal">
-                        <div class="thumb" @if($item->image_path) style="background-image:url('{{ asset('storage/' . $item->image_path) }}')" @endif></div>
+                        <div class="thumb" @if($item->image_path) style="background-image:url('{{ $item->optimized_image_url ?? asset('storage/' . $item->image_path) }}')" @endif></div>
                         <div>
                             <h5><a href="{{ url('/tr/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></h5>
                             <span>{{ optional($item->published_at)->format('F Y') }}</span>

@@ -50,6 +50,14 @@ class Page extends Model
         return $this->morphOne(ContentPlan::class, 'contentable');
     }
 
+    // نسخه‌ی WebP تصویر شاخص (اگر کتابخانه‌ی رسانه یکی برایش ساخته باشد) — قالب‌های عمومی این را
+    // با fallback به image_path خام نمایش می‌دهند؛ عکس‌های ثبت‌نشده در DAM یا بدون مشتق WebP
+    // (مثلا SVG) همچنان همان مسیر اصلی را برمی‌گردانند (null اینجا)
+    public function getOptimizedImageUrlAttribute(): ?string
+    {
+        return Media::forRecord($this)?->webp_url;
+    }
+
     // مسیر عمومی صفحه بر اساس زبان — صفحات مستقل در ریشه‌ی سایت هستند، نه زیر /blog
     public function path(): string
     {

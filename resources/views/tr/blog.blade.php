@@ -97,7 +97,7 @@
                         <div style="margin-top:10px">
                             @foreach($popular as $pop)
                             <div class="popular-item">
-                                <div class="thumb" @if($pop->image_path) style="background-image:url('{{ asset('storage/' . $pop->image_path) }}')" @endif></div>
+                                <div class="thumb" @if($pop->image_path) style="background-image:url('{{ $pop->optimized_image_url ?? asset('storage/' . $pop->image_path) }}')" @endif></div>
                                 <h6><a href="{{ url('/tr/blog/' . $pop->slug) }}">{{ $pop->title }}</a></h6>
                             </div>
                             @endforeach
@@ -115,7 +115,7 @@
                         @forelse($articles as $article)
                         <article class="post-item reveal">
                             <a href="{{ url('/tr/blog/' . $article->slug) }}" class="post-item__image">
-                                <div class="thumb" @if($article->image_path) style="background-image:url('{{ asset('storage/' . $article->image_path) }}')" @endif>
+                                <div class="thumb" @if($article->image_path) style="background-image:url('{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}')" @endif>
                                     @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
                                 </div>
                                 @if($article->category)
