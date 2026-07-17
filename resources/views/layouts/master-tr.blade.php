@@ -199,14 +199,15 @@
             .footer-grid>div{border-bottom:1px solid rgba(255,255,255,.12)}
             .footer-grid>div:first-child{border-top:1px solid rgba(255,255,255,.12)}
             .footer-grid h4{
-                cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
-                margin-bottom:0;padding:14px 0;
+                cursor:pointer;display:flex;align-items:center;justify-content:space-between;
+                margin-bottom:0;padding:11px 2px;
             }
             .footer-col-toggle{
                 display:inline-flex;align-items:center;justify-content:center;
-                background:none;border:0;padding:0;width:22px;height:22px;flex-shrink:0;cursor:pointer;
+                background:none;border:0;padding:0;width:18px;height:18px;flex-shrink:0;
+                pointer-events:none;
             }
-            .footer-col-toggle::after{content:"\203A";color:var(--gold);font-size:20px;line-height:1;transition:transform .25s}
+            .footer-col-toggle::after{content:"\203A";color:var(--gold);font-size:17px;line-height:1;transition:transform .25s}
             .footer-col-toggle[aria-expanded="true"]::after{transform:rotate(90deg)}
             .footer-grid ul{max-height:0;overflow:hidden;transition:max-height .3s ease}
             .footer-grid>div.open ul{max-height:400px;padding-bottom:14px}
@@ -436,12 +437,16 @@
         overlay && overlay.addEventListener('click', shut);
     })();
 
-    // ===== آکاردئون ستون‌های فوتر — فقط زیر ۴۸۰px قابل‌دیدن/کلیک است (دکمه display:none در
-    // دسکتاپ)، پس این هندلر در دسکتاپ هیچ اثری ندارد و رفتار فعلی همان‌جا دست‌نخورده می‌ماند =====
+    // ===== آکاردئون ستون‌های فوتر — کل ردیف تیتر قابل‌کلیک است (نه فقط دکمه‌ی کوچک؛ دکمه
+    // pointer-events:none دارد، پس کلیک همیشه به h4 می‌رسد)، فقط زیر ۴۸۰px قابل‌دیدن/کلیک است
+    // (دکمه display:none در دسکتاپ)، پس این هندلر در دسکتاپ هیچ اثری ندارد. با تب/اینتر روی
+    // دکمه هم کار می‌کند چون رویداد کلیک از دکمه به h4 حباب می‌کند =====
     (function () {
-        document.querySelectorAll('.footer-col-toggle').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                var col = btn.closest('.footer-grid > div');
+        document.querySelectorAll('.footer-grid .footer-col-toggle').forEach(function (btn) {
+            var h4 = btn.parentElement;
+            if (!h4) return;
+            h4.addEventListener('click', function () {
+                var col = h4.parentElement;
                 if (!col) return;
                 var expanded = btn.getAttribute('aria-expanded') === 'true';
                 btn.setAttribute('aria-expanded', String(!expanded));
