@@ -19,7 +19,7 @@
     <x-filament::section>
         <x-slot name="heading">Media storage link</x-slot>
         <x-slot name="description">
-            Uploaded images and files are served through a link from the public web folder. If this ever shows a problem, uploads still save but images across the site will fail to display — tell a developer, it needs <code>php artisan storage:link</code> on the server.
+            This checks that uploaded images and files are actually reachable on the web. It fetches a small test file through its public URL, so it reflects what visitors really see — however your host serves files.
         </x-slot>
 
         @if ($this->storageLinkHealthy)
@@ -28,14 +28,14 @@
                 <span>Working — uploaded files are publicly reachable.</span>
             </div>
         @else
-            <div class="flex items-center gap-2 text-sm" style="color:#b91c1c">
-                <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-5 w-5" />
-                <span>Not set up — the link at <code>{{ $this->storageLinkPath }}</code> is missing or points to the wrong place. Images will not display until the link is created.</span>
+            <div class="flex items-start gap-2 text-sm" style="color:#b91c1c">
+                <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-5 w-5 shrink-0" />
+                <span><strong>Could not confirm uploaded files are reachable.</strong> If images across the site look fine, you can ignore this. If images are actually missing, the storage link (<code>{{ $this->storageLinkPath }}</code>) likely needs setting up — try the button below, or ask your host to run <code>php artisan storage:link</code> / create the link, since some hosts block it.</span>
             </div>
 
             <div class="mt-4">
                 <x-filament::button wire:click="linkStorage" icon="heroicon-o-link">
-                    Fix media storage link
+                    Try to fix media storage link
                 </x-filament::button>
             </div>
         @endif
