@@ -63,6 +63,29 @@ class AiImportApiTest extends TestCase
             ->assertStatus(401);
     }
 
+    public function test_token_with_no_expiry_still_works(): void
+    {
+        // expires_at پیش‌فرض null است — یعنی «هرگز منقضی نمی‌شود»؛ باید دقیقاً رفتار قبلی
+        // (بدون این ستون) را حفظ کند
+        $this->assertNull($this->token->expires_at);
+
+        $this->apiPost('/api/ai-import/validate', $this->payload())->assertStatus(200);
+    }
+
+    public function test_token_with_future_expiry_still_works(): void
+    {
+        $this->token->update(['expires_at' => now()->addDay()]);
+
+        $this->apiPost('/api/ai-import/validate', $this->payload())->assertStatus(200);
+    }
+
+    public function test_expired_token_is_rejected(): void
+    {
+        $this->token->update(['expires_at' => now()->subMinute()]);
+
+        $this->apiPost('/api/ai-import/validate', $this->payload())->assertStatus(401);
+    }
+
     public function test_token_last_used_at_is_recorded(): void
     {
         $this->assertNull($this->token->last_used_at);
@@ -243,5 +266,15 @@ class AiImportApiTest extends TestCase
             ->assertOk()
             ->assertSee('API Tokens')
             ->assertSee('Claude');
+    }
+
+    public function test_api_token_create_form_renders_with_optional_expiry_field(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        $this->actingAs($owner)
+            ->get('/admin/api-tokens/create')
+            ->assertOk()
+            ->assertSee('Expires at');
     }
 }
