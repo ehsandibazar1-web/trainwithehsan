@@ -357,8 +357,11 @@
     .video-modal.open{display:flex}
     .video-modal__inner{width:min(860px,100%);aspect-ratio:16/9;background:#000;position:relative}
     .video-modal__inner iframe,.video-modal__inner video{width:100%;height:100%;border:0}
+    /* اینستاگرام/تیک‌تاک عمودی‌اند و blockquote خودش را اندازه می‌کند — قابِ مودال باید ارتفاعِ آزاد بگیرد */
+    .video-modal__inner--social{aspect-ratio:auto;width:min(420px,100%);height:auto;max-height:90vh;overflow:auto;background:#fff;border-radius:12px}
+    .video-modal__inner--social iframe,.video-modal__inner--social video{height:auto}
     .video-modal__close{position:absolute;top:-42px;right:0;background:none;border:0;color:#fff;font-size:30px;cursor:pointer}
-    .js-video[data-embed=""][data-file=""]{cursor:default}
+    .js-video[data-embed-src=""][data-file=""]{cursor:default}
     .hero-slide.has-bg::before{display:none}
 </style>
 @endsection
@@ -368,18 +371,13 @@
     @php($members = $members ?? [])
     {{-- مقدار فقط-فاصله عمداً «پر» حساب می‌شود — راه مدیر سایت برای مخفی‌کردن متن پیش‌فرض بدون کد --}}
     @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
-    {{-- لینک ویدیو را به فرم embed تبدیل می‌کند: watch?v= / youtu.be / shorts و vimeo قابلِ
-         iframe نیستند؛ مدیر معمولاً همان لینکِ عادی را کپی می‌کند، پس اینجا نرمال‌سازی می‌شود --}}
-    @php($embed = function ($u) {
+    {{-- لینکِ ویدیو را به دادهٔ embed تبدیل می‌کند — همان موتورِ embedِ بدنهٔ مقاله
+         (App\Services\Content\EmbedRenderer): یوتیوب/ویمئو/اینستاگرام/تیک‌تاک را می‌شناسد.
+         ناشناخته (مثلِ آپارات) → مثلِ قبل یک iframe با همان لینک (سازگاریِ عقب‌رو). null اگر خالی باشد. --}}
+    @php($embedMatch = function ($u) {
         $u = trim((string) $u);
-        if ($u === '') return '';
-        if (preg_match('~(?:youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})~i', $u, $m)) {
-            return 'https://www.youtube.com/embed/' . $m[1];
-        }
-        if (preg_match('~vimeo\.com/(?:video/)?(\d+)~i', $u, $m)) {
-            return 'https://player.vimeo.com/video/' . $m[1];
-        }
-        return $u;
+        if ($u === '') return null;
+        return app(\App\Services\Content\EmbedRenderer::class)->detect($u) ?: ['kind' => 'iframe', 'src' => $u];
     })
 
     {{-- ============ اسلایدر هیرو ============ --}}
@@ -422,10 +420,10 @@
             @php($videoDefaults = ['Why train martial arts & self-defense', 'How the training works', 'What is self-defense & martial sport'])
             <div class="row-video reveal-group">
                 @foreach([1, 2, 3] as $i)
-                @php($vEmbed = $embed($v("video{$i}_embed")))
+                @php($vMatch = $embedMatch($v("video{$i}_embed")) ?? [])
                 @php($vFile = $v("video{$i}_file"))
                 @php($vThumb = $v("video{$i}_thumb"))
-                <div class="video-card js-video reveal" data-embed="{{ $vEmbed }}" data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
+                <div class="video-card js-video reveal" data-embed-kind="{{ $vMatch['kind'] ?? '' }}" data-embed-src="{{ $vMatch['src'] ?? '' }}" @if(!empty($vMatch['id'])) data-embed-id="{{ $vMatch['id'] }}" @endif data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
                     <div class="video-card__img" @if($vThumb) style="background:url('{{ asset('storage/' . $vThumb) }}') center/cover no-repeat" @endif>
                         <span class="video-icon">▶</span>
                     </div>
@@ -530,13 +528,13 @@
                         @php($mName = trim($m['name'] ?? '') !== '' ? $m['name'] : 'Member')
                         {{-- ویدیوی نتیجه‌ی عضو — دقیقاً همان مکانیزم کارت‌های ویدیوی بالای صفحه
                              (.js-video/#videoModal): یا لینک embed یا فایل آپلودشده، نه هر دو --}}
-                        @php($mEmbed = $embed($m['video_embed'] ?? ''))
+                        @php($mMatch = $embedMatch($m['video_embed'] ?? '') ?? [])
                         @php($mFile = !empty($m['video_file']) ? asset('storage/' . $m['video_file']) : '')
-                        @php($mHasVideo = $mEmbed || $mFile)
+                        @php($mHasVideo = !empty($mMatch) || $mFile)
                         <li class="reveal">
                             <div class="img-user @if($mHasVideo) img-user--video js-video @endif"
                                  @if($mHasVideo)
-                                 data-embed="{{ $mEmbed }}" data-file="{{ $mFile }}"
+                                 data-embed-kind="{{ $mMatch['kind'] ?? '' }}" data-embed-src="{{ $mMatch['src'] ?? '' }}" @if(!empty($mMatch['id'])) data-embed-id="{{ $mMatch['id'] }}" @endif data-file="{{ $mFile }}"
                                  role="button" tabindex="0" aria-label="{{ 'Play ' . $mName . '’s video' }}"
                                  @endif
                                  @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
@@ -662,26 +660,25 @@
         var closeBtn = modal.querySelector('.video-modal__close');
         function close() {
             modal.classList.remove('open');
-            inner.querySelectorAll('iframe,video').forEach(function (el) { el.remove(); });
+            inner.classList.remove('video-modal__inner--social');
+            inner.querySelectorAll('iframe,video,blockquote').forEach(function (el) { el.remove(); });
         }
         document.querySelectorAll('.js-video').forEach(function (card) {
             function open() {
-                var embed = card.getAttribute('data-embed');
+                var kind = card.getAttribute('data-embed-kind');
+                var src = card.getAttribute('data-embed-src');
+                var id = card.getAttribute('data-embed-id');
                 var file = card.getAttribute('data-file');
-                if (!embed && !file) return;
-                var el;
-                if (embed) {
-                    el = document.createElement('iframe');
-                    el.src = embed;
-                    el.setAttribute('allow', 'autoplay; fullscreen');
-                    el.setAttribute('allowfullscreen', '');
+                if (!src && !file) return;
+                if (!window.tweMediaEmbed) return;
+                // اینستاگرام/تیک‌تاک عمودی‌اند — قابِ مودال به حالتِ social می‌رود؛ همان سازنده‌ی
+                // مشترکِ facadeِ درون‌متنی پخش‌کننده را می‌سازد (یک منطق، نه دو نسخه)
+                inner.classList.toggle('video-modal__inner--social', kind === 'instagram' || kind === 'tiktok');
+                if (src) {
+                    window.tweMediaEmbed.build(inner, kind, src, id);
                 } else {
-                    el = document.createElement('video');
-                    el.src = file;
-                    el.controls = true;
-                    el.autoplay = true;
+                    window.tweMediaEmbed.build(inner, 'video', file, null);
                 }
-                inner.appendChild(el);
                 modal.classList.add('open');
             }
             card.addEventListener('click', open);
