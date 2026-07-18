@@ -52,6 +52,8 @@
     @endif
     <meta name="theme-color" content="#d9bb75">
 
+    <script src="https://analytics.ahrefs.com/analytics.js" data-key="eou7/AHP2woEpfdpW9t1cQ" async></script>
+
     {{-- Manrope: فقط وزن‌های واقعاً استفاده‌شده در سیستم تایپوگرافی (۴۰۰/۵۰۰/۶۰۰/۷۰۰/۸۰۰) —
          preload برای اولویت‌دهی به دانلود CSS فونت (کاهش تأخیر متن)، display=swap برای جلوگیری
          از FOIT (متن نامرئی هنگام لود فونت) — همان الگوی preconnect قبلی، فقط با فونت جدید --}}
