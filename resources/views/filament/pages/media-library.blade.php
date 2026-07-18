@@ -116,6 +116,7 @@
                 <select wire:model.live="typeFilter">
                     <option value="all">All types</option>
                     <option value="image">Images</option>
+                    <option value="video">Videos</option>
                     <option value="other">Other files</option>
                 </select>
 
@@ -176,6 +177,8 @@
                     <button type="button" class="media-lib-item" wire:click="selectMedia({{ $item->id }})" title="{{ $item->original_name }}">
                         @if($item->type === 'image')
                             <img src="{{ $item->thumbnail_url }}" loading="lazy" alt="{{ $item->alt_text }}">
+                        @elseif($item->type === 'video')
+                            <div class="file-icon">🎬</div>
                         @else
                             <div class="file-icon">📄</div>
                         @endif
@@ -210,6 +213,9 @@
 
             @if($this->selectedMedia->type === 'image')
                 <img class="preview" src="{{ $this->selectedMedia->webp_url ?? $this->selectedMedia->url }}" alt="{{ $this->selectedMedia->alt_text }}">
+            @elseif($this->selectedMedia->type === 'video')
+                {{-- نمایشِ نیتیوِ فایل — نه تولیدِ poster (آن فاز بعدی است)، فقط پخش‌کننده‌ی مرورگر --}}
+                <video class="preview" controls preload="metadata" src="{{ $this->selectedMedia->url }}"></video>
             @endif
 
             <h3>{{ $this->selectedMedia->original_name }}</h3>

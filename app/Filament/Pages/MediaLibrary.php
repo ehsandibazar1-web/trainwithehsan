@@ -34,7 +34,7 @@ class MediaLibrary extends Page implements HasForms
 
     public string $search = '';
 
-    public string $typeFilter = 'all'; // all | image | other
+    public string $typeFilter = 'all'; // all | image | video | other
 
     public bool $onlyUnused = false;
 
@@ -371,11 +371,12 @@ class MediaLibrary extends Page implements HasForms
 
         if ($this->typeFilter === 'image') {
             $query->where('type', 'image');
+        } elseif ($this->typeFilter === 'video') {
+            $query->where('type', 'video');
         } elseif ($this->typeFilter === 'other') {
-            // «سایر فایل‌ها» یعنی هر چیزی جز تصویر (ویدئو/سند/صوت/…) — نه صرفا type='other' —
-            // تا با معرفیِ نوع‌های ریزترِ MediaProcessor::resolveType() هیچ فایلی از این فیلتر
-            // ناپدید نشود. فیلترِ اختصاصیِ «ویدئوها» در فاز بعدی اضافه می‌شود.
-            $query->where('type', '!=', 'image');
+            // «سایر فایل‌ها» = نه تصویر و نه ویدئو (سند/صوت/زیپ/…) — ویدئوها فیلترِ اختصاصیِ
+            // خودشان را دارند، پس هیچ فایلی از هیچ فیلتری ناپدید نمی‌شود.
+            $query->whereNotIn('type', ['image', 'video']);
         }
 
         if ($this->onlyMissingAlt) {

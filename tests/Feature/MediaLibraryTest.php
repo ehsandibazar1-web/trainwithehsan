@@ -349,7 +349,7 @@ class MediaLibraryTest extends TestCase
         $this->assertNotNull($media->webp_path);
     }
 
-    public function test_other_files_filter_shows_every_non_image_type_not_just_type_other(): void
+    public function test_type_filters_partition_image_video_and_other_with_nothing_vanishing(): void
     {
         $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
 
@@ -370,24 +370,27 @@ class MediaLibraryTest extends TestCase
             'url' => 'http://x/bundle.zip', 'type' => 'other',
         ]);
 
-        // «Other files» یعنی هر چیزی جز تصویر — ویدئو/سند/other همه باید دیده شوند
-        $otherIds = Livewire::actingAs($owner)->test(MediaLibrary::class)
-            ->set('typeFilter', 'other')
+        $idsFor = fn (string $filter) => Livewire::actingAs($owner)->test(MediaLibrary::class)
+            ->set('typeFilter', $filter)
             ->instance()->mediaItems->pluck('id');
 
-        $this->assertFalse($otherIds->contains($image->id));
-        $this->assertTrue($otherIds->contains($video->id));
-        $this->assertTrue($otherIds->contains($doc->id));
-        $this->assertTrue($otherIds->contains($other->id));
+        // Images = فقط تصویر
+        $images = $idsFor('image');
+        $this->assertTrue($images->contains($image->id));
+        $this->assertFalse($images->contains($video->id));
 
-        // «Images» فقط تصویر
-        $imageIds = Livewire::actingAs($owner)->test(MediaLibrary::class)
-            ->set('typeFilter', 'image')
-            ->instance()->mediaItems->pluck('id');
+        // Videos = فقط ویدئو (فیلترِ اختصاصیِ فاز ۵)
+        $videos = $idsFor('video');
+        $this->assertTrue($videos->contains($video->id));
+        $this->assertFalse($videos->contains($image->id));
+        $this->assertFalse($videos->contains($doc->id));
 
-        $this->assertTrue($imageIds->contains($image->id));
-        $this->assertFalse($imageIds->contains($video->id));
-        $this->assertFalse($imageIds->contains($doc->id));
+        // Other files = نه تصویر و نه ویدئو (سند/زیپ/…) — هیچ فایلی از هیچ فیلتری ناپدید نمی‌شود
+        $others = $idsFor('other');
+        $this->assertFalse($others->contains($image->id));
+        $this->assertFalse($others->contains($video->id));
+        $this->assertTrue($others->contains($doc->id));
+        $this->assertTrue($others->contains($other->id));
     }
 
     public function test_is_orphan_flags_unused_system_attached_files_but_not_manual_uploads_or_in_use_files(): void
@@ -453,6 +456,21 @@ class MediaLibraryTest extends TestCase
         $this->assertTrue($ids->contains($orphan->id));
         $this->assertFalse($ids->contains($manualUnused->id));
         $this->assertFalse($ids->contains($inUse->id));
+    }
+
+    public function test_video_media_is_usage_tracked_when_referenced_from_settings(): void
+    {
+        // یک ویدئوی DAM-managed (type=video) که مسیرش در SiteSetting نشسته — دقیقاً همان چیزی که
+        // HomepageSettings::save() بعد از عبور از MediaProcessor ذخیره می‌کند
+        $video = Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'homepage/videos/clip.mp4',
+            'url' => 'http://x/clip.mp4', 'type' => 'video',
+        ]);
+        SiteSetting::set('home.en.video1_file', 'homepage/videos/clip.mp4');
+
+        // پس ویدئوها هم مثل تصویرها ردگیریِ استفاده می‌شوند و حذفشان محافظت‌شده است
+        $this->assertTrue($video->isInUse());
+        $this->assertNotEmpty($video->usages());
     }
 
     public function test_upload_size_policy_keeps_images_at_15mb_and_allows_other_media_up_to_128mb(): void

@@ -186,6 +186,7 @@ class HomepageSettings extends Page implements HasForms
                 ->directory('homepage/videos')
                 ->acceptedFileTypes(['video/mp4'])
                 ->maxSize(131072)
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable();
         }
 
@@ -262,6 +263,7 @@ class HomepageSettings extends Page implements HasForms
                         ->directory('homepage/members')
                         ->acceptedFileTypes(['video/mp4'])
                         ->maxSize(131072)
+                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                         ->nullable(),
                 ])
                 ->defaultItems(0)
