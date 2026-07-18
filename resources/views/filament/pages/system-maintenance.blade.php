@@ -16,6 +16,25 @@
         </div>
     </x-filament::section>
 
+    <x-filament::section>
+        <x-slot name="heading">Media storage link</x-slot>
+        <x-slot name="description">
+            Uploaded images and files are served through a link from the public web folder. If this ever shows a problem, uploads still save but images across the site will fail to display — tell a developer, it needs <code>php artisan storage:link</code> on the server.
+        </x-slot>
+
+        @if ($this->storageLinkHealthy)
+            <div class="flex items-center gap-2 text-sm" style="color:#15803d">
+                <x-filament::icon icon="heroicon-o-check-circle" class="h-5 w-5" />
+                <span>Working — uploaded files are publicly reachable.</span>
+            </div>
+        @else
+            <div class="flex items-center gap-2 text-sm" style="color:#b91c1c">
+                <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-5 w-5" />
+                <span>Not set up — the link at <code>{{ $this->storageLinkPath }}</code> is missing or points to the wrong place. Images will not display until a developer runs <code>php artisan storage:link</code>.</span>
+            </div>
+        @endif
+    </x-filament::section>
+
     @if ($lastOutput)
         <x-filament::section>
             <x-slot name="heading">Last result</x-slot>

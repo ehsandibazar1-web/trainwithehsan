@@ -94,6 +94,46 @@ class SystemMaintenance extends Page
         return null;
     }
 
+    // آیا symlink ای که فایل‌های دیسکِ public را در دسترسِ عمومی قرار می‌دهد
+    // (public/storage → storage/app/public) سالم است؟ اگر این لینک نباشد یا اشتباه باشد،
+    // آپلودها موفق می‌شوند (ردیف Media ساخته می‌شود و فایل روی دیسک نوشته می‌شود) ولی هر
+    // تصویرِ سایت 404 می‌دهد — نقصی که دقیقا شبیهِ «کتابخانه‌ی رسانه خراب است» به نظر می‌رسد
+    // ولی هیچ ربطی به کدِ آپلود ندارد. چون این هاست SSH ندارد، تنها راهِ دیدنِ وضعیتِ لینک
+    // همین پنل است. صرفا خواندنی — این صفحه لینک را نمی‌سازد.
+    public function getStorageLinkHealthyProperty(): bool
+    {
+        // دقیقا همان نگاشتی که `php artisan storage:link` می‌سازد را می‌سنجیم
+        // (config('filesystems.links') → معمولا public/storage ← storage/app/public).
+        // عمدا با ریشه‌ی دیسکِ public مقایسه نمی‌کنیم، چون آن می‌تواند در .env به یک مسیرِ
+        // مطلقِ سرورِ تولید تنظیم شده باشد که با هدفِ واقعیِ symlink فرق دارد.
+        $links = (array) config('filesystems.links', []);
+
+        if ($links === []) {
+            return true;
+        }
+
+        foreach ($links as $link => $target) {
+            if (! file_exists($link)) {
+                return false;
+            }
+
+            $linkReal = realpath($link);
+            $targetReal = realpath($target);
+
+            if ($linkReal === false || $targetReal === false
+                || rtrim($linkReal, DIRECTORY_SEPARATOR) !== rtrim($targetReal, DIRECTORY_SEPARATOR)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    public function getStorageLinkPathProperty(): string
+    {
+        return (string) (array_key_first((array) config('filesystems.links', [])) ?: public_path('storage'));
+    }
+
     public function clearCache(): void
     {
         try {
