@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Forms\Components\MediaPickerInput;
 use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
@@ -151,13 +152,10 @@ class HomepageSettings extends Page implements HasForms
         foreach ([1, 2, 3] as $i) {
             $fields[] = TextInput::make("$l.hero{$i}_title")->label("Slide $i — Title");
             $fields[] = Textarea::make("$l.hero{$i}_sub")->label("Slide $i — Subtitle")->rows(2);
-            $fields[] = FileUpload::make("$l.hero{$i}_image")
+            $fields[] = MediaPickerInput::make("$l.hero{$i}_image")
                 ->label("Slide $i — Background image")
-                ->image()
-                ->maxSize(8192)
-                ->disk('public')
-                ->directory('homepage/hero')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('homepage/hero')
                 ->nullable();
         }
 
@@ -169,12 +167,10 @@ class HomepageSettings extends Page implements HasForms
         $fields = [];
         foreach ([1, 2, 3] as $i) {
             $fields[] = TextInput::make("$l.video{$i}_caption")->label("Video $i — Caption");
-            $fields[] = FileUpload::make("$l.video{$i}_thumb")
+            $fields[] = MediaPickerInput::make("$l.video{$i}_thumb")
                 ->label("Video $i — Thumbnail photo")
-                ->image()
-                ->disk('public')
-                ->directory('homepage/videos')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('homepage/videos')
                 ->nullable();
             $fields[] = TextInput::make("$l.video{$i}_embed")
                 ->label("Video $i — Embed URL (YouTube/Aparat)")
@@ -200,12 +196,10 @@ class HomepageSettings extends Page implements HasForms
             TextInput::make("$l.app_subtitle")->label('Subtitle'),
             Textarea::make("$l.app_text")->label('Text')->rows(4),
             TextInput::make("$l.app_button_label")->label('Button label'),
-            FileUpload::make("$l.app_image")
+            MediaPickerInput::make("$l.app_image")
                 ->label('Section image')
-                ->image()
-                ->disk('public')
-                ->directory('homepage')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('homepage')
                 ->nullable(),
         ];
     }
@@ -223,12 +217,10 @@ class HomepageSettings extends Page implements HasForms
                 ->label("Course $i — Link")
                 ->nullable()
                 ->helperText("Where this card goes when clicked — a relative path (e.g. /blog/some-article) or a full https:// URL. Leave blank to link to the blog ($blogPath) as a placeholder until you have a dedicated page.");
-            $fields[] = FileUpload::make("$l.course{$i}_image")
+            $fields[] = MediaPickerInput::make("$l.course{$i}_image")
                 ->label("Course $i — Image")
-                ->image()
-                ->disk('public')
-                ->directory('homepage/courses')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('homepage/courses')
                 ->nullable();
         }
 
@@ -312,13 +304,11 @@ class HomepageSettings extends Page implements HasForms
                 ->label('Button URL')
                 ->url()
                 ->helperText('Leave blank to use the Instagram URL set above.'),
-            FileUpload::make("$l.{$prefix}_fallback_image")
+            MediaPickerInput::make("$l.{$prefix}_fallback_image")
                 ->label('Optional Fallback Image')
                 ->helperText('Shown if the Instagram embed is disabled, has no URL, or fails to load.')
-                ->image()
-                ->disk('public')
-                ->directory('homepage')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('homepage')
                 ->nullable(),
         ]);
     }
