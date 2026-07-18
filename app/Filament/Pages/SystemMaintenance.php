@@ -150,4 +150,36 @@ class SystemMaintenance extends Page
             Notification::make()->danger()->title('Cache clear failed')->body($e->getMessage())->send();
         }
     }
+
+    // معادلِ یک‌کلیکیِ `php artisan storage:link` از داخلِ پنل — چون این هاست SSH ندارد و همان
+    // چکِ سلامتِ بالا ممکن است لینکِ گم‌شده/اشتباه را گزارش کند. یک لینکِ سالم دست‌نخورده می‌ماند؛
+    // فقط یک symlinkِ خراب/اشتباه پیش از ساختِ دوباره پاک می‌شود تا storage:link با خطای
+    // «already exists» گیر نکند. یک پوشه‌ی واقعی (نه symlink) عمداً حذف نمی‌شود.
+    public function linkStorage(): void
+    {
+        try {
+            $link = public_path('storage');
+
+            if (! $this->storageLinkHealthy && is_link($link)) {
+                @unlink($link);
+            }
+
+            Artisan::call('storage:link');
+            $this->lastOutput = trim(Artisan::output()) ?: 'Media storage link created.';
+
+            if ($this->storageLinkHealthy) {
+                Notification::make()->success()->title('Media storage link is set up — images will display now')->send();
+            } else {
+                // symlink() ممکن است روی بعضی هاست‌های اشتراکی غیرفعال باشد
+                Notification::make()->warning()
+                    ->title('Ran, but the link still is not healthy')
+                    ->body('The server may not allow creating symbolic links (symlink disabled), or the web root differs from the app path. Ask your host to enable symlinks or create public/storage manually.')
+                    ->send();
+            }
+        } catch (Throwable $e) {
+            $this->lastOutput = $e->getMessage();
+
+            Notification::make()->danger()->title('Could not create the media storage link')->body($e->getMessage())->send();
+        }
+    }
 }
