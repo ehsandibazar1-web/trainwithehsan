@@ -30,7 +30,13 @@
         @else
             <div class="flex items-center gap-2 text-sm" style="color:#b91c1c">
                 <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-5 w-5" />
-                <span>Not set up — the link at <code>{{ $this->storageLinkPath }}</code> is missing or points to the wrong place. Images will not display until a developer runs <code>php artisan storage:link</code>.</span>
+                <span>Not set up — the link at <code>{{ $this->storageLinkPath }}</code> is missing or points to the wrong place. Images will not display until the link is created.</span>
+            </div>
+
+            <div class="mt-4">
+                <x-filament::button wire:click="linkStorage" icon="heroicon-o-link">
+                    Fix media storage link
+                </x-filament::button>
             </div>
         @endif
     </x-filament::section>
