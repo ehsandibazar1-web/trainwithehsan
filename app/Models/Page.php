@@ -14,7 +14,7 @@ class Page extends Model
         'locale', 'translation_of', 'title', 'slug', 'body', 'faqs',
         'seo_title', 'meta_description', 'meta_keywords', 'canonical_url', 'robots',
         'og_title', 'og_description',
-        'image_path', 'status', 'published_at',
+        'image_path', 'image_alt', 'status', 'published_at',
         'hero_image_prompt', 'thumbnail_image_prompt', 'og_image_prompt', 'social_image_prompt',
     ];
 

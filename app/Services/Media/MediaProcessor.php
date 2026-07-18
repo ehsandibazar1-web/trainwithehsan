@@ -68,7 +68,10 @@ class MediaProcessor
         $mimeType = $file->getMimeType();
         $extension = $this->assertSafeExtension($mimeType);
 
-        $filename = (string) Str::ulid().'.'.$extension;
+        // اسمِ فایلِ توصیفی (SEOِ عکس) از نامِ اصلی: muay-thai.png به‌جای ULIDِ گنگ. اگر نام غیرِلاتین
+        // باشد و slug خالی درآید (مثلاً تماماً فارسی)، به ULID برمی‌گردیم تا هرگز اسمِ خالی نسازیم.
+        // یکتایی با پسوندِ عددیِ افزایشی تضمین می‌شود تا هیچ فایلِ موجودی بازنویسی نشود.
+        $filename = $this->descriptiveFilename($file->getClientOriginalName(), $extension, $directory, $disk);
         $storedPath = $file->storeAs($directory, $filename, $disk);
 
         Storage::disk($disk)->setVisibility($storedPath, 'public');
@@ -320,6 +323,25 @@ class MediaProcessor
     // نوعِ رسانه‌ی یک MIME واقعی: image | video | audio | document | other. عمومی است تا
     // مصرف‌کننده‌های دیگر (مثلا فیلترِ کتابخانه‌ی رسانه) هم بتوانند از همین منطقِ واحد استفاده
     // کنند، به‌جای بازتولیدِ یک نگاشتِ موازی.
+    // نامِ توصیفیِ یکتا از نامِ اصلیِ فایل: slug + پسوندِ عددی در صورتِ تصادم. slugِ خالی → ULID.
+    private function descriptiveFilename(string $originalName, string $extension, string $directory, string $disk): string
+    {
+        $slug = Str::slug(pathinfo($originalName, PATHINFO_FILENAME));
+        if ($slug === '') {
+            $slug = (string) Str::ulid();
+        }
+        $slug = Str::limit($slug, 80, '');
+
+        $candidate = $slug.'.'.$extension;
+        $i = 1;
+        while (Storage::disk($disk)->exists($directory.'/'.$candidate)) {
+            $i++;
+            $candidate = $slug.'-'.$i.'.'.$extension;
+        }
+
+        return $candidate;
+    }
+
     public function resolveType(?string $mimeType): string
     {
         foreach (self::MIME_CATEGORIES as $type => $mimeTypes) {

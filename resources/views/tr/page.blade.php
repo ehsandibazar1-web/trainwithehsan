@@ -20,6 +20,7 @@
   "name": @json($page->title),
   "url": @json(url('/tr/' . $page->slug)),
   "dateModified": @json(optional($page->updated_at)->toIso8601String()),
+  @if($page->image_path)"image": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)),@endif
   "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"}
 }
 </script>
@@ -60,6 +61,7 @@
         aspect-ratio:800/450;margin-bottom:14px;border-radius:4px;overflow:hidden;
         background-size:cover;background-position:center;
     }
+    .page-hero-image img{width:100%;height:100%;object-fit:cover;display:block}
     .page-title h1{font-weight:800;font-size:26px;color:#222;margin-bottom:10px;line-height:1.2;letter-spacing:-.01em}
 
     .page-meta{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:10px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:1.2rem;font-size:13px;color:#666}
@@ -119,7 +121,9 @@
 
         <div class="site-page__box">
             @if($page->image_path)
-            <div class="page-hero-image" style="background-image:url('{{ $page->optimized_image_url ?? asset('storage/' . $page->image_path) }}')"></div>
+            <div class="page-hero-image">
+                <img src="{{ $page->optimized_image_url ?? asset('storage/' . $page->image_path) }}" alt="{{ $page->image_alt ?: $page->title }}" width="800" height="450" loading="eager" decoding="async">
+            </div>
             @endif
 
             <div class="page-title"><h1>{{ $page->title }}</h1></div>

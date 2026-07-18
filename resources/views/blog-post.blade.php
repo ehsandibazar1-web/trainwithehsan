@@ -8,6 +8,7 @@
 @section('canonical', url('/blog/' . $article->slug))
 @section('og_title', ($article->og_title ?: $article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
 @section('og_description', $article->og_description ?: $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
+@section('og_image', $article->image_path ? asset('storage/' . $article->image_path) : '')
 
 {{-- hreflang اختصاصی: اسلاگ EN/TR یک مقاله لزوماً یکی نیست (مثلاً combat-intelligence در برابر
      dovus-zekasi)، پس نمی‌توان مثل صفحات ثابت از یک path_suffix مشترک استفاده کرد. اگر ترجمه‌ای
@@ -30,6 +31,7 @@
   "headline": @json($article->title),
   "url": @json(url('/blog/' . $article->slug)),
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
+  @if($article->image_path)"image": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)),@endif
   "author": {"@@type": "Person", "name": @json($article->author_name)},
   "publisher": {"@@id": "https://trainwithehsan.com/#organization"}
 }
@@ -74,6 +76,7 @@
         background:linear-gradient(135deg,#d8d3c4 0%,#cdb87f 80%,var(--gold) 160%);
         background-size:cover;background-position:center;
     }
+    .post-hero-image img{width:100%;height:100%;object-fit:cover;display:block}
     .post-title h1{font-weight:800;font-size:26px;color:#222;margin-bottom:10px;line-height:1.2;letter-spacing:-.01em}
 
     .article-meta{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:10px 0;border-top:1px solid #eee;border-bottom:1px solid #eee;margin-bottom:1.2rem;font-size:13px;color:#666}
@@ -144,7 +147,11 @@
 
         <div class="site-blog-post__box">
             <div>
-                <div class="post-hero-image" @if($article->image_path) style="background-image:url('{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}')" @endif></div>
+                <div class="post-hero-image">
+                    @if($article->image_path)
+                    <img src="{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}" alt="{{ $article->image_alt ?: $article->title }}" width="800" height="450" loading="eager" decoding="async">
+                    @endif
+                </div>
 
                 <div class="post-title"><h1>{{ $article->title }}</h1></div>
 
