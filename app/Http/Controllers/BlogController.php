@@ -221,6 +221,9 @@ class BlogController extends Controller
         $authorPhoto = SiteSetting::get("about.$locale.hero_image")
             ?? SiteSetting::get('about.en.hero_image');
 
-        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto'));
+        // Video SEO — VideoObject برای ویدیوهای درون‌متنیِ مقاله (همان لینک‌هایی که در بدنه پخش‌کننده می‌شوند)
+        $videoSchemas = app(VideoSchemaService::class)->forArticle($article);
+
+        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto', 'videoSchemas'));
     }
 }

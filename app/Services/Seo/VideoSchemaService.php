@@ -2,20 +2,38 @@
 
 namespace App\Services\Seo;
 
+use App\Models\Article;
 use App\Models\Media;
+use App\Models\Page;
+use App\Services\Content\EmbedRenderer;
+use Illuminate\Support\Str;
 
 /**
- * می‌سازد: فهرستی از آرایه‌های VideoObject (schema.org) برای ویدیوهایی که همین حالا روی صفحه‌ی
- * اصلی نمایش داده می‌شوند — ردیفِ ویدیو (video1..3) و ویدیوهای نتایجِ اعضا. این «Video SEO» است:
- * فقط داده‌ی ساختاریِ نامرئی (JSON-LD) اضافه می‌شود تا موتورهای جست‌وجو ویدیوها را به‌عنوان
- * ویدیو بشناسند (rich result)؛ هیچ فیلدِ ادمینِ تازه، هیچ تغییری در ظاهر/رندرِ عمومی.
+ * می‌سازد: فهرستی از آرایه‌های VideoObject (schema.org) برای ویدیوهایی که همین حالا روی صفحه نمایش
+ * داده می‌شوند — صفحه‌ی اصلی (ردیفِ ویدیو + ویدیوهای اعضا)، و ویدیوهای درون‌متنیِ مقاله/صفحه. این
+ * «Video SEO» است: فقط داده‌ی ساختاریِ نامرئی (JSON-LD) اضافه می‌شود تا موتورهای جست‌وجو ویدیوها
+ * را به‌عنوان ویدیو بشناسند (rich result)؛ هیچ فیلدِ ادمینِ تازه، هیچ تغییری در ظاهر/رندرِ عمومی.
  *
- * فقط از داده‌ی موجود ساخته می‌شود (کپشن/تامبنیل/لینکِ embed/فایلِ آپلودشده/عکسِ عضو). هر ویدیویی
- * که منبع (فایل یا embedِ شناخته‌شده) یا thumbnailUrl نداشته باشد رد می‌شود، تا فقط VideoObjectهای
- * معتبر منتشر شوند (Google برای VideoObject به thumbnailUrl و یک منبع نیاز دارد).
+ * تشخیصِ اینکه یک لینک «ویدیو»ست و از کدام ارائه‌دهنده، *یک منبعِ واحدِ حقیقت* دارد:
+ * App\Services\Content\EmbedRenderer (همان providerهایی که facadeِ کلیک‌برای‌بارگذاری را می‌سازند).
+ * این‌جا هیچ regexِ مستقلی برای «آیا این یوتیوب است؟» نیست — فقط از detect()/extractVideos() آن
+ * استفاده می‌کنیم و خروجی‌اش را به فیلدهای schema نگاشت می‌کنیم. پس رندرِ واقعی و structured data
+ * هرگز از هم جدا نمی‌افتند، و همین سرویس هم schemaِ HTML و هم Video Sitemap را تغذیه می‌کند.
+ *
+ * هر ویدیویی که منبع (فایل یا embedِ شناخته‌شده) یا thumbnailUrl نداشته باشد رد می‌شود، تا فقط
+ * VideoObjectهای معتبر منتشر شوند (Google برای VideoObject به thumbnailUrl و یک منبع نیاز دارد).
+ * فقط سه نوعِ پشتیبانی‌شده: فایلِ خودمیزبان، یوتیوب، ویمئو — اینستاگرام/تیک‌تاک خانه‌ی متعارفشان روی
+ * خودِ پلتفرم است و VideoObject روی دامنه‌ی ما برایشان ساخته نمی‌شود.
  */
 class VideoSchemaService
 {
+    private EmbedRenderer $embeds;
+
+    public function __construct(?EmbedRenderer $embeds = null)
+    {
+        $this->embeds = $embeds ?? new EmbedRenderer;
+    }
+
     /**
      * @param  array<string, mixed>  $s  تنظیماتِ صفحه‌ی اصلی (home.{locale}.*) به‌شکلِ کلید→مقدار
      * @param  array<int, array<string, mixed>>  $members  ردیف‌های ریپیترِ اعضا
@@ -64,13 +82,108 @@ class VideoSchemaService
     }
 
     /**
-     * یک VideoObject از داده‌ی خام — یا null اگر منبع/تامبنیلِ معتبر نداشته باشد.
+     * VideoObjectهای ویدیوهای درون‌متنیِ یک مقاله — همان لینک‌هایی که در بدنه به پخش‌کننده تبدیل می‌شوند.
+     * تامبنیل: یوتیوب از شناسه، وگرنه عکسِ شاخصِ مقاله (fallbackِ نماینده)؛ تاریخِ انتشار = published_at.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function forArticle(Article $article): array
+    {
+        return $this->fromBody(
+            (string) $article->body,
+            $article->title,
+            $this->firstNonEmpty([$article->meta_description, $article->excerpt, $this->plainSummary($article->body), $article->title]),
+            $this->recordImageUrl($article->image_path),
+            optional($article->published_at)->toIso8601String(),
+        );
+    }
+
+    /**
+     * VideoObjectهای ویدیوهای درون‌متنیِ یک صفحه‌ی مستقل — مثلِ مقاله، ولی صفحه excerpt ندارد.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function forPage(Page $page): array
+    {
+        return $this->fromBody(
+            (string) $page->body,
+            $page->title,
+            $this->firstNonEmpty([$page->meta_description, $this->plainSummary($page->body), $page->title]),
+            $this->recordImageUrl($page->image_path),
+            optional($page->published_at ?? $page->updated_at)->toIso8601String(),
+        );
+    }
+
+    /**
+     * موتورِ مشترکِ ویدیوهای درون‌متنی — از EmbedRenderer::extractVideos() (منبعِ واحدِ تشخیص) عبور
+     * می‌کند و هر لینکِ یوتیوب/ویمئو/فایلِ خودمیزبانِ معتبر را به یک VideoObject نگاشت می‌کند.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function fromBody(string $body, string $fallbackName, string $description, ?string $thumbFallback, ?string $uploadDate): array
+    {
+        $videos = [];
+        $seen = [];
+
+        foreach ($this->embeds->extractVideos($body) as $item) {
+            $match = $item['match'];
+            $embedUrl = $this->embedUrlFromMatch($match);
+            $contentUrl = $this->selfHostedVideoUrl($match);
+
+            // فقط یوتیوب/ویمئو/ویدیوی خودمیزبان → VideoObject؛ اینستاگرام/تیک‌تاک/صوت رد می‌شوند
+            if (! $embedUrl && ! $contentUrl) {
+                continue;
+            }
+
+            $thumbnailUrl = $this->youTubeThumbFromMatch($match) ?: $thumbFallback;
+
+            // VideoObject بدونِ thumbnailUrl معتبر نیست — رد می‌شود تا داده‌ی ناقص منتشر نشود
+            if (! $thumbnailUrl) {
+                continue;
+            }
+
+            // بدونِ داده‌ی ساختاریِ تکراری برای یک منبعِ یکسان روی همان صفحه
+            $key = $embedUrl ?: $contentUrl;
+            if (isset($seen[$key])) {
+                continue;
+            }
+            $seen[$key] = true;
+
+            // نامِ لینک اگر واقعی باشد (نه خودِ URL)، وگرنه عنوانِ مقاله/صفحه
+            $name = ($item['text'] !== '' && ! $this->looksLikeUrl($item['text'])) ? $item['text'] : $fallbackName;
+
+            $schema = [
+                '@context' => 'https://schema.org',
+                '@type' => 'VideoObject',
+                'name' => $name,
+                'description' => $description !== '' ? $description : $name,
+                'thumbnailUrl' => $thumbnailUrl,
+            ];
+
+            if ($uploadDate) {
+                $schema['uploadDate'] = $uploadDate;
+            }
+            if ($contentUrl) {
+                $schema['contentUrl'] = $contentUrl;
+            }
+            if ($embedUrl) {
+                $schema['embedUrl'] = $embedUrl;
+            }
+
+            $videos[] = $schema;
+        }
+
+        return $videos;
+    }
+
+    /**
+     * یک VideoObject از داده‌ی خامِ صفحه‌ی اصلی — یا null اگر منبع/تامبنیلِ معتبر نداشته باشد.
      *
      * @return array<string, mixed>|null
      */
     private function build(string $name, string $description, string $embedRaw, string $filePath, string $thumbPath): ?array
     {
-        $embedUrl = $this->embedUrl($embedRaw);
+        $embedUrl = $embedRaw !== '' ? $this->embedUrlFromMatch($this->embeds->detect($embedRaw)) : null;
         $contentUrl = filled($filePath) ? asset('storage/'.ltrim($filePath, '/')) : null;
 
         // بدونِ منبع (نه فایلِ آپلودشده، نه embedِ شناخته‌شده) → ویدیویی وجود ندارد
@@ -119,34 +232,56 @@ class VideoSchemaService
         return ($val !== null && $val !== '') ? (string) $val : '';
     }
 
-    // لینکِ عادیِ ویدیو → embedUrlِ متعارف (فقط ارائه‌دهنده‌های شناخته‌شده) — همان تشخیصِ
-    // home.blade.php، اینجا یک‌بار در سرویس تا رندر و schema هم‌داستان بمانند
-    private function embedUrl(string $u): ?string
+    // از یک matchِ providerِ EmbedRenderer، embedUrlِ متعارفِ schema (فقط یوتیوب/ویمئو). شناسه از
+    // خروجیِ نرمال‌شده‌ی خودِ provider خوانده می‌شود، نه از ورودیِ خام — پس نمی‌تواند از تشخیصِ
+    // authoritativeِ provider جدا بیفتد؛ فقط شناسه‌ای را که provider قبلاً درآورده بازمی‌خواند.
+    private function embedUrlFromMatch(?array $match): ?string
     {
-        if ($id = $this->youTubeId($u)) {
-            return 'https://www.youtube.com/embed/'.$id;
+        if (! $match) {
+            return null;
         }
 
-        if ($id = $this->vimeoId($u)) {
-            return 'https://player.vimeo.com/video/'.$id;
+        if (($match['provider'] ?? '') === 'youtube' && preg_match('~/embed/([A-Za-z0-9_-]{11})~', (string) ($match['src'] ?? ''), $m)) {
+            return 'https://www.youtube.com/embed/'.$m[1];
+        }
+
+        if (($match['provider'] ?? '') === 'vimeo' && preg_match('~/video/(\d+)~', (string) ($match['src'] ?? ''), $m)) {
+            return 'https://player.vimeo.com/video/'.$m[1];
         }
 
         return null;
     }
 
-    // تامبنیل: عکسِ آپلودشده اگر باشد، وگرنه تامبنیلِ ثابتِ یوتیوب از روی شناسه — Vimeo/سایر بدونِ
-    // عکس، تامبنیلِ ثابت ندارند (نیاز به API) پس null → آن ویدیو بدونِ schema می‌ماند
+    // تامبنیلِ ثابتِ یوتیوب از روی شناسه (بدونِ نیاز به API). ویمئو/سایر بدونِ عکسِ آپلودشده تامبنیلِ
+    // مشتق ندارند → null، پس صداکننده باید fallback (عکسِ شاخص) بدهد وگرنه آن ویدیو رد می‌شود.
+    private function youTubeThumbFromMatch(?array $match): ?string
+    {
+        if ($match && ($match['provider'] ?? '') === 'youtube'
+            && preg_match('~/embed/([A-Za-z0-9_-]{11})~', (string) ($match['src'] ?? ''), $m)) {
+            return 'https://img.youtube.com/vi/'.$m[1].'/hqdefault.jpg';
+        }
+
+        return null;
+    }
+
+    // فقط ویدیوی خودمیزبان (kind=video, provider=file) contentUrl می‌دهد — صوت (audio) ویدیو نیست
+    private function selfHostedVideoUrl(array $match): ?string
+    {
+        if (($match['provider'] ?? '') !== 'file' || ($match['kind'] ?? '') !== 'video') {
+            return null;
+        }
+
+        return $this->absoluteUrl((string) ($match['src'] ?? ''));
+    }
+
+    // تامبنیلِ صفحه‌ی اصلی: عکسِ آپلودشده اگر باشد، وگرنه تامبنیلِ مشتقِ یوتیوب
     private function thumbnailUrl(string $thumbPath, string $embedRaw): ?string
     {
         if (filled($thumbPath)) {
             return asset('storage/'.ltrim($thumbPath, '/'));
         }
 
-        if ($id = $this->youTubeId($embedRaw)) {
-            return 'https://img.youtube.com/vi/'.$id.'/hqdefault.jpg';
-        }
-
-        return null;
+        return $embedRaw !== '' ? $this->youTubeThumbFromMatch($this->embeds->detect($embedRaw)) : null;
     }
 
     private function uploadDate(string $filePath): ?string
@@ -154,25 +289,39 @@ class VideoSchemaService
         return Media::where('disk_path', $filePath)->first()?->created_at?->toIso8601String();
     }
 
-    private function youTubeId(string $u): ?string
+    // عکسِ شاخصِ رکورد به‌عنوان تامبنیلِ نماینده‌ی ویدیوی خودمیزبان/ویمئو (که تامبنیلِ مشتق ندارند).
+    // عمداً فایلِ اصلی (نه WebP) تا هیچ کوئریِ Media روی هر درخواست زده نشود (Media::forRecord کوئری دارد).
+    private function recordImageUrl(?string $imagePath): ?string
     {
-        $u = trim($u);
-        if ($u === '') {
-            return null;
-        }
-
-        return preg_match('~(?:youtube\.com/(?:watch\?(?:.*&)?v=|embed/|shorts/|live/)|youtu\.be/)([A-Za-z0-9_-]{11})~i', $u, $m)
-            ? $m[1]
-            : null;
+        return filled($imagePath) ? asset('storage/'.ltrim($imagePath, '/')) : null;
     }
 
-    private function vimeoId(string $u): ?string
+    private function absoluteUrl(string $src): string
     {
-        $u = trim($u);
-        if ($u === '') {
-            return null;
+        return Str::startsWith(strtolower($src), ['http://', 'https://']) ? $src : url($src);
+    }
+
+    private function looksLikeUrl(string $text): bool
+    {
+        return Str::startsWith(strtolower(trim($text)), ['http://', 'https://', 'www.']);
+    }
+
+    /**
+     * @param  array<int, string|null>  $candidates
+     */
+    private function firstNonEmpty(array $candidates): string
+    {
+        foreach ($candidates as $c) {
+            if (filled($c)) {
+                return trim((string) $c);
+            }
         }
 
-        return preg_match('~vimeo\.com/(?:video/)?(\d+)~i', $u, $m) ? $m[1] : null;
+        return '';
+    }
+
+    private function plainSummary(?string $html): string
+    {
+        return Str::limit(trim(preg_replace('/\s+/', ' ', (string) strip_tags((string) $html)) ?? ''), 200, '');
     }
 }
