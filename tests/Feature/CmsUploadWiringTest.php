@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Filament\Pages\AboutPageSettings;
+use App\Filament\Pages\FooterSettings;
+use App\Filament\Pages\HomepageSettings;
 use App\Filament\Support\MediaLibraryUploads;
 use App\Models\Media;
 use App\Models\SiteSetting;
@@ -57,5 +59,15 @@ class CmsUploadWiringTest extends TestCase
 
         // منطقِ mount/save و normalizeUpload بعد از سیم‌کشی دست‌نخورده کار می‌کند
         $this->assertSame('Ehsan Dibazar', SiteSetting::get('about.en.hero_name'));
+    }
+
+    public function test_footer_and_homepage_pages_still_load_and_save_after_wiring(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        // هر دو صفحه باید بدونِ خطا mount و save شوند — یعنی سیم‌کشیِ saveUploadedFileUsing
+        // چرخه‌ی موجودِ mount/save‌شان را نشکسته
+        Livewire::actingAs($owner)->test(FooterSettings::class)->call('save')->assertHasNoErrors();
+        Livewire::actingAs($owner)->test(HomepageSettings::class)->call('save')->assertHasNoErrors();
     }
 }

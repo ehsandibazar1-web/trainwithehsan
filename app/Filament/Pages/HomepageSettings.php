@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
@@ -156,6 +157,7 @@ class HomepageSettings extends Page implements HasForms
                 ->maxSize(8192)
                 ->disk('public')
                 ->directory('homepage/hero')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable();
         }
 
@@ -172,6 +174,7 @@ class HomepageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('homepage/videos')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable();
             $fields[] = TextInput::make("$l.video{$i}_embed")
                 ->label("Video $i — Embed URL (YouTube/Aparat)")
@@ -201,6 +204,7 @@ class HomepageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('homepage')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable(),
         ];
     }
@@ -223,6 +227,7 @@ class HomepageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('homepage/courses')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable();
         }
 
@@ -244,6 +249,7 @@ class HomepageSettings extends Page implements HasForms
                         ->image()
                         ->disk('public')
                         ->directory('homepage/members')
+                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                         ->nullable(),
                     TextInput::make('video_embed')
                         ->label('Video embed URL (YouTube)')
@@ -310,6 +316,7 @@ class HomepageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('homepage')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable(),
         ]);
     }
