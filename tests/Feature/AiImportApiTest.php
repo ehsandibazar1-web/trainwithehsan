@@ -204,6 +204,34 @@ class AiImportApiTest extends TestCase
         $this->apiPost('/api/ai-import/validate', $this->payload())->assertStatus(429);
     }
 
+    public function test_repeated_invalid_token_requests_are_throttled_by_ip(): void
+    {
+        // میان‌افزار احراز هویت روی توکنِ نامعتبر کوتاه‌مدار می‌شود، پس محدودیتِ per-token
+        // هرگز اجرا نمی‌شود — این تست مطمئن می‌شود که با این حال یک سقفِ مستقلِ بر اساسِ IP
+        // جلوی سیلِ نامحدودِ درخواست با توکنِ نامعتبر را می‌گیرد. عمداً به مرز دقیق سقف تکیه
+        // نمی‌کند (فقط مطمئن می‌شود که بعد از تعداد زیادی درخواست، در نهایت 429 دیده می‌شود).
+        $sawUnauthorized = false;
+        $sawThrottled = false;
+
+        for ($i = 0; $i < 80; $i++) {
+            $status = $this->withToken('aiimp_wrong-token')
+                ->postJson('/api/ai-import/validate', $this->payload())
+                ->getStatusCode();
+
+            if ($status === 401) {
+                $sawUnauthorized = true;
+            } elseif ($status === 429) {
+                $sawThrottled = true;
+                break;
+            } else {
+                $this->fail("Unexpected status code {$status} on attempt {$i}.");
+            }
+        }
+
+        $this->assertTrue($sawUnauthorized, 'Expected at least one 401 before throttling kicked in.');
+        $this->assertTrue($sawThrottled, 'Expected repeated invalid-token requests to eventually be throttled (429).');
+    }
+
     // ---------------------------------------------------------------- admin UI
 
     public function test_api_tokens_resource_renders(): void
