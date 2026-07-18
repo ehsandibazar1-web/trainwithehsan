@@ -154,7 +154,10 @@ class ArticleForm
                     ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file) => app(MediaProcessor::class)
                         ->store($file, $component->getDirectory(), $component->getDiskName())
                         ->disk_path)
-                    ->hintAction(MediaLibraryUploads::altHintAction())
+                    ->hintActions([
+                        MediaLibraryUploads::pickFromLibraryAction(),
+                        MediaLibraryUploads::altHintAction(),
+                    ])
                     ->nullable(),
 
                 Section::make('AI Image Prompts (optional)')
