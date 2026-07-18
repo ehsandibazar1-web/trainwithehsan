@@ -107,4 +107,25 @@ class CmsUploadWiringTest extends TestCase
             ->assertHasNoErrors();
         $this->assertSame('footer/logo.png', SiteSetting::get('footer.en.logo'));
     }
+
+    // فاز ۳: فیلدهای رسانه‌ایِ درونِ Repeater هم MediaPickerInput هستند. این تست تأیید می‌کند
+    // یک عکس/ویدئوی عضو (رشته‌ی disk_path داخلِ آیتمِ ریپیتر) از چرخه‌ی mount→save سالم عبور
+    // می‌کند و همان مسیر در JSONِ members باقی می‌ماند — همان شکلی که تمپلیت عمومی می‌خواند.
+    public function test_repeater_embedded_media_picker_values_round_trip_through_save(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        SiteSetting::set('home.en.members', json_encode([
+            ['name' => 'Ali', 'photo' => 'homepage/members/ali.jpg', 'video_embed' => '', 'video_file' => 'homepage/members/ali.mp4'],
+        ]), 'homepage');
+
+        Livewire::actingAs($owner)
+            ->test(HomepageSettings::class)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $members = array_values(json_decode(SiteSetting::get('home.en.members'), true));
+        $this->assertSame('homepage/members/ali.jpg', $members[0]['photo']);
+        $this->assertSame('homepage/members/ali.mp4', $members[0]['video_file']);
+    }
 }

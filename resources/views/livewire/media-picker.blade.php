@@ -5,7 +5,7 @@
 --}}
 <div
     x-data
-    x-on:open-media-picker.window="$wire.openFor($event.detail.target, $event.detail.onlyImages ?? false, $event.detail.uploadDirectory ?? null)"
+    x-on:open-media-picker.window="$wire.openFor($event.detail.target, $event.detail.onlyImages ?? false, $event.detail.uploadDirectory ?? null, $event.detail.initialType ?? null)"
 >
     <style>
         .mp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:60;display:flex;align-items:center;justify-content:center;padding:1rem}

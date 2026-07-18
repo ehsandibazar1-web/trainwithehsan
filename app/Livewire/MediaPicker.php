@@ -49,7 +49,7 @@ class MediaPicker extends Component
         return ['original_name', 'alt_text', 'caption', 'description', 'mime_type'];
     }
 
-    public function openFor(?string $target, bool $onlyImages = false, ?string $uploadDirectory = null): void
+    public function openFor(?string $target, bool $onlyImages = false, ?string $uploadDirectory = null, ?string $initialType = null): void
     {
         $this->target = $target;
         $this->onlyImages = $onlyImages;
@@ -61,7 +61,10 @@ class MediaPicker extends Component
         $this->search = '';
         $this->currentFolderId = null;
         $this->resetPickerFilters();
-        $this->typeFilter = $onlyImages ? 'image' : 'all';
+        // فقط-تصویر: قفل روی image. در غیر این صورت اگر فیلد یک نوعِ پیش‌فرض داده باشد (مثلاً فیلدِ
+        // ویدئو → 'video') با همان نما باز می‌شود، ولی چون قفل نیست ادمین می‌تواند عوضش کند
+        // («generic file fields allow every media type»).
+        $this->typeFilter = $onlyImages ? 'image' : ($initialType ?: 'all');
     }
 
     public function close(): void

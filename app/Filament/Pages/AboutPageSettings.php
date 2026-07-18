@@ -3,10 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Forms\Components\MediaPickerInput;
-use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -164,12 +162,10 @@ class AboutPageSettings extends Page implements HasForms
             Repeater::make("$l.certificates")
                 ->label('Certificates')
                 ->schema([
-                    FileUpload::make('image')
+                    MediaPickerInput::make('image')
                         ->label('Certificate image')
-                        ->image()
-                        ->disk('public')
-                        ->directory('about/certificates')
-                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                        ->onlyImages()
+                        ->uploadDirectory('about/certificates')
                         ->nullable()
                         ->helperText('Optional — a placeholder is shown if left empty.'),
                     TextInput::make('title')
@@ -203,12 +199,10 @@ class AboutPageSettings extends Page implements HasForms
             Repeater::make("$l.gallery")
                 ->label('Gallery images')
                 ->schema([
-                    FileUpload::make('image')
+                    MediaPickerInput::make('image')
                         ->label('Image')
-                        ->image()
-                        ->disk('public')
-                        ->directory('about/gallery')
-                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                        ->onlyImages()
+                        ->uploadDirectory('about/gallery')
                         ->required(),
                     TextInput::make('alt')
                         ->label('Alt text')

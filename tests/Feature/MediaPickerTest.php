@@ -70,6 +70,25 @@ class MediaPickerTest extends TestCase
             ->assertSet('typeFilter', 'document');
     }
 
+    public function test_initial_type_sets_the_opening_filter_without_locking_it(): void
+    {
+        // فیلدِ فایلِ ویدئو با نمای «Videos» باز می‌شود ولی قفل نیست — هر نوعِ دیگری هم قابلِ انتخاب است
+        Livewire::actingAs($this->owner())
+            ->test(MediaPicker::class)
+            ->call('openFor', 'data.video_file', false, 'homepage/videos', 'video')
+            ->assertSet('typeFilter', 'video')
+            ->call('setTypeFilter', 'document')
+            ->assertSet('typeFilter', 'document');
+    }
+
+    public function test_only_images_overrides_any_initial_type(): void
+    {
+        Livewire::actingAs($this->owner())
+            ->test(MediaPicker::class)
+            ->call('openFor', 'data.image', true, 'x', 'video')
+            ->assertSet('typeFilter', 'image');
+    }
+
     public function test_choosing_returns_the_disk_path_to_the_field_and_closes(): void
     {
         $media = $this->image();
