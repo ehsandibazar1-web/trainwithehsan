@@ -63,7 +63,11 @@
 <style>
 :root{--dark:#0e0e0e;--dark2:#161616}
 body{background:var(--dark)!important}
-.about-v5{overflow-x:hidden;max-width:100%;width:100%;background:var(--dark);color:#eee}
+/* overflow-x:hidden بدون overflow-y صریح باعث می‌شد طبق اسپک CSS مرورگر overflow-y را هم auto
+   حساب کند؛ چون افکت‌های تزئینی (blur/transform روی .glow و مشابه) چند پیکسل از قاب بیرون
+   می‌زدند، کل این wrapper یک اسکرول عمودیِ داخلیِ ناخواسته پیدا می‌کرد — دقیقاً همان باگی که
+   روی کاروسل‌های صفحه‌ی اصلی بود، این‌جا برای کل صفحه‌ی درباره‌ی من */
+.about-v5{overflow-x:hidden;overflow-y:hidden;max-width:100%;width:100%;background:var(--dark);color:#eee}
 .about-v5 *{box-sizing:border-box}
 .about-v5 section{padding:70px 20px;position:relative}
 .about-v5 .container{max-width:920px;margin:0 auto}
