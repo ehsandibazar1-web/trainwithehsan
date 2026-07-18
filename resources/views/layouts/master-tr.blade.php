@@ -167,7 +167,7 @@
         .carousel-track{
             display:flex;gap:20px;overflow-x:auto;scroll-snap-type:x mandatory;
             scrollbar-width:none;padding-bottom:4px;
-            -webkit-overflow-scrolling:touch;scroll-padding-left:15px;
+            scroll-padding-left:15px;
         }
         .carousel-track::-webkit-scrollbar{display:none}
         .carousel-track>*{scroll-snap-align:start;flex:0 0 auto}
