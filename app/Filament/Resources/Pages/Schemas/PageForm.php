@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Pages\Schemas;
 
+use App\Filament\RichContent\MediaLibraryRichContentPlugin;
 use App\Models\Page;
 use App\Services\Media\MediaProcessor;
 use Filament\Forms\Components\BaseFileUpload;
@@ -130,6 +131,7 @@ class PageForm
                     ->required()
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('pages/inline')
+                    ->plugins([MediaLibraryRichContentPlugin::make('pages/inline')])
                     ->columnSpanFull(),
 
                 FileUpload::make('image_path')

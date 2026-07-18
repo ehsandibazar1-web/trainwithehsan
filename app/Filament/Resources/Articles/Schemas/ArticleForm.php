@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Articles\Schemas;
 
+use App\Filament\RichContent\MediaLibraryRichContentPlugin;
 use App\Models\Article;
 use App\Services\Media\MediaProcessor;
 use Filament\Forms\Components\BaseFileUpload;
@@ -118,6 +119,7 @@ class ArticleForm
                     ->required()
                     ->fileAttachmentsDisk('public')
                     ->fileAttachmentsDirectory('articles/inline')
+                    ->plugins([MediaLibraryRichContentPlugin::make('articles/inline')])
                     ->columnSpanFull(),
 
                 Repeater::make('faqs')
