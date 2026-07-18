@@ -41,6 +41,27 @@ class EmbedRendererTest extends TestCase
         $this->assertStringNotContainsString('<iframe', $out);
     }
 
+    public function test_a_standalone_instagram_link_becomes_an_instagram_facade(): void
+    {
+        $out = $this->render('<p><a href="https://www.instagram.com/reel/ABC123def/">post</a></p>');
+
+        $this->assertStringContainsString('twe-embed--instagram', $out);
+        $this->assertStringContainsString('data-embed-kind="instagram"', $out);
+        $this->assertStringContainsString('instagram.com/reel/ABC123def/', $out);
+        // blockquote/embed.js فقط هنگامِ کلیک ساخته می‌شود — در HTMLِ سرور نیست
+        $this->assertStringNotContainsString('<blockquote', $out);
+    }
+
+    public function test_a_standalone_tiktok_link_becomes_a_tiktok_facade_with_video_id(): void
+    {
+        $out = $this->render('<p><a href="https://www.tiktok.com/@someone/video/1234567890123456789">clip</a></p>');
+
+        $this->assertStringContainsString('twe-embed--tiktok', $out);
+        $this->assertStringContainsString('data-embed-kind="tiktok"', $out);
+        $this->assertStringContainsString('data-embed-id="1234567890123456789"', $out);
+        $this->assertStringNotContainsString('<blockquote', $out);
+    }
+
     public function test_a_self_hosted_video_link_becomes_a_video_facade(): void
     {
         $url = url('/storage/media/library/clip.mp4');

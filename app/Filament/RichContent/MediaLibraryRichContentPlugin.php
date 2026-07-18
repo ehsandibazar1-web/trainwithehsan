@@ -87,21 +87,27 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
             ->schema([
                 MediaPickerInput::make('media')
                     ->label('Media')
-                    ->helperText('Pick any file from the Media Library, or upload a new one inside the picker. Images are inserted inline; documents are inserted as a download link.')
-                    ->uploadDirectory($directory)
-                    ->required(),
+                    ->helperText('Pick any file from the Media Library, or upload a new one inside the picker. Images insert inline; a video/audio file becomes a click-to-load player; documents insert as a download link.')
+                    ->uploadDirectory($directory),
+                TextInput::make('embed_url')
+                    ->label('Or paste a video / embed URL')
+                    ->helperText('YouTube, Vimeo, Instagram or TikTok — inserted as a privacy-friendly click-to-load player (nothing loads until the reader clicks).')
+                    ->url(),
                 TextInput::make('alt')
                     ->label('Alt text (images only — accessibility & image SEO)')
                     ->maxLength(1000),
             ])
             ->action(function (array $arguments, array $data, RichEditor $component): void {
-                $media = Media::where('disk_path', $data['media'] ?? '')->first();
+                $embedUrl = trim((string) ($data['embed_url'] ?? ''));
 
-                if (! $media) {
+                // یک URLِ embed برنده است؛ وگرنه رسانه‌ی انتخاب‌شده از کتابخانه
+                if ($embedUrl !== '') {
+                    $content = static::embedLinkHtml($embedUrl);
+                } elseif ($media = Media::where('disk_path', $data['media'] ?? '')->first()) {
+                    $content = static::insertContentFor($media, $data['alt'] ?? null);
+                } else {
                     return;
                 }
-
-                $content = static::insertContentFor($media, $data['alt'] ?? null);
 
                 $component->runCommands(
                     [EditorCommand::make('insertContent', arguments: [$content])],
@@ -122,8 +128,13 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
             return static::imageNode($media->url, ($alt !== null && trim($alt) !== '') ? $alt : $media->alt_text);
         }
 
-        // اسناد/زیپ/ویدئو/صوت/سایر: فعلاً لینکِ دانلود (تنها HTMLِ غیرتصویری که از sanitize (#73)
-        // عبور می‌کند). پخش‌کننده/امبدِ واقعی در فازِ Video SEO با گشودنِ allowlistِ sanitizer می‌آید.
+        // ویدئو/صوتِ خودمیزبان: یک لینکِ تنهای پاراگراف — App\Services\Content\EmbedRenderer در سمتِ
+        // عمومی آن را به پخش‌کننده‌ی click-to-load تبدیل می‌کند (نگاه کنید به Section 8)
+        if (in_array($media->type, ['video', 'audio'], true)) {
+            return static::embedLinkHtml($media->url);
+        }
+
+        // اسناد/زیپ/سایر: لینکِ دانلودِ درون‌خطی (<a href> که از sanitize (#73) عبور می‌کند)
         return static::downloadLinkHtml($media->url, $media->original_name);
     }
 
@@ -149,5 +160,13 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
     public static function downloadLinkHtml(string $url, string $filename): string
     {
         return '<a href="'.e($url).'" target="_blank" rel="noopener">📎 '.e($filename).'</a>';
+    }
+
+    // یک لینکِ تنهای پاراگراف به یک ویدئو/embed — همان الگویی که EmbedRenderer در سمتِ عمومی به
+    // facadeِ click-to-load تبدیل می‌کند (پاراگرافی که تنها محتوایش یک <a> است). هیچ <iframe> ای
+    // اینجا ساخته/ذخیره نمی‌شود — نگاه کنید به App\Services\Content\EmbedRenderer.
+    public static function embedLinkHtml(string $url): string
+    {
+        return '<p><a href="'.e($url).'">'.e($url).'</a></p>';
     }
 }
