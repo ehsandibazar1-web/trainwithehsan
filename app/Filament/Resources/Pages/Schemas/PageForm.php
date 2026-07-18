@@ -135,10 +135,15 @@ class PageForm
                 // ذخیره می‌کرد؛ ALT درونِ خودِ پنجره ویرایش می‌شود (نگاه کنید به App\Livewire\MediaPicker).
                 MediaPickerInput::make('image_path')
                     ->label('Featured image')
-                    ->helperText('Pick from the Media Library or upload a new one — WebP, thumbnail and responsive sizes are generated automatically. ALT text is edited inside the picker.')
+                    ->helperText('Pick from the Media Library or upload a new one — WebP, thumbnail and responsive sizes are generated automatically.')
                     ->onlyImages()
                     ->uploadDirectory('pages')
                     ->nullable(),
+
+                TextInput::make('image_alt')
+                    ->label('Featured image — ALT text')
+                    ->helperText('Describes the hero image for Google Images and screen readers. Each language has its own — write it in this page\'s language. Leave blank to fall back to the page title.')
+                    ->maxLength(255),
 
                 Section::make('AI Image Prompts (optional)')
                     ->description('Editable prompts used by the AI Image Pipeline. Leave "Hero image" blank to let the AI Assistant build one automatically from the title/excerpt when you click "Generate Hero Image" in the sidebar. The other three are stored for future use (thumbnail/social/OG image generation) and are not used yet.')
