@@ -2,17 +2,20 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\MediaLibrary;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\MediaFolder;
 use App\Models\Page;
 use App\Models\SiteSetting;
+use App\Models\User;
 use App\Services\Media\MediaProcessor;
 use App\Services\Media\MediaUsageScanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class MediaLibraryTest extends TestCase
@@ -85,7 +88,9 @@ class MediaLibraryTest extends TestCase
 
         $media = $this->processor()->store($pdf, 'media/library', 'public');
 
-        $this->assertSame('other', $media->type);
+        // از فاز ۱ (طبقه‌بندیِ عمومیِ رسانه) یک PDF به‌جای 'other' حالا 'document' می‌شود —
+        // به هر حال یک فایلِ غیرتصویری است و هیچ مشتقی نمی‌گیرد؛ فقط دسته‌بندی‌اش دقیق‌تر شد
+        $this->assertSame('document', $media->type);
         $this->assertStringEndsWith('.pdf', $media->disk_path);
         Storage::disk('public')->assertExists($media->disk_path);
     }
@@ -315,6 +320,74 @@ class MediaLibraryTest extends TestCase
 
         $this->assertTrue($failed->processingFailed());
         $this->assertSame([], $failed->warnings());
+    }
+
+    public function test_resolve_type_classifies_real_mimes_into_the_media_taxonomy(): void
+    {
+        $p = $this->processor();
+
+        $this->assertSame('image', $p->resolveType('image/png'));
+        $this->assertSame('image', $p->resolveType('image/webp'));
+        $this->assertSame('video', $p->resolveType('video/mp4'));
+        $this->assertSame('video', $p->resolveType('video/quicktime'));
+        $this->assertSame('audio', $p->resolveType('audio/mpeg'));
+        $this->assertSame('document', $p->resolveType('application/pdf'));
+        $this->assertSame('document', $p->resolveType('text/plain'));
+        // zip و هر MIME ناشناخته/خالی → 'other' (پیش‌فرضِ امن)
+        $this->assertSame('other', $p->resolveType('application/zip'));
+        $this->assertSame('other', $p->resolveType('application/x-unknown'));
+        $this->assertSame('other', $p->resolveType(null));
+    }
+
+    public function test_storing_a_real_image_still_resolves_to_type_image(): void
+    {
+        Storage::fake('public');
+
+        $media = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+
+        $this->assertSame('image', $media->type);
+        $this->assertNotNull($media->webp_path);
+    }
+
+    public function test_other_files_filter_shows_every_non_image_type_not_just_type_other(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        $image = Media::create([
+            'original_name' => 'a.jpg', 'disk' => 'public', 'disk_path' => 'media/a.jpg',
+            'url' => 'http://x/a.jpg', 'type' => 'image',
+        ]);
+        $video = Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'media/clip.mp4',
+            'url' => 'http://x/clip.mp4', 'type' => 'video',
+        ]);
+        $doc = Media::create([
+            'original_name' => 'notes.pdf', 'disk' => 'public', 'disk_path' => 'media/notes.pdf',
+            'url' => 'http://x/notes.pdf', 'type' => 'document',
+        ]);
+        $other = Media::create([
+            'original_name' => 'bundle.zip', 'disk' => 'public', 'disk_path' => 'media/bundle.zip',
+            'url' => 'http://x/bundle.zip', 'type' => 'other',
+        ]);
+
+        // «Other files» یعنی هر چیزی جز تصویر — ویدئو/سند/other همه باید دیده شوند
+        $otherIds = Livewire::actingAs($owner)->test(MediaLibrary::class)
+            ->set('typeFilter', 'other')
+            ->instance()->mediaItems->pluck('id');
+
+        $this->assertFalse($otherIds->contains($image->id));
+        $this->assertTrue($otherIds->contains($video->id));
+        $this->assertTrue($otherIds->contains($doc->id));
+        $this->assertTrue($otherIds->contains($other->id));
+
+        // «Images» فقط تصویر
+        $imageIds = Livewire::actingAs($owner)->test(MediaLibrary::class)
+            ->set('typeFilter', 'image')
+            ->instance()->mediaItems->pluck('id');
+
+        $this->assertTrue($imageIds->contains($image->id));
+        $this->assertFalse($imageIds->contains($video->id));
+        $this->assertFalse($imageIds->contains($doc->id));
     }
 
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void

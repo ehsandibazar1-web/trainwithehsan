@@ -318,8 +318,13 @@ class MediaLibrary extends Page implements HasForms
             $query->where('folder_id', $this->currentFolderId);
         }
 
-        if ($this->typeFilter !== 'all') {
-            $query->where('type', $this->typeFilter);
+        if ($this->typeFilter === 'image') {
+            $query->where('type', 'image');
+        } elseif ($this->typeFilter === 'other') {
+            // «سایر فایل‌ها» یعنی هر چیزی جز تصویر (ویدئو/سند/صوت/…) — نه صرفا type='other' —
+            // تا با معرفیِ نوع‌های ریزترِ MediaProcessor::resolveType() هیچ فایلی از این فیلتر
+            // ناپدید نشود. فیلترِ اختصاصیِ «ویدئوها» در فاز بعدی اضافه می‌شود.
+            $query->where('type', '!=', 'image');
         }
 
         if ($this->onlyMissingAlt) {
