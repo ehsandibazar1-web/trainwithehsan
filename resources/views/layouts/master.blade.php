@@ -133,7 +133,7 @@
         /* ===== Mobile panel — .panel-menu {background:#171717; width:300px; right} ===== */
         .panel-menu{
             position:fixed;top:0;right:-100%;width:100%;max-width:320px;height:100%;
-            background:#171717;z-index:999999;transition:.5s;overflow-y:auto;
+            background:#171717;z-index:999999;transition:.5s;overflow-y:auto;overflow-x:hidden;
         }
         .panel-menu.open{right:0;box-shadow:0 5px 15px 0 rgba(0,0,0,.3)}
         .panel-menu-head{display:flex;justify-content:space-between;align-items:center;padding:14px 20px}
