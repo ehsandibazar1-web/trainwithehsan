@@ -581,6 +581,52 @@ class MediaLibraryTest extends TestCase
         $this->assertNotNull($media->fresh()->webp_path);
     }
 
+    public function test_bulk_regenerate_rebuilds_webp_for_every_image_missing_one(): void
+    {
+        Storage::fake('public');
+
+        $missingA = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+        $missingB = $this->processor()->store($this->fakeImage(640, 480), 'media/library', 'public');
+        $alreadyDone = $this->processor()->store($this->fakeImage(400, 300), 'media/library', 'public');
+        $missingA->update(['webp_path' => null, 'thumbnail_path' => null, 'responsive_paths' => null]);
+        $missingB->update(['webp_path' => null, 'thumbnail_path' => null, 'responsive_paths' => null]);
+        $doneWebp = $alreadyDone->fresh()->webp_path;
+
+        $this->assertSame(2, Media::where('type', 'image')->whereNull('webp_path')->count());
+
+        Livewire::actingAs(User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']))
+            ->test(MediaLibrary::class)
+            ->assertSet('imagesMissingWebpCount', 2)
+            ->call('regenerateAllMissingWebp')
+            ->assertHasNoErrors();
+
+        $this->assertNotNull($missingA->fresh()->webp_path);
+        $this->assertNotNull($missingB->fresh()->webp_path);
+        // یک عکسی که از قبل WebP داشت دست‌نخورده می‌ماند
+        $this->assertSame($doneWebp, $alreadyDone->fresh()->webp_path);
+        $this->assertSame(0, Media::where('type', 'image')->whereNull('webp_path')->count());
+    }
+
+    public function test_images_missing_webp_count_ignores_videos_and_documents(): void
+    {
+        Storage::fake('public');
+
+        Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'media/library/clip.mp4',
+            'url' => 'http://x/clip.mp4', 'type' => 'video', 'webp_path' => null,
+        ]);
+        Media::create([
+            'original_name' => 'doc.pdf', 'disk' => 'public', 'disk_path' => 'media/library/doc.pdf',
+            'url' => 'http://x/doc.pdf', 'type' => 'document', 'webp_path' => null,
+        ]);
+        $image = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+        $image->update(['webp_path' => null]);
+
+        Livewire::actingAs(User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']))
+            ->test(MediaLibrary::class)
+            ->assertSet('imagesMissingWebpCount', 1);
+    }
+
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void
     {
         Storage::fake('public');

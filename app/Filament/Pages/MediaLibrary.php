@@ -349,6 +349,52 @@ class MediaLibrary extends Page implements HasForms
             ->send();
     }
 
+    // بازتولیدِ WebP برای همه‌ی تصاویری که هنوز نسخه‌ی WebP ندارند (webp_path == null) — تصاویری که
+    // پیش از رفعِ خطِ لوله آپلود شده‌اند و هرگز دوباره تلاش نشده. همان MediaProcessor::regenerate() که
+    // دکمه‌ی تک‌عکسِ regenerateDerivatives() صدا می‌زند، فقط روی همه‌ی آن‌ها یک‌جا. خلاصه‌ی شمارشی
+    // (ساخته‌شد/رد/شکست) گزارش می‌شود؛ خطاهای تکیِ per-image کلِ عملیات را نمی‌شکنند.
+    public function regenerateAllMissingWebp(): void
+    {
+        $processor = app(MediaProcessor::class);
+        $regenerated = 0;
+        $failed = 0;
+
+        Media::where('type', 'image')->whereNull('webp_path')->get()->each(function (Media $media) use ($processor, &$regenerated, &$failed) {
+            $report = $processor->regenerate($media);
+
+            if (! $report['error'] && $report['webp_created'] && $report['webp_exists_on_disk']) {
+                $regenerated++;
+            } else {
+                $failed++;
+            }
+        });
+
+        if ($regenerated === 0 && $failed === 0) {
+            Notification::make()->success()->title('Every image already has a WebP version')->send();
+
+            return;
+        }
+
+        if ($failed === 0) {
+            Notification::make()->success()->title($regenerated.' image(s) now have a WebP version')->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->warning()
+            ->title($regenerated.' regenerated, '.$failed.' could not be')
+            ->body('Open a failed image and use its Regenerate WebP button to see the exact reason (missing original file, unsupported encoding, or a disk-write issue).')
+            ->persistent()
+            ->send();
+    }
+
+    // چند تصویر هنوز نسخه‌ی WebP ندارند — برای نشان دادن (یا پنهان کردنِ) دکمه‌ی بازتولیدِ گروهی
+    public function getImagesMissingWebpCountProperty(): int
+    {
+        return Media::where('type', 'image')->whereNull('webp_path')->count();
+    }
+
     public function deleteMedia(int $mediaId): void
     {
         $media = Media::findOrFail($mediaId);
