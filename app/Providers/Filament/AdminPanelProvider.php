@@ -11,6 +11,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
+use Filament\View\PanelsRenderHook;
 use Filament\Widgets\AccountWidget;
 use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -18,6 +19,7 @@ use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 
@@ -57,7 +59,15 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
-            ]);
+            ])
+            // پنجره‌ی انتخابِ رسانه‌ی یکپارچه — یک‌بار در انتهای body هر صفحه‌ی پنل رندر می‌شود تا هر
+            // فیلدِ رسانه‌ای (MediaPickerInput) و RichEditor بتواند همان یک پنجره را باز کند. تا وقتی
+            // باز نشده تقریباً هیچ هزینه‌ای ندارد (فقط یک div و یک شنونده‌ی رویداد) — نگاه کنید به
+            // App\Livewire\MediaPicker.
+            ->renderHook(
+                PanelsRenderHook::BODY_END,
+                fn (): string => Blade::render('@livewire(\'media-picker\')'),
+            );
 
         // زنگولهٔ اعلان‌ها — App\Notifications\* روی کانال database می‌نویسند، این فقط
         // خواندن/نمایش همان اعلان‌ها را در پنل فعال می‌کند.

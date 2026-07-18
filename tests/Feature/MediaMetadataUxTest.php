@@ -4,9 +4,8 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\MediaLibrary;
 use App\Filament\Resources\Articles\Pages\CreateArticle;
-use App\Filament\Resources\Articles\Pages\EditArticle;
 use App\Filament\Support\MediaLibraryUploads;
-use App\Models\Article;
+use App\Livewire\MediaPicker;
 use App\Models\Media;
 use App\Models\User;
 use Filament\Actions\Action;
@@ -45,19 +44,21 @@ class MediaMetadataUxTest extends TestCase
 
     public function test_choosing_an_existing_image_sets_it_as_the_featured_image_on_save(): void
     {
-        // یک تصویرِ موجودِ DAM که می‌خواهیم به‌جای آپلودِ تازه انتخابش کنیم
+        // یک تصویرِ موجودِ DAM که پنجره‌ی انتخابِ رسانه‌ی یکپارچه (MediaPickerInput) آن را انتخاب می‌کند
         $media = Media::create([
             'original_name' => 'existing.jpg', 'disk' => 'public', 'disk_path' => 'media/library/existing.jpg',
             'url' => 'http://localhost/storage/media/library/existing.jpg', 'type' => 'image',
         ]);
 
+        // پیکر با media-picker-selected مقدارِ فیلد را روی disk_pathِ رسانه‌ی انتخاب‌شده ست می‌کند —
+        // یعنی همان رشته‌ی مسیر که فیلدِ قبلی هم ذخیره می‌کرد (backward-compatible)
         Livewire::actingAs($this->owner())
             ->test(CreateArticle::class)
             ->fillForm([
                 'locale' => 'en', 'title' => 'Picked hero', 'slug' => 'picked-hero',
                 'body' => '<p>Body</p>', 'author_name' => 'Ehsan', 'status' => 'draft',
+                'image_path' => $media->disk_path,
             ])
-            ->callFormComponentAction('image_path', 'pickFromLibrary', data: ['media_id' => $media->id])
             ->call('create')
             ->assertHasNoErrors();
 
@@ -66,20 +67,19 @@ class MediaMetadataUxTest extends TestCase
         $this->assertSame(1, Media::where('disk_path', 'media/library/existing.jpg')->count());
     }
 
-    public function test_featured_image_alt_action_writes_to_the_media_row_from_the_editor(): void
+    public function test_featured_image_alt_is_edited_inside_the_media_picker(): void
     {
-        $article = Article::create([
-            'locale' => 'en', 'title' => 'With hero', 'slug' => 'with-hero',
-            'body' => '<p>x</p>', 'image_path' => 'articles/hero.jpg', 'author_name' => 'Ehsan', 'status' => 'draft',
-        ]);
+        // پس از یکپارچه‌سازی، ALTِ تصویرِ شاخص در خودِ پنجره‌ی انتخابِ رسانه ویرایش می‌شود، نه با یک
+        // اکشنِ hint کنارِ فیلد — همان جریانِ saveAltText که کتابخانه‌ی رسانه هم دارد
         $media = Media::create([
             'original_name' => 'hero.jpg', 'disk' => 'public', 'disk_path' => 'articles/hero.jpg',
             'url' => 'http://localhost/storage/articles/hero.jpg', 'type' => 'image',
         ]);
 
         Livewire::actingAs($this->owner())
-            ->test(EditArticle::class, ['record' => $article->id])
-            ->callFormComponentAction('image_path', 'editFeaturedImageAlt', data: ['alt_text' => 'A grappling exchange']);
+            ->test(MediaPicker::class)
+            ->call('selectMedia', $media->id)
+            ->call('saveAltText', 'A grappling exchange');
 
         $this->assertSame('A grappling exchange', $media->refresh()->alt_text);
     }
