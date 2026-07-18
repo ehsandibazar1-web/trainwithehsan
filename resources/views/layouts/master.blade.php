@@ -653,5 +653,6 @@
     @endif
 </script>
 @yield('page-js')
+@include('partials.media-embeds')
 </body>
 </html>
