@@ -88,6 +88,19 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
                 MediaPickerInput::make('media')
                     ->label('Media')
                     ->helperText('Pick any file from the Media Library, or upload a new one inside the picker. Images insert inline; a video/audio file becomes a click-to-load player; documents insert as a download link.')
+                    ->live()
+                    ->afterStateUpdated(function ($state, callable $set, callable $get) {
+                        // پیش‌پرکردنِ ALT از کتابخانه به‌عنوانِ پیش‌فرضِ *قابل‌ویرایش* — تا نویسنده به‌جای
+                        // خالی‌گذاشتن (که خاموش به alt_textِ تک‌زبانه fallback می‌شود، نگاه کنید به
+                        // insertContentFor) آن را ببیند و برای این مقاله/زبان بومی‌سازی کند. فقط وقتی
+                        // ALT خالی است پر می‌شود تا متنی که نویسنده خودش نوشته پاک نشود.
+                        if (filled($get('alt'))) {
+                            return;
+                        }
+                        if ($alt = static::altPrefillFor(is_string($state) ? $state : null)) {
+                            $set('alt', $alt);
+                        }
+                    })
                     ->uploadDirectory($directory),
                 TextInput::make('embed_url')
                     ->label('Or paste a video / embed URL')
@@ -95,6 +108,7 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
                     ->url(),
                 TextInput::make('alt')
                     ->label('Alt text (images only — accessibility & image SEO)')
+                    ->helperText('Pre-filled from the Media Library when you pick an image — edit it here to localize per article and language (the EN and TR versions can each have their own ALT).')
                     ->maxLength(1000),
             ])
             ->action(function (array $arguments, array $data, RichEditor $component): void {
@@ -122,6 +136,19 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
      *
      * @return array<string, mixed>|string
      */
+    // ALTِ پیشنهادی برای پیش‌پرکردنِ فیلدِ modal از روی disk_pathِ انتخاب‌شده — فقط برای تصویری که
+    // خودش ALT دارد. عمداً محض و static تا مستقل از ماشینِ فرمِ Filament تست شود (مثلِ insertContentFor).
+    public static function altPrefillFor(?string $diskPath): ?string
+    {
+        if (! filled($diskPath)) {
+            return null;
+        }
+
+        $media = Media::where('disk_path', $diskPath)->first();
+
+        return ($media && $media->type === 'image' && filled($media->alt_text)) ? $media->alt_text : null;
+    }
+
     public static function insertContentFor(Media $media, ?string $alt = null): array|string
     {
         if ($media->type === 'image') {

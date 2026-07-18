@@ -100,6 +100,54 @@ class SeoAuditTest extends TestCase
     // از ۲۰۲۶-۰۷-۱۷ page.blade.php/tr/page.blade.php همیشه WebPage schema تولید می‌کنند (و در
     // صورت وجود faqs، FAQPage هم)، و از ۲۰۲۶-۰۷-۱۸ blog.blade.php/tr/blog.blade.php هم همیشه
     // CollectionPage تولید می‌کنند — پس دیگر هیچ‌چیزی در «Missing Schema» پرچم نمی‌خورد
+    public function test_untranslated_alt_flags_identical_alt_across_a_translation_pair(): void
+    {
+        $img = '<p><img src="/storage/media/muay.webp" alt="Muay Thai training in Istanbul"></p>';
+        $en = $this->makeArticle(['slug' => 'muay-en', 'body' => '<p>Intro.</p>'.$img]);
+        $this->makeArticle([
+            'slug' => 'muay-tr', 'locale' => 'tr', 'translation_of' => $en->id, 'title' => 'Muay Thai TR',
+            'body' => '<p>Giriş.</p>'.$img, // همان تصویر، همان ALT — بومی‌سازی‌نشده
+        ]);
+
+        $findings = $this->service()->run()['untranslated_alt'];
+
+        $this->assertCount(1, $findings);
+        $this->assertSame('tr', $findings[0]['locale']); // یافته روی نسخه‌ی TR می‌نشیند
+        $this->assertSame('Article', $findings[0]['type']);
+    }
+
+    public function test_untranslated_alt_does_not_flag_a_localized_alt(): void
+    {
+        $en = $this->makeArticle(['slug' => 'loc-en', 'body' => '<p><img src="/storage/media/muay.webp" alt="Muay Thai training in Istanbul"></p>']);
+        $this->makeArticle([
+            'slug' => 'loc-tr', 'locale' => 'tr', 'translation_of' => $en->id, 'title' => 'Loc TR',
+            'body' => '<p><img src="/storage/media/muay.webp" alt="İstanbul\'da Muay Thai antrenmanı"></p>',
+        ]);
+
+        $this->assertCount(0, $this->service()->run()['untranslated_alt']);
+    }
+
+    public function test_untranslated_alt_ignores_empty_alt_which_missing_alt_already_covers(): void
+    {
+        $en = $this->makeArticle(['slug' => 'empty-en', 'body' => '<p><img src="/storage/media/x.webp" alt=""></p>']);
+        $this->makeArticle([
+            'slug' => 'empty-tr', 'locale' => 'tr', 'translation_of' => $en->id, 'title' => 'Empty TR',
+            'body' => '<p><img src="/storage/media/x.webp" alt=""></p>',
+        ]);
+
+        $result = $this->service()->run();
+
+        $this->assertCount(0, $result['untranslated_alt']); // خالی این‌جا نه
+        $this->assertCount(2, collect($result['missing_alt'])->where('type', 'Article')); // ولی missing_alt هر دو را می‌گیرد
+    }
+
+    public function test_untranslated_alt_is_empty_without_a_translation_pair(): void
+    {
+        $this->makeArticle(['slug' => 'solo', 'body' => '<p><img src="/storage/media/x.webp" alt="Some alt"></p>']);
+
+        $this->assertCount(0, $this->service()->run()['untranslated_alt']);
+    }
+
     public function test_missing_schema_flags_nothing_pages_articles_and_blog_index_all_have_schema(): void
     {
         $this->makeArticle();

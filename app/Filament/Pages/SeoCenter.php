@@ -26,6 +26,7 @@ class SeoCenter extends Page
         'missing_descriptions' => 'Missing Meta Descriptions',
         'missing_canonicals' => 'Missing Canonicals',
         'missing_alt' => 'Missing ALT Text',
+        'untranslated_alt' => 'Untranslated ALT Text',
         'missing_schema' => 'Missing Schema',
         'duplicate_titles' => 'Duplicate Titles',
         'duplicate_descriptions' => 'Duplicate Descriptions',

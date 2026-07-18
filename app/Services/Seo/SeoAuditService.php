@@ -44,6 +44,7 @@ class SeoAuditService
             'missing_descriptions' => $this->missingDescriptions($items),
             'missing_canonicals' => $this->missingCanonicals(),
             'missing_alt' => $this->missingAlt($items),
+            'untranslated_alt' => $this->untranslatedAlt(),
             'missing_schema' => $this->missingSchema(),
             'duplicate_titles' => $this->duplicateTitles($items),
             'duplicate_descriptions' => $this->duplicateDescriptions($items),
@@ -220,6 +221,88 @@ class SeoAuditService
                     : 'This page has no dedicated meta-description field — its description is auto-generated from the body, which is too short here.'
             ))
             ->values()->all();
+    }
+
+    /**
+     * تصاویری که در نسخه‌ی EN و TRِ یک مقاله/صفحه‌ی جفت‌شده ALTِ *یکسان* دارند — نشانه‌ی
+     * «بومی‌سازی‌نشده» (ALT فقط به یک زبان نوشته و در هر دو نسخه تکرار شده). عمداً از دسته‌ی
+     * «Missing ALT Text» جداست: ALTِ خالی این‌جا گزارش نمی‌شود چون missingAlt() قبلاً آن را می‌گیرد —
+     * این‌جا فقط سیگنالِ چندزبانه است، تا یافته‌ی تکراری ساخته نشود. یافته روی نسخه‌ای که باید بومی
+     * شود (طرفِ غیرِانگلیسی) می‌نشیند تا «Fix it» مستقیم همان‌جا را باز کند.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function untranslatedAlt(): array
+    {
+        $findings = [];
+        $seenPairs = [];
+
+        $models = [
+            [Article::class, ArticleResource::class, 'Article'],
+            [Page::class, PageResource::class, 'Page'],
+        ];
+
+        foreach ($models as [$model, $resource, $type]) {
+            $model::query()->whereNotNull('translation_of')->with('translation')->get()
+                ->each(function ($record) use (&$findings, &$seenPairs, $resource, $type) {
+                    $other = $record->translation;
+                    if (! $other || $record->locale === $other->locale) {
+                        return;
+                    }
+
+                    // هر جفت فقط یک‌بار (حتی اگر لینک دوطرفه باشد)
+                    $pairKey = $type.':'.min($record->id, $other->id).'-'.max($record->id, $other->id);
+                    if (isset($seenPairs[$pairKey])) {
+                        return;
+                    }
+                    $seenPairs[$pairKey] = true;
+
+                    // انگلیسی منبع، غیرانگلیسی هدفِ بومی‌سازی
+                    [$en, $localized] = $record->locale === 'en' ? [$record, $other] : [$other, $record];
+                    $enAlts = $this->altBySrc($en->body);
+
+                    foreach ($this->altBySrc($localized->body) as $src => $alt) {
+                        $enAlt = $enAlts[$src] ?? null;
+
+                        // فقط وقتی همان تصویر در هر دو نسخه هست و هر دو ALTِ ناخالی دارند و یکسان‌اند
+                        if ($enAlt === null || trim((string) $alt) === '' || trim((string) $enAlt) === '') {
+                            continue;
+                        }
+                        if (mb_strtolower(trim((string) $alt)) !== mb_strtolower(trim((string) $enAlt))) {
+                            continue;
+                        }
+
+                        $findings[] = [
+                            'category' => 'untranslated_alt',
+                            'type' => $type,
+                            'id' => $localized->id,
+                            'locale' => $localized->locale,
+                            'title' => $localized->title.' ('.strtoupper($localized->locale).')',
+                            'detail' => "This image's ALT text is identical to the English version — write a localized ALT for this language: {$src}",
+                            'edit_url' => $resource::getUrl('edit', ['record' => $localized->id]),
+                        ];
+                    }
+                });
+        }
+
+        return $findings;
+    }
+
+    /**
+     * نگاشتِ src → ALT برای تصاویرِ درون‌متنیِ یک بدنه (اولین رخداد برنده) — برای مقایسه‌ی EN/TR.
+     *
+     * @return array<string, string>
+     */
+    private function altBySrc(?string $body): array
+    {
+        $map = [];
+        foreach ($this->scanner->images($body) as $image) {
+            if ($image['src'] !== '' && ! array_key_exists($image['src'], $map)) {
+                $map[$image['src']] = $image['alt'];
+            }
+        }
+
+        return $map;
     }
 
     /**
