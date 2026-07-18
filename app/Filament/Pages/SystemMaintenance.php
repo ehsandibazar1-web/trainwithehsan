@@ -9,6 +9,8 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 // جایگزین امنِ دو route عمومیِ system-cache-flush / system-migrate در routes/web.php —
@@ -100,12 +102,45 @@ class SystemMaintenance extends Page
     // تصویرِ سایت 404 می‌دهد — نقصی که دقیقا شبیهِ «کتابخانه‌ی رسانه خراب است» به نظر می‌رسد
     // ولی هیچ ربطی به کدِ آپلود ندارد. چون این هاست SSH ندارد، تنها راهِ دیدنِ وضعیتِ لینک
     // همین پنل است. صرفا خواندنی — این صفحه لینک را نمی‌سازد.
+    // آیا فایل‌های آپلودشده واقعاً از روی وب قابل‌دسترس‌اند؟ این پاسخِ درستِ «آیا تصویرها نمایش
+    // داده می‌شوند» است — فارغ از اینکه هاست چطور سِرو می‌کند. بعضی هاست‌های اشتراکی symlink را
+    // غیرفعال می‌کنند ولی دیسکِ public را مستقیم در web root می‌نویسند؛ آنجا تصویرها سالم‌اند
+    // هرچند symlinkِ پیش‌فرضِ لاراول وجود ندارد. پس اول دسترس‌پذیریِ واقعی را می‌سنجیم (یک
+    // self-request کوچک)، و فقط اگر شبکه در دسترس نبود به چکِ symlink برمی‌گردیم.
     public function getStorageLinkHealthyProperty(): bool
     {
-        // دقیقا همان نگاشتی که `php artisan storage:link` می‌سازد را می‌سنجیم
-        // (config('filesystems.links') → معمولا public/storage ← storage/app/public).
-        // عمدا با ریشه‌ی دیسکِ public مقایسه نمی‌کنیم، چون آن می‌تواند در .env به یک مسیرِ
-        // مطلقِ سرورِ تولید تنظیم شده باشد که با هدفِ واقعیِ symlink فرق دارد.
+        return $this->publicUploadsAreReachable() || $this->storageSymlinkIsCorrect();
+    }
+
+    // یک فایلِ نشانه در دیسکِ public می‌سازد و از طریقِ URLش می‌خواندش — 2xx یعنی تصویرها
+    // واقعاً سِرو می‌شوند. هر خطا/تایم‌اوت → false (یعنی «نتوانستم تأیید کنم»، نه لزوماً «خراب»).
+    private function publicUploadsAreReachable(): bool
+    {
+        $marker = '.storage-health-check.txt';
+        $token = 'STORAGE_OK';
+
+        try {
+            Storage::disk('public')->put($marker, $token);
+            $url = Storage::disk('public')->url($marker);
+
+            $ok = Http::timeout(6)->get($url)->successful();
+        } catch (Throwable $e) {
+            $ok = false;
+        } finally {
+            try {
+                Storage::disk('public')->delete($marker);
+            } catch (Throwable $e) {
+                // پاک‌سازیِ فایلِ نشانه هرگز نباید نتیجه‌ی چک را عوض کند
+            }
+        }
+
+        return $ok;
+    }
+
+    // fallbackِ بدونِ شبکه: همان نگاشتی که `php artisan storage:link` می‌سازد
+    // (config('filesystems.links') → معمولا public/storage ← storage/app/public).
+    private function storageSymlinkIsCorrect(): bool
+    {
         $links = (array) config('filesystems.links', []);
 
         if ($links === []) {
