@@ -70,6 +70,14 @@ class MediaLibrary extends Page implements HasForms
     // فهرست بیرون نرود
     private const ALLOWED_UPLOAD_EXTENSIONS = 'jpg,jpeg,png,webp,gif,bmp,pdf,doc,docx,xls,xlsx,txt,mp4,webm,mov,mp3,wav,zip';
 
+    // سقفِ اندازه بر اساس نوعِ رسانه: تصویرها عمداً سخت‌گیرانه (۱۵MB — تصویرِ بهینه‌ی سایت هرگز
+    // این‌قدر بزرگ نیست) در برابر ویدئو/صوت/سند که تا سقفِ کلیِ Livewire (۱۲۸MB، config/livewire.php)
+    // مجازند. توجه: PHP خودِ سرور (upload_max_filesize/post_max_size) هم باید دستِ‌کم ۱۲۸MB باشد،
+    // وگرنه فایلِ بزرگ اصلا به لاراول نمی‌رسد — این را از کد نمی‌شود تضمین کرد، فقط در راهنما هشدار داده می‌شود.
+    private const MAX_IMAGE_UPLOAD_KB = 15360;   // 15MB
+
+    private const MAX_MEDIA_UPLOAD_KB = 131072;  // 128MB
+
     // لینک مستقیم از جاهای دیگر پنل (مثلا SEO Center) با ?media=ID — پوشه‌ی درست باز و آیتم انتخاب می‌شود
     public function mount(): void
     {
@@ -89,13 +97,25 @@ class MediaLibrary extends Page implements HasForms
 
     public function updatedUploads(): void
     {
-        $this->validate(['uploads.*' => ['file', 'max:15360', 'mimes:'.self::ALLOWED_UPLOAD_EXTENSIONS]]);
+        // سقفِ کلی (۱۲۸MB) اینجا اعمال می‌شود؛ سقفِ سخت‌گیرانه‌ترِ تصویر per-file پایین‌تر چک می‌شود
+        $this->validate(['uploads.*' => ['file', 'max:'.self::MAX_MEDIA_UPLOAD_KB, 'mimes:'.self::ALLOWED_UPLOAD_EXTENSIONS]]);
 
         $processor = app(MediaProcessor::class);
         $count = 0;
 
         foreach ($this->uploads as $upload) {
             if (! $upload) {
+                continue;
+            }
+
+            // یک تصویرِ بزرگ‌تر از ۱۵MB کلِ آپلودِ چندتایی را نمی‌شکند — فقط همان فایل با پیام رد می‌شود
+            if ($this->exceedsTypeSizeLimit($upload)) {
+                Notification::make()
+                    ->danger()
+                    ->title('Too large: '.$upload->getClientOriginalName())
+                    ->body('Images must be under 15 MB. Video and other files may be up to 128 MB.')
+                    ->send();
+
                 continue;
             }
 
@@ -124,13 +144,42 @@ class MediaLibrary extends Page implements HasForms
             return;
         }
 
-        $this->validate(['replaceFile' => ['file', 'max:15360', 'mimes:'.self::ALLOWED_UPLOAD_EXTENSIONS]]);
+        $this->validate(['replaceFile' => ['file', 'max:'.self::MAX_MEDIA_UPLOAD_KB, 'mimes:'.self::ALLOWED_UPLOAD_EXTENSIONS]]);
+
+        if ($this->exceedsTypeSizeLimit($this->replaceFile)) {
+            Notification::make()
+                ->danger()
+                ->title('Too large')
+                ->body('Images must be under 15 MB. Video and other files may be up to 128 MB.')
+                ->send();
+            $this->replaceFile = null;
+
+            return;
+        }
 
         $media = Media::findOrFail($this->selectedMediaId);
         app(MediaProcessor::class)->replace($media, $this->replaceFile);
         $this->replaceFile = null;
 
         Notification::make()->success()->title('File replaced — existing links on the site keep working')->send();
+    }
+
+    // سقفِ اندازه بسته به نوعِ فایل — تصویرها ۱۵MB، بقیه (ویدئو/صوت/سند) ۱۲۸MB. از همان
+    // طبقه‌بندیِ واحدِ MediaProcessor::resolveType() (فاز ۱) استفاده می‌کند تا منطق دوباره‌کاری نشود.
+    private function exceedsTypeSizeLimit(TemporaryUploadedFile $upload): bool
+    {
+        $type = app(MediaProcessor::class)->resolveType($upload->getMimeType());
+
+        return self::isOverTypeLimit($type, (int) $upload->getSize());
+    }
+
+    // تصمیمِ محضِ سیاستِ اندازه، جدا از آپلودِ واقعی تا مستقیم و بدونِ وابستگی به Livewire
+    // تست‌پذیر باشد: تصویر → ۱۵MB، هر نوعِ دیگر → ۱۲۸MB.
+    public static function isOverTypeLimit(string $type, int $sizeBytes): bool
+    {
+        $maxKb = $type === 'image' ? self::MAX_IMAGE_UPLOAD_KB : self::MAX_MEDIA_UPLOAD_KB;
+
+        return $sizeBytes > $maxKb * 1024;
     }
 
     public function openFolder(?int $folderId): void

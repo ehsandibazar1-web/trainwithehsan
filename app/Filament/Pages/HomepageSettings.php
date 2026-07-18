@@ -178,6 +178,7 @@ class HomepageSettings extends Page implements HasForms
                 ->helperText('Paste an embed link here, OR upload a file below — not both.');
             $fields[] = FileUpload::make("$l.video{$i}_file")
                 ->label("Video $i — File (mp4)")
+                ->helperText('Up to 128 MB. Very large uploads also need the server\'s PHP upload limit raised to match.')
                 ->disk('public')
                 ->directory('homepage/videos')
                 ->acceptedFileTypes(['video/mp4'])
@@ -250,6 +251,7 @@ class HomepageSettings extends Page implements HasForms
                         ->nullable(),
                     FileUpload::make('video_file')
                         ->label('Video file (mp4)')
+                        ->helperText('Up to 128 MB. Very large uploads also need the server\'s PHP upload limit raised to match.')
                         ->disk('public')
                         ->directory('homepage/members')
                         ->acceptedFileTypes(['video/mp4'])

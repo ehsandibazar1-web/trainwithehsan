@@ -104,6 +104,7 @@
             {{-- آپلود با درگ‌اند‌دراپ + انتخاب چندتایی --}}
             <div class="media-lib-drop" id="mediaDropzone">
                 <div><strong>Drag &amp; drop files here</strong>, or click to choose files (multiple allowed)</div>
+                <div style="margin-top:.35rem;font-size:.72rem;color:#9ca3af">Images up to 15 MB · video and other files up to 128 MB. Very large uploads also need the server's PHP upload limit raised to match.</div>
                 <div wire:loading wire:target="uploads" style="margin-top:.4rem">Uploading…</div>
                 <input type="file" id="mediaFileInput" multiple style="display:none">
             </div>

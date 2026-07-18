@@ -455,6 +455,22 @@ class MediaLibraryTest extends TestCase
         $this->assertFalse($ids->contains($inUse->id));
     }
 
+    public function test_upload_size_policy_keeps_images_at_15mb_and_allows_other_media_up_to_128mb(): void
+    {
+        $mb = 1024 * 1024;
+
+        // تصویر: سقف ۱۵MB
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('image', 15 * $mb));
+        $this->assertTrue(MediaLibrary::isOverTypeLimit('image', 16 * $mb));
+
+        // ویدئو/صوت/سند/سایر: سقف ۱۲۸MB — یک ویدئوی ۱۰۰MB مجاز، ۲۰MB قطعاً مجاز
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('video', 100 * $mb));
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('video', 20 * $mb));
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('document', 20 * $mb));
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('audio', 20 * $mb));
+        $this->assertTrue(MediaLibrary::isOverTypeLimit('video', 129 * $mb));
+    }
+
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void
     {
         Storage::fake('public');
