@@ -41,6 +41,23 @@ class PagesModuleTest extends TestCase
         $this->get('/tr/ornek-sayfa')->assertOk()->assertSee('Örnek Sayfa');
     }
 
+    public function test_page_body_is_sanitized_at_render_time(): void
+    {
+        // page.blade.php/tr/page.blade.php از {!! !!} استفاده می‌کنند؛ چون صفحات از طریق پنل
+        // ادمین ویرایش می‌شوند (نه API عمومی)، این یک لایه‌ی دفاعیِ سطحِ رندر است، نه ورودی.
+        // متن خامِ «evilxss(...)» ممکن است هنوز (بی‌خطر، به‌صورت escape‌شده) داخل meta description
+        // دیده شود؛ چیزی که واقعاً مهم است نبودِ خودِ تگ <script> اجراشدنی است
+        $this->makePage([
+            'body' => '<p>Safe text.</p><script>evilxss(document.cookie)</script>',
+        ]);
+
+        $response = $this->get('/test-standalone-page');
+
+        $response->assertOk();
+        $response->assertDontSee('<script>evilxss', false);
+        $response->assertSee('Safe text.', false);
+    }
+
     public function test_draft_and_future_scheduled_pages_are_hidden(): void
     {
         $this->makePage(['slug' => 'secret', 'status' => 'draft', 'published_at' => null]);

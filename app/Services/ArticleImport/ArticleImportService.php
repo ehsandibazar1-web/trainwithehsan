@@ -675,6 +675,10 @@ class ArticleImportService
             if (strtolower((string) ($data['body_format'] ?? 'html')) === 'markdown') {
                 $body = (string) Str::markdown($body);
             }
+            // بدنه با {!! !!} (بدون escape) رندر می‌شود، پس هر HTML خام رسیده از API عمومی
+            // باید همین‌جا پاک‌سازی شود — همان sanitizer رسمیِ Filament (Symfony HtmlSanitizer)
+            // که RichEditor خودش هم برایش تنظیم شده، تا تگ/ویژگی‌های امنِ محتوای غنی دست‌نخورده بماند
+            $body = Str::sanitizeHtml($body);
             $mapping['mapped']['content'] = 'Article body';
         }
 

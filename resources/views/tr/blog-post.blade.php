@@ -160,7 +160,9 @@
                 </div>
 
                 <div class="article-body" id="article-content">
-                    {!! $article->body !!}
+                    {{-- محتوا در ورودیِ AI Import هم پاک‌سازی می‌شود؛ این‌جا فقط یک لایه‌ی دفاعیِ
+                         اضافه است (برای محتوای قدیمی یا ویرایش دستی) --}}
+                    {!! \Illuminate\Support\Str::sanitizeHtml($article->body) !!}
                 </div>
 
                 @if($faqs->isNotEmpty())
