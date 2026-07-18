@@ -26,6 +26,13 @@ class ApiTokensTable
                     ->placeholder('Never used')
                     ->sortable(),
 
+                TextColumn::make('expires_at')
+                    ->label('Expires')
+                    ->dateTime('Y-m-d H:i')
+                    ->placeholder('Never')
+                    ->color(fn (?string $state): ?string => $state && now()->greaterThan($state) ? 'danger' : null)
+                    ->sortable(),
+
                 TextColumn::make('created_at')
                     ->label('Created')
                     ->dateTime('Y-m-d H:i')
