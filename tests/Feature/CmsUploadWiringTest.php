@@ -5,47 +5,20 @@ namespace Tests\Feature;
 use App\Filament\Pages\AboutPageSettings;
 use App\Filament\Pages\FooterSettings;
 use App\Filament\Pages\HomepageSettings;
-use App\Filament\Support\MediaLibraryUploads;
-use App\Models\Media;
 use App\Models\SiteSetting;
 use App\Models\User;
-use Filament\Forms\Components\FileUpload;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * فاز ۴: فیلدهای تصویرِ CMS (Homepage/About/Footer/Members) حالا از MediaProcessor عبور می‌کنند.
- * این تست‌ها سازوکارِ مشترک (MediaLibraryUploads::callback) و بی‌رگرسیون‌بودنِ ذخیره‌ی صفحات را
- * می‌سنجند؛ خودِ سیم‌کشیِ هر فیلد با خواندنِ ->saveUploadedFileUsing(MediaLibraryUploads::callback())
- * تأیید می‌شود.
+ * فیلدهای رسانه‌ایِ CMS (Homepage/About/Footer/Members) حالا MediaPickerInput هستند که مقدارشان
+ * یک رشته‌ی disk_path است. این تست‌ها بی‌رگرسیون‌بودنِ mount/save صفحات و عبورِ سالمِ آن رشته از
+ * فرم به SiteSetting را می‌سنجند — یعنی جایگزینیِ ویجت، شکلِ داده و ذخیره‌سازی را نشکسته.
  */
 class CmsUploadWiringTest extends TestCase
 {
     use RefreshDatabase;
-
-    public function test_shared_upload_callback_routes_a_cms_upload_through_the_dam(): void
-    {
-        Storage::fake('public');
-
-        // دقیقاً همان مؤلفه‌ای که فیلدهای About/Footer/Homepage می‌سازند
-        $component = FileUpload::make('img')->disk('public')->directory('about/hero');
-
-        $path = (MediaLibraryUploads::callback())($component, UploadedFile::fake()->image('hero.jpg', 800, 600));
-
-        // مقدارِ برگشتی همان رشته‌ی disk_path است (شکلِ ذخیره‌شده عوض نمی‌شود)
-        $this->assertStringStartsWith('about/hero/', $path);
-
-        // ولی حالا یک ردیفِ واقعیِ کتابخانه‌ی رسانه با مشتقاتِ WebP ساخته شده
-        $media = Media::where('disk_path', $path)->first();
-        $this->assertNotNull($media);
-        $this->assertSame('image', $media->type);
-        $this->assertNotNull($media->webp_path);
-        Storage::disk('public')->assertExists($media->disk_path);
-        Storage::disk('public')->assertExists($media->webp_path);
-    }
 
     public function test_about_page_still_saves_normally_without_an_upload(): void
     {
