@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\SiteSetting;
+use App\Services\Seo\VideoSchemaService;
 use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
@@ -19,7 +20,10 @@ class BlogController extends Controller
 
         [$s, $members] = $this->homeSettings('en');
 
-        return view('home', compact('latestArticles', 's', 'members'));
+        // Video SEO — داده‌ی ساختاریِ VideoObject برای ویدیوهای همین صفحه (نامرئی، افزایشی)
+        $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members);
+
+        return view('home', compact('latestArticles', 's', 'members', 'videoSchemas'));
     }
 
     // صفحه اصلی — ترکی
@@ -33,7 +37,9 @@ class BlogController extends Controller
 
         [$s, $members] = $this->homeSettings('tr');
 
-        return view('tr.home', compact('latestArticles', 's', 'members'));
+        $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members);
+
+        return view('tr.home', compact('latestArticles', 's', 'members', 'videoSchemas'));
     }
 
     // خواندن یک‌جای تنظیمات صفحه اصلی از دیتابیس (یک کوئری)

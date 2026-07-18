@@ -31,6 +31,11 @@
   ]
 }
 </script>
+{{-- Video SEO — یک VideoObject به ازای هر ویدیوی نمایش‌داده‌شده (ردیفِ ویدیو + ویدیوهای اعضا).
+     کاملاً افزایشی: اگر هیچ ویدیویی پیکربندی نشده باشد چیزی اضافه نمی‌شود و خروجی مثلِ قبل است. --}}
+@foreach(($videoSchemas ?? []) as $video)
+<script type="application/ld+json">{!! json_encode($video, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!}</script>
+@endforeach
 @endsection
 
 @section('page-css')
