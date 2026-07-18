@@ -20,15 +20,39 @@ class MediaProcessor
 
     private const THUMBNAIL_WIDTH = 320;
 
+    // فهرست سفیدِ نوع فایل‌های مجاز برای آپلود — پسوندِ ذخیره‌شده روی دیسک همیشه از این نگاشت
+    // انتخاب می‌شود (بر اساس نوعِ MIME واقعیِ محتوا، نه پسوندِ نام فایلِ کلاینت که قابلِ جعل
+    // است)، تا هیچ‌وقت فایلی با پسوندِ اجراشدنی (مثل .php) روی دیسک ذخیره نشود
+    private const SAFE_MIME_EXTENSIONS = [
+        'image/jpeg' => 'jpg',
+        'image/png' => 'png',
+        'image/webp' => 'webp',
+        'image/gif' => 'gif',
+        'image/bmp' => 'bmp',
+        'application/pdf' => 'pdf',
+        'application/msword' => 'doc',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' => 'docx',
+        'application/vnd.ms-excel' => 'xls',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' => 'xlsx',
+        'text/plain' => 'txt',
+        'video/mp4' => 'mp4',
+        'video/webm' => 'webm',
+        'video/quicktime' => 'mov',
+        'audio/mpeg' => 'mp3',
+        'audio/wav' => 'wav',
+        'application/zip' => 'zip',
+    ];
+
     public function store(UploadedFile $file, string $directory, string $disk = 'public', ?int $folderId = null): Media
     {
-        $extension = strtolower($file->getClientOriginalExtension() ?: ($file->extension() ?: 'jpg'));
+        // getMimeType() محتوای واقعیِ فایل را می‌خواند (نه هدر Content-Type ارسالیِ کلاینت)
+        $mimeType = $file->getMimeType();
+        $extension = $this->assertSafeExtension($mimeType);
+
         $filename = (string) Str::ulid().'.'.$extension;
         $storedPath = $file->storeAs($directory, $filename, $disk);
 
         Storage::disk($disk)->setVisibility($storedPath, 'public');
-
-        $mimeType = $file->getMimeType();
 
         $media = Media::create([
             'original_name' => $file->getClientOriginalName(),
@@ -75,6 +99,10 @@ class MediaProcessor
      */
     public function replace(Media $media, UploadedFile $file): Media
     {
+        // فقط اعتبارسنجی می‌شود (پرتاب استثنا در صورت نوعِ ناامن) — چون disk_path و پسوندش
+        // عوض نمی‌شود، اینجا صرفاً از ذخیره‌ی محتوای ناامن جلوگیری می‌کند
+        $this->assertSafeExtension($file->getMimeType());
+
         Storage::disk($media->disk)->put($media->disk_path, file_get_contents($file->getRealPath()));
         Storage::disk($media->disk)->setVisibility($media->disk_path, 'public');
 
@@ -182,5 +210,16 @@ class MediaProcessor
     private function isProcessableImage(?string $mimeType): bool
     {
         return in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'], true);
+    }
+
+    private function assertSafeExtension(?string $mimeType): string
+    {
+        $extension = self::SAFE_MIME_EXTENSIONS[$mimeType] ?? null;
+
+        if (! $extension) {
+            throw new \RuntimeException('Unsupported file type'.($mimeType ? " ($mimeType)" : '').'.');
+        }
+
+        return $extension;
     }
 }

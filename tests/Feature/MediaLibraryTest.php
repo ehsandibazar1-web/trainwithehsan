@@ -12,6 +12,7 @@ use App\Services\Media\MediaUsageScanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 use Tests\TestCase;
 
 class MediaLibraryTest extends TestCase
@@ -58,6 +59,63 @@ class MediaLibraryTest extends TestCase
         $this->assertNull($media->responsive_paths);
         Storage::disk('public')->assertExists($media->webp_path);
         Storage::disk('public')->assertExists($media->thumbnail_path);
+    }
+
+    // ---------------------------------------------------------- upload restrictions (security)
+
+    public function test_stored_filename_extension_comes_from_real_content_not_the_client_filename(): void
+    {
+        Storage::fake('public');
+
+        // نام کلاینت می‌گوید jpg، ولی خودِ فایل واقعاً یک png است — پسوندِ ذخیره‌شده باید از
+        // روی محتوای واقعی (png) انتخاب شود، نه از پسوندِ نامِ فایل که کلاینت ادعا کرده
+        $image = UploadedFile::fake()->image('photo.png', 200, 200);
+        $mismatched = new UploadedFile($image->getPathname(), 'photo.jpg', 'image/png', null, true);
+
+        $media = $this->processor()->store($mismatched, 'media/library', 'public');
+
+        $this->assertStringEndsWith('.png', $media->disk_path);
+    }
+
+    public function test_a_real_pdf_upload_is_accepted_as_a_non_image_document(): void
+    {
+        Storage::fake('public');
+
+        $pdf = UploadedFile::fake()->createWithContent('guide.pdf', "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n1 0 obj\n<< >>\nendobj\ntrailer\n<< >>\n%%EOF");
+
+        $media = $this->processor()->store($pdf, 'media/library', 'public');
+
+        $this->assertSame('other', $media->type);
+        $this->assertStringEndsWith('.pdf', $media->disk_path);
+        Storage::disk('public')->assertExists($media->disk_path);
+    }
+
+    public function test_store_rejects_a_file_whose_real_content_is_not_an_allowed_type(): void
+    {
+        Storage::fake('public');
+
+        // بایت‌های دلخواه که هیچ نوعِ فایلِ شناخته‌شده‌ای را تشکیل نمی‌دهند
+        $unknown = UploadedFile::fake()->createWithContent('payload.bin', "\x7F\x45\x4C\x46random-binary-junk-not-a-real-format");
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Unsupported file type');
+
+        $this->processor()->store($unknown, 'media/library', 'public');
+    }
+
+    public function test_media_library_form_rule_rejects_a_php_extension_regardless_of_content(): void
+    {
+        // محتوای واقعی یک تصویر معتبر است، ولی پسوندِ نامِ فایل php است — قانونِ mimes: خودِ
+        // لاراول این را حتی قبل از رسیدن به MediaProcessor رد می‌کند (shouldBlockPhpUpload)،
+        // چون 'php' در فهرستِ مجاز (همان رشته‌ی استفاده‌شده در MediaLibrary::updatedUploads()) نیست
+        $disguised = UploadedFile::fake()->image('shell.php', 10, 10);
+
+        $validator = Validator::make(
+            ['file' => $disguised],
+            ['file' => ['file', 'max:15360', 'mimes:jpg,jpeg,png,webp,gif,bmp,pdf,doc,docx,xls,xlsx,txt,mp4,webm,mov,mp3,wav,zip']]
+        );
+
+        $this->assertTrue($validator->fails());
     }
 
     public function test_replace_keeps_the_same_disk_path_so_existing_links_do_not_break(): void
