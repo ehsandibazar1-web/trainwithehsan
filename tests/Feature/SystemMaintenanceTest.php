@@ -69,6 +69,17 @@ class SystemMaintenanceTest extends TestCase
         }
     }
 
+    public function test_image_webp_support_property_reflects_the_server(): void
+    {
+        $supported = Livewire::actingAs($this->owner())
+            ->test(SystemMaintenance::class)
+            ->instance()
+            ->imageWebpSupported;
+
+        // یک بولین است و باید با قابلیتِ واقعیِ GDِ همین محیط بخواند
+        $this->assertSame(function_exists('imagewebp') && (bool) (gd_info()['WebP Support'] ?? false), $supported);
+    }
+
     public function test_link_storage_action_recreates_a_missing_link(): void
     {
         // reachability را ناموفق نگه می‌داریم تا واقعاً مسیرِ symlink سنجیده شود

@@ -169,6 +169,14 @@ class SystemMaintenance extends Page
         return (string) (array_key_first((array) config('filesystems.links', [])) ?: public_path('storage'));
     }
 
+    // آیا GDِ این سرور می‌تواند WebP بسازد؟ تبدیلِ خودکارِ تصویرها به WebP به imagewebp() نیاز
+    // دارد؛ بعضی هاست‌های اشتراکی GD را بدونِ WebP کامپایل می‌کنند یا imagewebp را غیرفعال
+    // می‌کنند — آن‌وقت آپلودها سالم ذخیره می‌شوند ولی نسخه‌ی WebP ساخته نمی‌شود.
+    public function getImageWebpSupportedProperty(): bool
+    {
+        return function_exists('imagewebp') && (bool) (gd_info()['WebP Support'] ?? false);
+    }
+
     public function clearCache(): void
     {
         try {

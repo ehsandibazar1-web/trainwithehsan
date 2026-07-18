@@ -41,6 +41,25 @@
         @endif
     </x-filament::section>
 
+    <x-filament::section>
+        <x-slot name="heading">Image optimization (WebP)</x-slot>
+        <x-slot name="description">
+            New image uploads are automatically converted to a smaller WebP version for faster loading. This needs the server's image library (PHP GD) to support WebP.
+        </x-slot>
+
+        @if ($this->imageWebpSupported)
+            <div class="flex items-center gap-2 text-sm" style="color:#15803d">
+                <x-filament::icon icon="heroicon-o-check-circle" class="h-5 w-5" />
+                <span>Working — WebP conversion is available on this server.</span>
+            </div>
+        @else
+            <div class="flex items-start gap-2 text-sm" style="color:#b91c1c">
+                <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-5 w-5 shrink-0" />
+                <span><strong>This server's image library (GD) has no WebP support</strong> (<code>imagewebp()</code> is unavailable or disabled). Uploads are stored as their original file and still display correctly — but no smaller WebP version is generated. Ask your host to enable WebP support in the PHP GD extension; after that, re-upload the image (or replace it) to generate the WebP.</span>
+            </div>
+        @endif
+    </x-filament::section>
+
     @if ($lastOutput)
         <x-filament::section>
             <x-slot name="heading">Last result</x-slot>

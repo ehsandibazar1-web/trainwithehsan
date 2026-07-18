@@ -184,6 +184,10 @@ class MediaProcessor
         }
         [$width, $height] = $dimensions;
 
+        // ابعاد مستقل از WebP معلوم است — همیشه ثبتش می‌کنیم، حتی اگر تولیدِ WebP روی این هاست
+        // شکست بخورد (تا Media Library باز هم اندازه/ابعاد را درست نشان دهد).
+        $media->update(['width' => $width, 'height' => $height]);
+
         try {
             $manager = ImageManager::gd();
         } catch (Throwable $e) {
@@ -194,33 +198,51 @@ class MediaProcessor
             return;
         }
 
-        $webpPath = $this->siblingPath($media->disk_path, '.webp');
-        $manager->read($absolutePath)->toWebp(quality: 82)->save($disk->path($webpPath));
-        $disk->setVisibility($webpPath, 'public');
+        // اگر GDِ این سرور از WebP پشتیبانی نکند (یا imagewebp در disable_functions باشد — همان
+        // نوع محدودیتی که روی این هاست exec/symlink را هم بسته)، تولیدِ WebP ممکن نیست. به‌جای
+        // اینکه استثنا بالا برود و کلِ آپلود «ناموفق» نشان داده شود، این‌جا شفاف گزارش می‌شود و
+        // فایلِ اصلی سالم می‌ماند؛ سایت از همان فایلِ اصل سِرو می‌کند (Article/Page::optimized_image_url
+        // به فایلِ اصلی fallback می‌کند) و Media::processingFailed() موضوع را در پنل نشان می‌دهد.
+        if (! function_exists('imagewebp')) {
+            report(new \RuntimeException(
+                "MediaProcessor: this server's GD build has no WebP support (imagewebp() is unavailable/disabled) — media #{$media->id} ({$media->disk_path}) was stored without a WebP derivative. Ask the host to enable WebP support in the PHP GD extension."
+            ));
 
-        $thumbPath = $this->siblingPath($media->disk_path, '-thumb.webp');
-        $manager->read($absolutePath)->scaleDown(width: self::THUMBNAIL_WIDTH)->toWebp(quality: 75)->save($disk->path($thumbPath));
-        $disk->setVisibility($thumbPath, 'public');
-
-        $responsivePaths = [];
-        foreach (self::RESPONSIVE_WIDTHS as $targetWidth) {
-            if ($targetWidth >= $width) {
-                continue;
-            }
-
-            $variantPath = $this->siblingPath($media->disk_path, "-{$targetWidth}w.webp");
-            $manager->read($absolutePath)->scaleDown(width: $targetWidth)->toWebp(quality: 80)->save($disk->path($variantPath));
-            $disk->setVisibility($variantPath, 'public');
-            $responsivePaths[$targetWidth] = $variantPath;
+            return;
         }
 
-        $media->update([
-            'width' => $width,
-            'height' => $height,
-            'webp_path' => $webpPath,
-            'thumbnail_path' => $thumbPath,
-            'responsive_paths' => $responsivePaths ?: null,
-        ]);
+        // خودِ تولید/ذخیره‌ی مشتقات در try/catch است تا هر شکستی (کدگذاری، حافظه، مجوزِ دیسک)
+        // آپلود را نشکند و فایلِ اصلی و رکورد سالم بمانند — پیش از این این بخش محافظت‌نشده بود و
+        // یک شکستِ WebP کلِ آپلود را «ناموفق» نشان می‌داد.
+        try {
+            $webpPath = $this->siblingPath($media->disk_path, '.webp');
+            $manager->read($absolutePath)->toWebp(quality: 82)->save($disk->path($webpPath));
+            $disk->setVisibility($webpPath, 'public');
+
+            $thumbPath = $this->siblingPath($media->disk_path, '-thumb.webp');
+            $manager->read($absolutePath)->scaleDown(width: self::THUMBNAIL_WIDTH)->toWebp(quality: 75)->save($disk->path($thumbPath));
+            $disk->setVisibility($thumbPath, 'public');
+
+            $responsivePaths = [];
+            foreach (self::RESPONSIVE_WIDTHS as $targetWidth) {
+                if ($targetWidth >= $width) {
+                    continue;
+                }
+
+                $variantPath = $this->siblingPath($media->disk_path, "-{$targetWidth}w.webp");
+                $manager->read($absolutePath)->scaleDown(width: $targetWidth)->toWebp(quality: 80)->save($disk->path($variantPath));
+                $disk->setVisibility($variantPath, 'public');
+                $responsivePaths[$targetWidth] = $variantPath;
+            }
+
+            $media->update([
+                'webp_path' => $webpPath,
+                'thumbnail_path' => $thumbPath,
+                'responsive_paths' => $responsivePaths ?: null,
+            ]);
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     private function deleteDerivatives(Media $media): void
