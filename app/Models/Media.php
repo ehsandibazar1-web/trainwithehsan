@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Services\Media\MediaUsageScanner;
+use App\Services\Media\VideoMetadataService;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Storage;
@@ -11,7 +12,7 @@ class Media extends Model
 {
     protected $fillable = [
         'original_name', 'disk', 'disk_path', 'url', 'type', 'mime_type', 'size',
-        'folder_id', 'alt_text', 'caption', 'description', 'width', 'height', 'webp_path', 'thumbnail_path', 'responsive_paths',
+        'folder_id', 'alt_text', 'caption', 'description', 'width', 'height', 'duration_seconds', 'webp_path', 'thumbnail_path', 'responsive_paths',
     ];
 
     protected $casts = [
@@ -40,6 +41,14 @@ class Media extends Model
     public function getWebpUrlAttribute(): ?string
     {
         return $this->webp_path ? Storage::disk($this->disk)->url($this->webp_path) : null;
+    }
+
+    // مدتِ ویدئو به شکلِ ISO-8601 (PT#H#M#S) برای VideoObject.duration — null اگر ثبت نشده باشد
+    public function getDurationIso8601Attribute(): ?string
+    {
+        return VideoMetadataService::toIso8601(
+            $this->duration_seconds !== null ? (int) $this->duration_seconds : null
+        );
     }
 
     // نگاشت عرض → آدرس، مرتب از کوچک به بزرگ — برای srcset

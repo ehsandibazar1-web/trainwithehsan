@@ -139,6 +139,7 @@ class MediaProcessor
             'webp_path' => null,
             'thumbnail_path' => null,
             'responsive_paths' => null,
+            'duration_seconds' => null,
         ]);
 
         $this->generateDerivatives($media->fresh());
@@ -161,8 +162,26 @@ class MediaProcessor
     {
         match ($media->type) {
             'image' => $this->generateImageDerivatives($media),
+            'video' => $this->probeVideoDuration($media),
             default => null,
         };
+    }
+
+    // ویدئو مشتقِ تصویری نمی‌گیرد، ولی مدتِ زمانش را (بدونِ وابستگی) از هدرِ فایل می‌خوانیم و ذخیره
+    // می‌کنیم تا VideoObject/سایت‌مپ بعداً بدونِ پردازشِ درخواستی از آن استفاده کنند. مثلِ مشتقاتِ
+    // تصویر: هر خطا گرفته و گزارش می‌شود، فایل و رکورد سالم می‌مانند (duration اختیاری است).
+    private function probeVideoDuration(Media $media): void
+    {
+        try {
+            $absolutePath = Storage::disk($media->disk)->path($media->disk_path);
+            $seconds = (new VideoMetadataService)->durationSeconds($absolutePath);
+
+            if ($seconds !== null && $seconds !== (int) $media->duration_seconds) {
+                $media->update(['duration_seconds' => $seconds]);
+            }
+        } catch (Throwable $e) {
+            report($e);
+        }
     }
 
     // مسیرِ آپلود: هرگز نباید به‌خاطرِ شکستِ مشتقات بشکند — هر خطا گرفته و گزارش می‌شود، فایلِ
