@@ -489,6 +489,35 @@ class MediaLibraryTest extends TestCase
         $this->assertTrue(MediaLibrary::isOverTypeLimit('video', 129 * $mb));
     }
 
+    public function test_webp_size_and_savings_percentage_are_reported(): void
+    {
+        Storage::fake('public');
+        // فایلِ WebP دقیقاً ۱MB در برابرِ اصلِ ۴MB — تا اعداد گِرد باشند
+        Storage::disk('public')->put('media/library/a.webp', str_repeat('x', 1048576));
+
+        $media = Media::create([
+            'original_name' => 'a.png', 'disk' => 'public', 'disk_path' => 'media/library/a.png',
+            'url' => 'http://x/a.png', 'type' => 'image', 'size' => 4194304,
+            'webp_path' => 'media/library/a.webp',
+        ]);
+
+        $this->assertSame(1048576, $media->webp_size);
+        $this->assertSame(75, $media->webp_savings_percent); // (1 - 1MB/4MB) * 100
+        $this->assertStringContainsString('MB', $media->webp_human_size); // 1 MB
+        $this->assertStringContainsString('MB', $media->human_size);      // 4 MB
+    }
+
+    public function test_webp_size_and_savings_are_null_without_a_webp(): void
+    {
+        $media = Media::create([
+            'original_name' => 'a.png', 'disk' => 'public', 'disk_path' => 'media/library/a.png',
+            'url' => 'http://x/a.png', 'type' => 'image', 'size' => 1000000,
+        ]);
+
+        $this->assertNull($media->webp_size);
+        $this->assertNull($media->webp_savings_percent);
+    }
+
     public function test_regenerate_rebuilds_the_webp_and_reports_success(): void
     {
         Storage::fake('public');
