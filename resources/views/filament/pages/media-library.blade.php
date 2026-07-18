@@ -128,6 +128,16 @@
                 <x-filament::button size="sm" color="gray" wire:click="$set('showNewFolderForm', true)">
                     + New folder
                 </x-filament::button>
+
+                @if($this->imagesMissingWebpCount > 0)
+                    <x-filament::button size="sm" color="warning" icon="heroicon-o-arrow-path"
+                        wire:click="regenerateAllMissingWebp"
+                        wire:confirm="Regenerate WebP for {{ $this->imagesMissingWebpCount }} image(s) that don't have one yet? This may take a moment."
+                        wire:loading.attr="disabled" wire:target="regenerateAllMissingWebp">
+                        <span wire:loading.remove wire:target="regenerateAllMissingWebp">Regenerate {{ $this->imagesMissingWebpCount }} missing WebP</span>
+                        <span wire:loading wire:target="regenerateAllMissingWebp">Regenerating…</span>
+                    </x-filament::button>
+                @endif
             </div>
 
             @if($showNewFolderForm)
