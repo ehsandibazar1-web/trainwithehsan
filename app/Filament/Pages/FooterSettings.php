@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
@@ -119,6 +120,7 @@ class FooterSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('footer')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable()
                 ->helperText('Leave empty to keep the current background.'),
             FileUpload::make("$l.logo")
@@ -126,6 +128,7 @@ class FooterSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('footer')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable()
                 ->helperText('Leave empty to keep the current logo.'),
             Textarea::make("$l.description")
