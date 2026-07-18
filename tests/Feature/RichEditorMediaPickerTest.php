@@ -8,17 +8,15 @@ use App\Models\Article;
 use App\Models\Media;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * فاز ۷: دکمه‌ی Media Library درونِ RichEditor. منطقِ قابل-تستِ هسته (resolveImage/imageNode)،
- * سازگاری با sanitize، ردگیریِ استفاده‌ی تصویرِ درون‌متنی، و بی‌رگرسیون‌بودنِ فرمِ مقاله سنجیده
- * می‌شود. تعاملِ واقعیِ دکمه/مودال در مرورگر — طبقِ روالِ همین پروژه برای UIهای Livewire — دستی
- * تأیید می‌شود؛ اینجا مطمئن می‌شویم پلاگین فرم را نمی‌شکند و درج/ثبت درست کار می‌کند.
+ * دکمه‌ی Media Library درونِ RichEditor — حالا از پنجره‌ی انتخابِ رسانه‌ی یکپارچه (MediaPickerInput)
+ * به‌جای Select جست‌وجوپذیر استفاده می‌کند. منطقِ قابل-تستِ هسته (insertContentFor/imageNode/
+ * downloadLinkHtml)، سازگاری با sanitize، ردگیریِ استفاده‌ی تصویرِ درون‌متنی، و بی‌رگرسیون‌بودنِ فرمِ
+ * مقاله سنجیده می‌شود. تعاملِ واقعیِ دکمه/مودال در مرورگر دستی تأیید می‌شود.
  */
 class RichEditorMediaPickerTest extends TestCase
 {
@@ -35,58 +33,57 @@ class RichEditorMediaPickerTest extends TestCase
         $this->assertSame([], $plugin->getTipTapJsExtensions());
     }
 
-    public function test_resolve_image_stores_a_new_upload_through_the_dam_with_derivatives(): void
-    {
-        Storage::fake('public');
-
-        $resolved = MediaLibraryRichContentPlugin::resolveImage(
-            ['upload' => UploadedFile::fake()->image('inline.jpg', 800, 600), 'alt' => 'A fighter'],
-            'articles/inline',
-        );
-
-        $this->assertNotNull($resolved);
-        $this->assertSame('A fighter', $resolved['alt']);
-
-        // یک ردیفِ واقعیِ DAM با WebP ساخته شده و src به فایلِ اصلی (نه WebP) اشاره می‌کند
-        $media = Media::where('type', 'image')->firstOrFail();
-        $this->assertNotNull($media->webp_path);
-        $this->assertStringStartsWith('articles/inline/', $media->disk_path);
-        $this->assertStringContainsString($media->disk_path, $resolved['src']);
-    }
-
-    public function test_resolve_image_uses_an_existing_media_selection(): void
+    public function test_insert_content_for_an_image_builds_an_image_node_with_alt(): void
     {
         $media = Media::create([
             'original_name' => 'hero.jpg', 'disk' => 'public', 'disk_path' => 'articles/hero.jpg',
             'url' => 'http://localhost/storage/articles/hero.jpg', 'type' => 'image', 'alt_text' => 'Existing alt',
         ]);
 
-        $resolved = MediaLibraryRichContentPlugin::resolveImage(['media_id' => $media->id], 'articles/inline');
+        // ALTِ صریح برنده است
+        $node = MediaLibraryRichContentPlugin::insertContentFor($media, 'A fighter');
+        $this->assertIsArray($node);
+        $this->assertSame('image', $node['type']);
+        $this->assertSame($media->url, $node['attrs']['src']); // فایلِ اصلی، نه WebP
+        $this->assertSame('A fighter', $node['attrs']['alt']);
 
-        $this->assertSame($media->url, $resolved['src']);
-        $this->assertSame('Existing alt', $resolved['alt']); // alt خالی → از خودِ رسانه پر می‌شود
+        // ALTِ خالی → از خودِ رسانه پر می‌شود
+        $node2 = MediaLibraryRichContentPlugin::insertContentFor($media, null);
+        $this->assertSame('Existing alt', $node2['attrs']['alt']);
     }
 
-    public function test_resolve_image_returns_null_when_nothing_is_chosen(): void
+    public function test_insert_content_for_a_document_builds_a_download_link(): void
     {
-        $this->assertNull(MediaLibraryRichContentPlugin::resolveImage(['alt' => 'x'], 'articles/inline'));
+        $media = Media::create([
+            'original_name' => 'guide.pdf', 'disk' => 'public', 'disk_path' => 'content-images/guide.pdf',
+            'url' => 'http://localhost/storage/content-images/guide.pdf', 'type' => 'document', 'mime_type' => 'application/pdf',
+        ]);
+
+        $html = MediaLibraryRichContentPlugin::insertContentFor($media);
+        $this->assertIsString($html);
+        $this->assertStringContainsString('<a href="http://localhost/storage/content-images/guide.pdf"', $html);
+        $this->assertStringContainsString('guide.pdf', $html);
+
+        // لینکِ دانلود باید از sanitize (#73) عبور کند — همان تگِ <a href> که بدنه از قبل نگه می‌دارد
+        $clean = Str::sanitizeHtml('<p>'.$html.'</p>');
+        $this->assertStringContainsString('<a', $clean);
+        $this->assertStringContainsString('/storage/content-images/guide.pdf', $clean);
     }
 
     public function test_inserted_image_keeps_the_media_usage_tracked(): void
     {
-        Storage::fake('public');
+        $media = Media::create([
+            'original_name' => 'inline.jpg', 'disk' => 'public', 'disk_path' => 'articles/inline/x.jpg',
+            'url' => 'http://localhost/storage/articles/inline/x.jpg', 'type' => 'image',
+        ]);
 
-        $resolved = MediaLibraryRichContentPlugin::resolveImage(
-            ['upload' => UploadedFile::fake()->image('inline.jpg', 800, 600)],
-            'articles/inline',
-        );
-        $media = Media::where('type', 'image')->firstOrFail();
+        $node = MediaLibraryRichContentPlugin::insertContentFor($media, 'x');
 
         // متنِ مقاله شاملِ همان src می‌شود — چون src خودِ disk_path را دربردارد، MediaUsageScanner
         // آن را «در حال استفاده» می‌بیند (نه یتیم)
         Article::create([
             'locale' => 'en', 'title' => 'Uses inline', 'slug' => 'uses-inline',
-            'body' => '<p><img src="'.$resolved['src'].'" alt="x"></p>',
+            'body' => '<p><img src="'.$node['attrs']['src'].'" alt="x"></p>',
             'author_name' => 'Ehsan', 'status' => 'draft',
         ]);
 

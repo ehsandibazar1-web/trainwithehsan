@@ -2,37 +2,34 @@
 
 namespace App\Filament\RichContent;
 
+use App\Filament\Forms\Components\MediaPickerInput;
 use App\Models\Media;
-use App\Services\Media\MediaProcessor;
 use Filament\Actions\Action;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\RichEditor\EditorCommand;
 use Filament\Forms\Components\RichEditor\Plugins\Contracts\HasToolbarButtons;
 use Filament\Forms\Components\RichEditor\Plugins\Contracts\RichContentPlugin;
 use Filament\Forms\Components\RichEditor\RichEditorTool;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Support\Enums\Width;
 use Filament\Support\Icons\Heroicon;
 
 /**
- * دکمه‌ی اختصاصیِ «Media Library» درونِ RichEditor — طبق تصمیمِ کاربر (فاز ۷، Option 1).
+ * دکمه‌ی «Media Library» درونِ RichEditor — حالا از همان پنجره‌ی انتخابِ رسانه‌ی یکپارچه‌ی کلِ CMS
+ * استفاده می‌کند (App\Livewire\MediaPicker از طریقِ فیلدِ MediaPickerInput)، نه یک Select جست‌وجوپذیر.
+ * دکمه یک اکشنِ کوچک باز می‌کند که تنها محتوایش همان MediaPickerInput است + یک فیلدِ ALT؛ خودِ درج
+ * از مسیرِ رسمیِ RichEditor (runCommands + editorSelection) انجام می‌شود تا انتخابِ متن حفظ شود و
+ * نیازی به JS build نباشد.
  *
- * پیش از این، تصویرهای درونِ متنِ مقاله/صفحه از سازوکارِ داخلیِ RichEditor آپلود می‌شدند و هرگز
- * وارد کتابخانه‌ی رسانه نمی‌شدند (نه ردیف Media، نه WebP، نه ردگیریِ استفاده). این پلاگین یک ابزارِ
- * تازه به نوار ابزار اضافه می‌کند که با آن می‌توان:
- *   - از میانِ تصویرهای موجودِ DAM جست‌وجو و انتخاب کرد،
- *   - یا یک تصویرِ تازه آپلود کرد که از MediaProcessor عبور می‌کند (ثبت در DAM + WebP/مشتقات)،
- * و سپس تصویرِ انتخاب‌شده به‌صورتِ یک نودِ image درونِ ویرایشگر درج می‌شود.
+ * درج بر اساسِ نوعِ رسانه (طراحی‌شده تا افزودنِ پخش‌کننده‌ی ویدئو/صوت و امبدهای یوتیوب/ویمئو/اینستاگرام
+ * در فازِ بعدی فقط یک شاخه‌ی تازه در insertContentFor() باشد، بی‌بازطراحیِ پیکر):
+ *   - تصویر → نودِ <img src alt> (مثلِ قبل، از sanitize (#73) عبور می‌کند)
+ *   - سند/زیپ/سایر → یک لینکِ دانلود (<a href> که از sanitize عبور می‌کند)
+ *   - ویدئو/صوت/امبد → فعلاً به‌صورتِ لینک؛ پخش‌کننده/امبدِ واقعی در فازِ Video SEO با تغییرِ
+ *     sanitizer اضافه می‌شود (عمداً اینجا انجام نشده تا این فاز فقط «پیکرِ یکپارچه» باشد).
  *
- * ابزار دقیقاً مثلِ ابزارِ داخلیِ link ساخته شده (jsHandler همان $wire.mountAction است، بدونِ هیچ
- * افزونه‌ی TipTap سفارشی)، چون فقط یک نودِ image موجود را درج می‌کند — پس نیازی به JS build ندارد.
- *
- * سازگاری با sanitize: نودِ image به یک <img src alt> ساده تبدیل می‌شود که Str::sanitizeHtml
- * (لایه‌ی دفاعیِ #73) نگهش می‌دارد. ردگیریِ استفاده: عمداً URLِ فایلِ اصلی درج می‌شود (نه WebP)،
- * چون MediaUsageScanner متن را با disk_path تطبیق می‌دهد؛ اگر WebP درج می‌شد، تصویرِ درون‌متنی
- * به‌اشتباه «یتیم» تشخیص داده می‌شد. WebP همچنان ساخته می‌شود و برای استفاده‌ی آینده آماده است.
+ * ردگیریِ استفاده: عمداً URLِ فایلِ اصلی درج می‌شود (نه WebP) — MediaUsageScanner متن را با
+ * disk_path تطبیق می‌دهد؛ با WebP، تصویرِ درون‌متنی به‌اشتباه «یتیم» می‌شد. WebP همچنان ساخته می‌شود.
  */
 class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlugin
 {
@@ -84,70 +81,50 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
 
         return Action::make('mediaLibrary')
             ->label('Media Library')
-            ->modalHeading('Insert an image from the Media Library')
-            ->modalSubmitActionLabel('Insert image')
+            ->modalHeading('Insert from the Media Library')
+            ->modalSubmitActionLabel('Insert')
             ->modalWidth(Width::Large)
             ->schema([
-                Select::make('media_id')
-                    ->label('Choose an existing image')
-                    ->helperText('Search the Media Library by filename. Or upload a new image below.')
-                    ->searchable()
-                    ->allowHtml()
-                    ->getSearchResultsUsing(fn (string $search): array => Media::query()
-                        ->where('type', 'image')
-                        ->where('original_name', 'like', '%'.$search.'%')
-                        ->latest()
-                        ->limit(50)
-                        ->get()
-                        ->mapWithKeys(fn (Media $media): array => [$media->id => static::optionLabel($media)])
-                        ->all())
-                    ->getOptionLabelUsing(fn ($value): ?string => ($media = Media::find($value)) ? static::optionLabel($media) : null),
-                FileUpload::make('upload')
-                    ->label('Or upload a new image')
-                    ->helperText('Added to the Media Library automatically (WebP + thumbnail + responsive sizes generated).')
-                    ->image()
-                    ->storeFiles(false)
-                    ->maxSize(15360),
+                MediaPickerInput::make('media')
+                    ->label('Media')
+                    ->helperText('Pick any file from the Media Library, or upload a new one inside the picker. Images are inserted inline; documents are inserted as a download link.')
+                    ->uploadDirectory($directory)
+                    ->required(),
                 TextInput::make('alt')
-                    ->label('Alt text (accessibility & image SEO)')
+                    ->label('Alt text (images only — accessibility & image SEO)')
                     ->maxLength(1000),
             ])
-            ->action(function (array $arguments, array $data, RichEditor $component) use ($directory): void {
-                $resolved = static::resolveImage($data, $directory);
+            ->action(function (array $arguments, array $data, RichEditor $component): void {
+                $media = Media::where('disk_path', $data['media'] ?? '')->first();
 
-                if ($resolved === null) {
+                if (! $media) {
                     return;
                 }
 
+                $content = static::insertContentFor($media, $data['alt'] ?? null);
+
                 $component->runCommands(
-                    [EditorCommand::make('insertContent', arguments: [static::imageNode($resolved['src'], $resolved['alt'])])],
+                    [EditorCommand::make('insertContent', arguments: [$content])],
                     editorSelection: $arguments['editorSelection'],
                 );
             });
     }
 
     /**
-     * از دیتای فرم یک {src, alt} می‌سازد: آپلودِ تازه (از MediaProcessor عبور می‌دهد) یا رسانه‌ی
-     * موجود. عمداً عمومی و محض است تا مستقل از ماشینِ اکشنِ RichEditor تست شود.
+     * محتوایی که بر اساسِ نوعِ رسانه در ویرایشگر درج می‌شود — نودِ image برای تصویر (آرایه‌ی TipTap)
+     * یا HTMLِ لینکِ دانلود برای بقیه. عمداً عمومی و محض است تا مستقل از ماشینِ اکشن تست شود.
      *
-     * @param  array<string, mixed>  $data
-     * @return array{src: string, alt: ?string}|null
+     * @return array<string, mixed>|string
      */
-    public static function resolveImage(array $data, string $directory): ?array
+    public static function insertContentFor(Media $media, ?string $alt = null): array|string
     {
-        $alt = trim((string) ($data['alt'] ?? '')) ?: null;
-
-        if ($data['upload'] ?? null) {
-            $media = app(MediaProcessor::class)->store($data['upload'], $directory, 'public');
-
-            return ['src' => $media->url, 'alt' => $alt ?? $media->alt_text];
+        if ($media->type === 'image') {
+            return static::imageNode($media->url, ($alt !== null && trim($alt) !== '') ? $alt : $media->alt_text);
         }
 
-        if (($id = $data['media_id'] ?? null) && ($media = Media::find($id))) {
-            return ['src' => $media->url, 'alt' => $alt ?? $media->alt_text];
-        }
-
-        return null;
+        // اسناد/زیپ/ویدئو/صوت/سایر: فعلاً لینکِ دانلود (تنها HTMLِ غیرتصویری که از sanitize (#73)
+        // عبور می‌کند). پخش‌کننده/امبدِ واقعی در فازِ Video SEO با گشودنِ allowlistِ sanitizer می‌آید.
+        return static::downloadLinkHtml($media->url, $media->original_name);
     }
 
     /**
@@ -166,11 +143,11 @@ class MediaLibraryRichContentPlugin implements HasToolbarButtons, RichContentPlu
         ];
     }
 
-    protected static function optionLabel(Media $media): string
+    // یک لینکِ دانلودِ ساده برای فایلِ غیرتصویری — <a href> از Str::sanitizeHtml عبور می‌کند
+    // (همان تگی که Internal Linking Center هم به بدنه اضافه می‌کند)، برخلافِ یک کارتِ div-محور
+    // که sanitize حذفش می‌کرد
+    public static function downloadLinkHtml(string $url, string $filename): string
     {
-        $thumb = e($media->thumbnail_url);
-        $name = e($media->original_name);
-
-        return "<span style=\"display:inline-flex;align-items:center;gap:.5rem\"><img src=\"{$thumb}\" style=\"width:32px;height:32px;object-fit:cover;border-radius:4px\" alt=\"\">{$name}</span>";
+        return '<a href="'.e($url).'" target="_blank" rel="noopener">📎 '.e($filename).'</a>';
     }
 }
