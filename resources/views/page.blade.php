@@ -135,7 +135,7 @@
             @endif
 
             <div class="page-body reveal">
-                {!! \Illuminate\Support\Str::sanitizeHtml($page->body) !!}
+                {!! app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($page->body)) !!}
             </div>
 
             @if($page->slug === 'contact')
