@@ -2,13 +2,10 @@
 
 namespace App\Filament\Resources\Articles\Schemas;
 
+use App\Filament\Forms\Components\MediaPickerInput;
 use App\Filament\RichContent\MediaLibraryRichContentPlugin;
-use App\Filament\Support\MediaLibraryUploads;
 use App\Models\Article;
-use App\Services\Media\MediaProcessor;
-use Filament\Forms\Components\BaseFileUpload;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\RichEditor;
 use Filament\Forms\Components\Select;
@@ -17,7 +14,6 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
 use Illuminate\Support\Str;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class ArticleForm
 {
@@ -144,20 +140,15 @@ class ArticleForm
                     ->nullable()
                     ->columnSpanFull(),
 
-                FileUpload::make('image_path')
+                // پنجره‌ی انتخابِ رسانه‌ی یکپارچه — همان پیکری که (به‌تدریج) همه‌جای CMS باز می‌شود.
+                // مقدار همان رشته‌ی disk_path است که FileUpload قبلی ذخیره می‌کرد، پس هر خواننده‌ی
+                // موجود و هر مقاله‌ی موجود بدونِ تغییر کار می‌کند. آپلودِ تازه، انتخاب از کتابخانه، و
+                // ویرایشِ ALT/کپشن همه درونِ خودِ پنجره انجام می‌شوند (نگاه کنید به App\Livewire\MediaPicker).
+                MediaPickerInput::make('image_path')
                     ->label('Featured image')
-                    ->helperText('Automatically added to the Media Library (WebP + thumbnail + responsive sizes generated).')
-                    ->image()
-                    ->disk('public')
-                    ->directory('articles')
-                    // ثبت خودکار در کتابخانه‌ی رسانه (DAM) + تولید WebP/تامبنیل/سایزهای واکنش‌گرا در همان لحظه‌ی آپلود
-                    ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file) => app(MediaProcessor::class)
-                        ->store($file, $component->getDirectory(), $component->getDiskName())
-                        ->disk_path)
-                    ->hintActions([
-                        MediaLibraryUploads::pickFromLibraryAction(),
-                        MediaLibraryUploads::altHintAction(),
-                    ])
+                    ->helperText('Pick from the Media Library or upload a new one — WebP, thumbnail and responsive sizes are generated automatically. ALT text is edited inside the picker.')
+                    ->onlyImages()
+                    ->uploadDirectory('articles')
                     ->nullable(),
 
                 Section::make('AI Image Prompts (optional)')
