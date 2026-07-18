@@ -91,6 +91,21 @@ class Media extends Model
         return $warnings;
     }
 
+    // تصویری که ثبت شده ولی هیچ نسخه‌ی بهینه‌ای (WebP) برایش ساخته نشده — یعنی پردازشِ زمانِ
+    // آپلود (getimagesize/GD در MediaProcessor::generateDerivatives) شکست خورده (فایل خراب یا
+    // کدگذاریِ پشتیبانی‌نشده). چون تولیدِ مشتقات هم‌زمان با store()/adopt()/replace() و به‌صورت
+    // همگام اجرا می‌شود، نبودِ webp_path برای یک ردیفِ type=image به‌طور قابل‌اتکا یعنی «شکستِ
+    // پردازش»، نه «هنوز پردازش‌نشده».
+    //
+    // این عمداً از warnings() جداست: warnings() را هم AgentAuditService (دسته‌ی image_optimization)
+    // و هم ContentReviewService::scoreCard() مصرف می‌کنند؛ افزودنِ این سیگنال به آن‌جا یک یافته‌ی
+    // «بهینه‌سازی تصویر» و تغییرِ امتیازِ سلامت می‌ساخت. این فقط یک نشانگرِ مشاهده‌پذیریِ کتابخانه‌ی
+    // رسانه است و جای دیگری مصرف نمی‌شود.
+    public function processingFailed(): bool
+    {
+        return $this->type === 'image' && blank($this->webp_path);
+    }
+
     // کجاها استفاده شده — مقاله‌ها، صفحات، تنظیمات سایت (بر اساس تطبیق مسیر فایل)
     public function usages(): array
     {

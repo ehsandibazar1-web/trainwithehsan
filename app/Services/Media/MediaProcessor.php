@@ -145,8 +145,14 @@ class MediaProcessor
 
         $dimensions = @getimagesize($absolutePath);
         if ($dimensions === false) {
-            // فایلی که به‌صورت تصویر آپلود شده ولی خوانده نمی‌شود (مثلا SVG یا فایل خراب) —
-            // رکورد بدون مشتقات باقی می‌ماند، فایل اصلی هرگز حذف نمی‌شود
+            // فایلی که MIME‌اش تصویر تشخیص داده شده ولی محتوایش خوانده نمی‌شود (مثلا JPEG
+            // بریده/خراب یا کدگذاریِ پشتیبانی‌نشده) — رکورد بدون مشتقات باقی می‌ماند و فایل اصلی
+            // هرگز حذف نمی‌شود. پیش از این این شاخه کاملا خاموش بود؛ حالا گزارش می‌شود تا در لاگ
+            // دیده شود و Media::processingFailed() هم آن را در پنل نشان می‌دهد.
+            report(new \RuntimeException(
+                "MediaProcessor: could not read image dimensions for media #{$media->id} ({$media->disk_path}) — file may be corrupt or an unsupported encoding; stored without derivatives."
+            ));
+
             return;
         }
         [$width, $height] = $dimensions;
@@ -154,6 +160,10 @@ class MediaProcessor
         try {
             $manager = ImageManager::gd();
         } catch (Throwable $e) {
+            // GD در دسترس نیست/راه‌اندازی نمی‌شود — یک نقصِ سطحِ سرور، نه فایلِ خراب؛ باز هم
+            // به‌جای شکستِ خاموش گزارش می‌شود تا قابلِ تشخیص باشد چرا هیچ تصویری مشتق نمی‌گیرد.
+            report($e);
+
             return;
         }
 

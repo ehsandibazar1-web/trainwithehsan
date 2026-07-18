@@ -55,6 +55,11 @@
             position:absolute;top:.3rem;right:.3rem;background:#f59e0b;color:#fff;border-radius:9999px;
             width:1.25rem;height:1.25rem;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;
         }
+        .media-lib-item .err-badge{
+            position:absolute;top:.3rem;left:.3rem;background:#dc2626;color:#fff;border-radius:9999px;
+            width:1.25rem;height:1.25rem;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;
+        }
+        .media-lib-error{background:#fef2f2;border:1px solid #fecaca;border-radius:.5rem;padding:.5rem .7rem;font-size:.78rem;color:#991b1b;margin-bottom:.6rem}
         .media-lib-empty{color:#9ca3af;font-size:.85rem;padding:2rem 0;text-align:center}
 
         .media-lib-overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
@@ -167,6 +172,10 @@
                             <div class="file-icon">📄</div>
                         @endif
 
+                        @if($item->processingFailed())
+                            <span class="err-badge" title="Could not be processed — no optimized version was generated. It may be corrupt or in an unsupported format.">✕</span>
+                        @endif
+
                         @if(count($item->warnings()))
                             <span class="warn-badge" title="{{ implode(' / ', $item->warnings()) }}">!</span>
                         @endif
@@ -186,6 +195,10 @@
         <div class="media-lib-overlay" wire:click="closeDetails"></div>
         <div class="media-lib-panel" wire:key="media-panel-{{ $this->selectedMedia->id }}">
             <button type="button" class="media-lib-close" wire:click="closeDetails">✕</button>
+
+            @if($this->selectedMedia->processingFailed())
+                <div class="media-lib-error">✕ This image could not be processed — no optimized (WebP) version was generated. It may be corrupt or in an unsupported format. Try replacing it with a valid image.</div>
+            @endif
 
             @if($this->selectedMedia->type === 'image')
                 <img class="preview" src="{{ $this->selectedMedia->webp_url ?? $this->selectedMedia->url }}" alt="{{ $this->selectedMedia->alt_text }}">

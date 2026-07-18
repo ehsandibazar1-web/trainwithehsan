@@ -277,6 +277,46 @@ class MediaLibraryTest extends TestCase
         $this->assertStringContainsString('small', implode(' ', $tiny->warnings()));
     }
 
+    public function test_processing_failed_is_true_for_an_image_row_with_no_webp_and_false_once_processed(): void
+    {
+        // یک ردیفِ type=image بدون webp_path — یعنی پردازشِ زمانِ آپلود شکست خورده
+        $failed = Media::create([
+            'original_name' => 'corrupt.jpg', 'disk' => 'public', 'disk_path' => 'media/corrupt.jpg',
+            'url' => 'http://x/corrupt.jpg', 'type' => 'image',
+        ]);
+        $this->assertTrue($failed->processingFailed());
+
+        // یک تصویرِ واقعی که از MediaProcessor عبور کرده باید webp داشته باشد و شکست‌خورده نباشد
+        Storage::fake('public');
+        $processed = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+        $this->assertNotNull($processed->webp_path);
+        $this->assertFalse($processed->processingFailed());
+    }
+
+    public function test_processing_failed_is_false_for_non_image_files(): void
+    {
+        // فایلِ غیرتصویری (type=other) هرگز مشتق نمی‌گیرد، پس نبودِ webp «شکست» نیست
+        $other = Media::create([
+            'original_name' => 'notes.pdf', 'disk' => 'public', 'disk_path' => 'media/notes.pdf',
+            'url' => 'http://x/notes.pdf', 'type' => 'other',
+        ]);
+        $this->assertFalse($other->processingFailed());
+    }
+
+    public function test_processing_failed_state_does_not_leak_into_warnings(): void
+    {
+        // مشاهده‌پذیریِ «شکستِ پردازش» عمداً از warnings() جداست تا AgentAuditService/scoreCard
+        // را تحتِ تأثیر نگذارد — یک تصویرِ سالمِ فقط-بدونِ-webp نباید هیچ warning ای بسازد
+        $failed = Media::create([
+            'original_name' => 'corrupt.jpg', 'disk' => 'public', 'disk_path' => 'media/corrupt2.jpg',
+            'url' => 'http://x/corrupt2.jpg', 'type' => 'image', 'width' => 800, 'height' => 600,
+            'alt_text' => 'has alt', 'webp_path' => null,
+        ]);
+
+        $this->assertTrue($failed->processingFailed());
+        $this->assertSame([], $failed->warnings());
+    }
+
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void
     {
         Storage::fake('public');
