@@ -171,8 +171,8 @@ class HomepageSettings extends Page implements HasForms
                 ->uploadDirectory('homepage/videos')
                 ->nullable();
             $fields[] = TextInput::make("$l.video{$i}_embed")
-                ->label("Video $i — Embed URL (YouTube/Aparat)")
-                ->helperText('Paste an embed link here, OR upload a file below — not both.');
+                ->label("Video $i — Embed URL (YouTube / Vimeo / Instagram / TikTok)")
+                ->helperText('Paste a YouTube, Vimeo, Instagram or TikTok link here, OR upload a file below — not both. It opens as a privacy-friendly player when the visitor clicks.');
             $fields[] = MediaPickerInput::make("$l.video{$i}_file")
                 ->label("Video $i — File (mp4)")
                 ->helperText('Pick or upload a video in the Media Library. Up to 128 MB.')

@@ -48,20 +48,16 @@
             el.style.cursor = 'default';
         }
 
-        // منبعِ ثالث فقط هنگامِ تعامل ساخته می‌شود — نه در زمانِ بارگذاریِ صفحه
-        function activate(el) {
-            if (el.dataset.embedLoaded) return;
-            el.dataset.embedLoaded = '1';
-            var kind = el.getAttribute('data-embed-kind');
-            var src = el.getAttribute('data-embed-src');
-            if (!src) return;
-
+        // پخش‌کننده‌ی واقعی را درونِ container می‌سازد (بدونِ هیچ بارگذاری تا این لحظه). به‌صورتِ
+        // window.tweMediaEmbed در دسترس است تا هم facadeِ درون‌متنی و هم مودالِ ویدیوی صفحه‌ی اصلی
+        // از یک منطقِ واحد استفاده کنند — نه دو نسخه‌ی موازی.
+        function buildEmbed(container, kind, src, id) {
             if (kind === 'instagram') {
                 var iq = document.createElement('blockquote');
                 iq.className = 'instagram-media';
                 iq.setAttribute('data-instgrm-permalink', src);
                 iq.setAttribute('data-instgrm-version', '14');
-                el.innerHTML = ''; el.appendChild(iq); markLoaded(el);
+                container.appendChild(iq);
                 loadScript('https://www.instagram.com/embed.js', function () {
                     if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
                 });
@@ -72,9 +68,9 @@
                 var tq = document.createElement('blockquote');
                 tq.className = 'tiktok-embed';
                 tq.setAttribute('cite', src);
-                if (el.getAttribute('data-embed-id')) tq.setAttribute('data-video-id', el.getAttribute('data-embed-id'));
+                if (id) tq.setAttribute('data-video-id', id);
                 tq.appendChild(document.createElement('section'));
-                el.innerHTML = ''; el.appendChild(tq); markLoaded(el);
+                container.appendChild(tq);
                 loadScript('https://www.tiktok.com/embed.js');
                 return;
             }
@@ -87,7 +83,7 @@
                 node.setAttribute('allowfullscreen', '');
                 node.setAttribute('loading', 'lazy');
                 node.setAttribute('referrerpolicy', 'strict-origin-when-cross-origin');
-                node.setAttribute('title', el.getAttribute('aria-label') || 'Embedded media');
+                node.setAttribute('title', 'Embedded media');
             } else {
                 node = document.createElement(kind); // video | audio
                 node.setAttribute('src', src);
@@ -96,9 +92,19 @@
                 node.setAttribute('playsinline', '');
                 node.setAttribute('preload', 'metadata');
             }
+            container.appendChild(node);
+        }
 
+        window.tweMediaEmbed = { build: buildEmbed, loadScript: loadScript };
+
+        // facadeِ درون‌متنی — منبعِ ثالث فقط هنگامِ تعامل ساخته می‌شود، نه در زمانِ بارگذاری
+        function activate(el) {
+            if (el.dataset.embedLoaded) return;
+            el.dataset.embedLoaded = '1';
+            var src = el.getAttribute('data-embed-src');
+            if (!src) return;
             el.innerHTML = '';
-            el.appendChild(node);
+            buildEmbed(el, el.getAttribute('data-embed-kind'), src, el.getAttribute('data-embed-id'));
             markLoaded(el);
         }
 
