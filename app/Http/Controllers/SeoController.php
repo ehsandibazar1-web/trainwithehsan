@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\Page;
+use App\Services\Media\VideoMetadataService;
 use App\Services\Seo\VideoSchemaService;
 use Illuminate\Support\Str;
 
@@ -99,6 +100,12 @@ class SeoController extends Controller
             }
             if ($player) {
                 $out .= '<video:player_loc>'.$esc($player).'</video:player_loc>';
+            }
+            // <video:duration> ثانیه، بازه‌ی مجازِ Google (۱..۲۸۸۰۰) — از duration (ISO-8601) که سرویس
+            // فقط برای ویدیوی خودمیزبان با مدتِ خوانده‌شده می‌گذارد
+            $durationSeconds = VideoMetadataService::iso8601ToSeconds($v['duration'] ?? null);
+            if ($durationSeconds !== null && $durationSeconds >= 1 && $durationSeconds <= 28800) {
+                $out .= '<video:duration>'.$durationSeconds.'</video:duration>';
             }
             if (! empty($v['uploadDate'])) {
                 $out .= '<video:publication_date>'.$esc($v['uploadDate']).'</video:publication_date>';

@@ -5,6 +5,7 @@ namespace App\Services\Seo;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\Page;
+use App\Models\SiteSetting;
 use App\Services\Content\EmbedRenderer;
 use Illuminate\Support\Str;
 
@@ -28,6 +29,13 @@ use Illuminate\Support\Str;
 class VideoSchemaService
 {
     private EmbedRenderer $embeds;
+
+    // fallbackِ تامبنیلِ سراسری (عکسِ هیروِ صفحه‌ی «درباره» = عکسِ برندِ نماینده که همه‌جای سایت هم
+    // نقشِ عکسِ نویسنده را دارد) — تنبل و یک‌بار در هر نمونه‌ی سرویس بارگذاری می‌شود، فقط وقتی ویدیویی
+    // تامبنیلِ اختصاصی نداشته باشد؛ تضمین می‌کند هیچ ویدیوی پشتیبانی‌شده‌ای به‌خاطرِ نبودِ تامبنیل حذف نشود.
+    private bool $defaultThumbLoaded = false;
+
+    private ?string $defaultThumb = null;
 
     public function __construct(?EmbedRenderer $embeds = null)
     {
@@ -171,7 +179,8 @@ class VideoSchemaService
                 continue;
             }
 
-            $thumbnailUrl = $this->youTubeThumbFromMatch($match) ?: $thumbFallback;
+            // تامبنیل: یوتیوب‌مشتق → عکسِ شاخصِ رکورد → fallbackِ سراسری (H3 — تا هیچ ویدیویی حذف نشود)
+            $thumbnailUrl = $this->youTubeThumbFromMatch($match) ?: $thumbFallback ?: $this->defaultThumbnail();
 
             // VideoObject بدونِ thumbnailUrl معتبر نیست — رد می‌شود تا داده‌ی ناقص منتشر نشود
             if (! $thumbnailUrl) {
@@ -209,6 +218,42 @@ class VideoSchemaService
             $videos[] = $schema;
         }
 
+        return $this->attachSelfHostedDurations($videos);
+    }
+
+    /**
+     * برای ویدیوهای خودمیزبانِ درون‌متنی، مدتِ زمان را با *یک* کوئریِ گروهی (whereIn) اضافه می‌کند —
+     * فقط وقتی صفحه واقعاً ویدیوی خودمیزبان دارد، پس روی صفحاتِ بدونِ ویدیو هیچ کوئریِ اضافه‌ای نیست.
+     *
+     * @param  array<int, array<string, mixed>>  $videos
+     * @return array<int, array<string, mixed>>
+     */
+    private function attachSelfHostedDurations(array $videos): array
+    {
+        // contentUrl → disk_path (فقط ویدیوهای خودمیزبان contentUrl دارند)
+        $paths = [];
+        foreach ($videos as $v) {
+            if (! empty($v['contentUrl']) && ($dp = $this->diskPathFromContentUrl($v['contentUrl']))) {
+                $paths[$v['contentUrl']] = $dp;
+            }
+        }
+
+        if (! $paths) {
+            return $videos;
+        }
+
+        $durations = Media::whereIn('disk_path', array_values($paths))
+            ->get(['disk_path', 'duration_seconds'])
+            ->keyBy('disk_path');
+
+        foreach ($videos as &$v) {
+            if (! empty($v['contentUrl']) && isset($paths[$v['contentUrl']])
+                && ($iso = $durations->get($paths[$v['contentUrl']])?->duration_iso8601)) {
+                $v['duration'] = $iso;
+            }
+        }
+        unset($v);
+
         return $videos;
     }
 
@@ -227,12 +272,16 @@ class VideoSchemaService
             return null;
         }
 
-        $thumbnailUrl = $this->thumbnailUrl($thumbPath, $embedRaw);
+        // تامبنیل: آپلودشده/یوتیوب‌مشتق، وگرنه fallbackِ سراسری (H3 — تا هیچ ویدیویی حذف نشود)
+        $thumbnailUrl = $this->thumbnailUrl($thumbPath, $embedRaw) ?: $this->defaultThumbnail();
 
         // VideoObject بدونِ thumbnailUrl معتبر نیست — رد می‌شود تا داده‌ی ناقص منتشر نشود
         if (! $thumbnailUrl) {
             return null;
         }
+
+        // ردیفِ Media یک‌بار خوانده می‌شود و هم uploadDate (created_at) هم duration را می‌دهد — نه دو کوئری
+        $media = ($contentUrl && filled($filePath)) ? $this->mediaForDiskPath($filePath) : null;
 
         $schema = [
             '@context' => 'https://schema.org',
@@ -246,8 +295,13 @@ class VideoSchemaService
             $schema['contentUrl'] = $contentUrl;
             // uploadDate فقط برای فایلِ آپلودشده که ردیفِ Media دارد (created_at) — برای embed حذف
             // می‌شود (Google آن را «توصیه‌شده» می‌داند نه «الزامی»)
-            if ($uploadDate = $this->uploadDate($filePath)) {
+            if ($uploadDate = $media?->created_at?->toIso8601String()) {
                 $schema['uploadDate'] = $uploadDate;
+            }
+            // duration فقط برای فایلِ خودمیزبان که مدتش هنگامِ آپلود خوانده شده — یوتیوب/ویمئو منبعِ
+            // مطمئنی بدونِ API ندارند، پس عمداً بدونِ duration می‌مانند (H2)
+            if ($duration = $media?->duration_iso8601) {
+                $schema['duration'] = $duration;
             }
         }
 
@@ -320,9 +374,38 @@ class VideoSchemaService
         return $embedRaw !== '' ? $this->youTubeThumbFromMatch($this->embeds->detect($embedRaw)) : null;
     }
 
-    private function uploadDate(string $filePath): ?string
+    private function mediaForDiskPath(string $filePath): ?Media
     {
-        return Media::where('disk_path', $filePath)->first()?->created_at?->toIso8601String();
+        return Media::where('disk_path', $filePath)->first();
+    }
+
+    // contentUrl (مطلق یا /storage/...) → disk_pathِ ردیفِ Media — همان قراردادِ مسیرِ خامِ DAM
+    // (پیشوندِ عمومیِ /storage/ حذف می‌شود). null اگر مسیرِ معتبری در نیاید.
+    private function diskPathFromContentUrl(string $url): ?string
+    {
+        $path = parse_url($url, PHP_URL_PATH);
+        if (! is_string($path) || $path === '') {
+            return null;
+        }
+
+        $path = ltrim($path, '/');
+        if (Str::startsWith($path, 'storage/')) {
+            $path = substr($path, strlen('storage/'));
+        }
+
+        return $path !== '' ? $path : null;
+    }
+
+    // fallbackِ تامبنیلِ سراسری — یک‌بار خوانده و کش می‌شود (SiteSetting یک کوئری، فقط هنگامِ نیاز)
+    private function defaultThumbnail(): ?string
+    {
+        if (! $this->defaultThumbLoaded) {
+            $this->defaultThumbLoaded = true;
+            $path = SiteSetting::get('about.en.hero_image');
+            $this->defaultThumb = filled($path) ? asset('storage/'.ltrim((string) $path, '/')) : null;
+        }
+
+        return $this->defaultThumb;
     }
 
     // عکسِ شاخصِ رکورد به‌عنوان تامبنیلِ نماینده‌ی ویدیوی خودمیزبان/ویمئو (که تامبنیلِ مشتق ندارند).
