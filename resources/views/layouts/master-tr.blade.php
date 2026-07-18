@@ -50,6 +50,7 @@
     <meta property="og:image:type" content="{{ $ogImageType }}">
     @endif
     @endif
+    @yield('social_video')
     <meta name="theme-color" content="#d9bb75">
 
     <script src="https://analytics.ahrefs.com/analytics.js" data-key="eou7/AHP2woEpfdpW9t1cQ" async></script>

@@ -284,6 +284,112 @@ class VideoSeoTest extends TestCase
         $this->assertNotFalse(simplexml_load_string($xml));
     }
 
+    // ---- H1: og:video + Twitter Player Card ------------------------------------
+
+    public function test_primary_social_video_maps_an_embed_to_player_card_fields(): void
+    {
+        $sv = $this->service()->primarySocialVideo([
+            ['@type' => 'VideoObject', 'name' => 'Clip', 'description' => 'A clip', 'thumbnailUrl' => 'https://img/x.jpg', 'embedUrl' => 'https://www.youtube.com/embed/abcdefghijk'],
+        ]);
+
+        $this->assertNotNull($sv);
+        $this->assertTrue($sv['is_embed']);
+        $this->assertTrue($sv['secure']);
+        $this->assertSame('text/html', $sv['type']);
+        $this->assertSame('https://www.youtube.com/embed/abcdefghijk', $sv['url']);
+    }
+
+    public function test_primary_social_video_maps_self_hosted_to_a_file_without_player_card(): void
+    {
+        $sv = $this->service()->primarySocialVideo([
+            ['@type' => 'VideoObject', 'name' => 'Demo', 'description' => 'x', 'thumbnailUrl' => 'https://img/x.jpg', 'contentUrl' => 'http://localhost/storage/videos/clip.mp4'],
+        ]);
+
+        $this->assertNotNull($sv);
+        $this->assertFalse($sv['is_embed']); // فایل → og:video بله، Player Card نه
+        $this->assertFalse($sv['secure']);   // http → og:video:secure_url حذف می‌شود
+        $this->assertSame('video/mp4', $sv['type']);
+    }
+
+    public function test_primary_social_video_is_null_when_there_are_no_videos(): void
+    {
+        $this->assertNull($this->service()->primarySocialVideo([]));
+    }
+
+    public function test_article_youtube_video_renders_og_video_and_twitter_player(): void
+    {
+        $article = $this->makeArticle([
+            'slug' => 'og-youtube-article',
+            'body' => $this->link('https://www.youtube.com/watch?v=abcdefghijk', 'Watch this'),
+        ]);
+
+        $html = $this->get($article->path())->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:video" content="https://www.youtube.com/embed/abcdefghijk">', $html);
+        $this->assertStringContainsString('<meta property="og:video:secure_url" content="https://www.youtube.com/embed/abcdefghijk">', $html);
+        $this->assertStringContainsString('<meta property="og:video:type" content="text/html">', $html);
+        $this->assertStringContainsString('<meta name="twitter:card" content="player">', $html);
+        $this->assertStringContainsString('<meta name="twitter:player" content="https://www.youtube.com/embed/abcdefghijk">', $html);
+        $this->assertStringContainsString('<meta name="twitter:player:width" content="1280">', $html);
+    }
+
+    public function test_article_self_hosted_video_renders_og_video_but_no_player_card(): void
+    {
+        $article = $this->makeArticle([
+            'slug' => 'og-selfhosted-article',
+            'image_path' => 'articles/hero.jpg',
+            'body' => $this->link('/storage/videos/demo.mp4', 'Technique demo'),
+        ]);
+
+        $html = $this->get($article->path())->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:video" content="'.url('/storage/videos/demo.mp4').'">', $html);
+        $this->assertStringContainsString('<meta property="og:video:type" content="video/mp4">', $html);
+        // فایلِ خودمیزبان iframe ندارد → هیچ Twitter Player Card ای نباید باشد
+        $this->assertStringNotContainsString('name="twitter:card" content="player"', $html);
+    }
+
+    public function test_only_the_primary_video_drives_the_social_tags(): void
+    {
+        $article = $this->makeArticle([
+            'slug' => 'og-multi-video-article',
+            'image_path' => 'articles/hero.jpg',
+            'body' => $this->link('https://www.youtube.com/watch?v=abcdefghijk', 'First')
+                .$this->link('https://vimeo.com/123456789', 'Second'),
+        ]);
+
+        $html = $this->get($article->path())->assertOk()->getContent();
+
+        // فقط یک og:video و یک Player Card — برای ویدیوی اول (primary)
+        $this->assertSame(1, substr_count($html, '<meta property="og:video" content='));
+        $this->assertSame(1, substr_count($html, 'name="twitter:card" content="player"'));
+        $this->assertStringContainsString('content="https://www.youtube.com/embed/abcdefghijk">', $html);
+    }
+
+    public function test_article_without_video_renders_no_og_video_tags(): void
+    {
+        $article = $this->makeArticle(['slug' => 'og-plain-article']);
+
+        $html = $this->get($article->path())->assertOk()->getContent();
+
+        $this->assertStringNotContainsString('property="og:video"', $html);
+        $this->assertStringNotContainsString('name="twitter:card" content="player"', $html);
+    }
+
+    public function test_page_with_a_video_renders_og_video_tags(): void
+    {
+        $page = $this->makePage([
+            'slug' => 'og-video-page',
+            'image_path' => 'pages/hero.jpg', // ویمئو تامبنیلِ مشتق ندارد → عکسِ شاخص لازم است وگرنه ویدیو رد می‌شود
+            'body' => $this->link('https://vimeo.com/123456789', 'Walkthrough'),
+        ]);
+
+        $html = $this->get($page->path())->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:video" content="https://player.vimeo.com/video/123456789">', $html);
+        $this->assertStringContainsString('<meta name="twitter:player" content="https://player.vimeo.com/video/123456789">', $html);
+    }
+
     /**
      * اولین بلاکِ JSON-LDِ VideoObject را از HTML بیرون می‌کشد و decode می‌کند.
      *

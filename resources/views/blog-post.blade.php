@@ -54,6 +54,10 @@
 @include('partials.video-schema')
 @endsection
 
+@section('social_video')
+@include('partials.video-og-tags')
+@endsection
+
 @section('page-css')
 <style>
     #reading-progress{position:fixed;top:0;left:0;height:3px;background:var(--gold);z-index:9999;width:0}
