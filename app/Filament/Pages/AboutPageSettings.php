@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
 use Filament\Forms\Components\FileUpload;
@@ -125,6 +126,7 @@ class AboutPageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('about/hero')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable(),
             TextInput::make("$l.hero_name")
                 ->label('Name'),
@@ -168,6 +170,7 @@ class AboutPageSettings extends Page implements HasForms
                         ->image()
                         ->disk('public')
                         ->directory('about/certificates')
+                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                         ->nullable()
                         ->helperText('Optional — a placeholder is shown if left empty.'),
                     TextInput::make('title')
@@ -206,6 +209,7 @@ class AboutPageSettings extends Page implements HasForms
                         ->image()
                         ->disk('public')
                         ->directory('about/gallery')
+                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                         ->required(),
                     TextInput::make('alt')
                         ->label('Alt text')
@@ -270,6 +274,7 @@ class AboutPageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('about/cta')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable()
                 ->helperText('Leave empty to keep the default dark gradient background.'),
         ];
@@ -288,6 +293,7 @@ class AboutPageSettings extends Page implements HasForms
                 ->image()
                 ->disk('public')
                 ->directory('about/seo')
+                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
                 ->nullable()
                 ->helperText('Shown as the preview image when this page is shared on social media.'),
         ];
