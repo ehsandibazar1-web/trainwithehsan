@@ -4,18 +4,16 @@ namespace Tests\Feature;
 
 use App\Filament\Pages\MediaLibrary;
 use App\Filament\Resources\Articles\Pages\CreateArticle;
-use App\Filament\Support\MediaLibraryUploads;
 use App\Livewire\MediaPicker;
 use App\Models\Media;
 use App\Models\User;
-use Filament\Actions\Action;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 /**
- * فاز ۸ (پرداختِ UX): ویرایشِ ALT تصویرِ شاخص از خودِ ویرایشگر، و ویرایشِ دستیِ caption/description
- * در پنلِ جزئیاتِ کتابخانه‌ی رسانه (که تا حالا فقط با AI پر می‌شدند).
+ * ویرایشِ ALT تصویرِ شاخص و caption/description از خودِ پنجره‌ی انتخابِ رسانه (که در فاز یکپارچه‌سازی
+ * جای اکشن‌های کمکیِ قدیمیِ کنارِ فیلد را گرفت)، و ویرایشِ دستیِ caption/description در پنلِ جزئیات.
  */
 class MediaMetadataUxTest extends TestCase
 {
@@ -24,22 +22,6 @@ class MediaMetadataUxTest extends TestCase
     private function owner(): User
     {
         return User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
-    }
-
-    public function test_featured_image_alt_hint_action_is_wired(): void
-    {
-        $action = MediaLibraryUploads::altHintAction();
-
-        $this->assertInstanceOf(Action::class, $action);
-        $this->assertSame('editFeaturedImageAlt', $action->getName());
-    }
-
-    public function test_pick_from_library_action_is_wired(): void
-    {
-        $action = MediaLibraryUploads::pickFromLibraryAction();
-
-        $this->assertInstanceOf(Action::class, $action);
-        $this->assertSame('pickFromLibrary', $action->getName());
     }
 
     public function test_choosing_an_existing_image_sets_it_as_the_featured_image_on_save(): void
