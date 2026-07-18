@@ -266,6 +266,64 @@ class AiImportTest extends TestCase
         $this->assertSame('failed', ImportLog::first()->status);
     }
 
+    // ------------------------------------------------------- SSRF (featured_image)
+
+    public function test_featured_image_pointing_at_loopback_ip_is_refused(): void
+    {
+        Storage::fake('public');
+        Http::fake(); // اگر واقعاً درخواستی برود یعنی محافظت کار نکرده — این fake همه‌چیز را می‌گیرد
+
+        $result = $this->service()->import($this->validJson([
+            'featured_image' => 'http://127.0.0.1/secret.png',
+        ]));
+
+        $this->assertNull($result['article']);
+        $this->assertStringContainsString('does not resolve to a public address', implode(' ', $result['errors']));
+        Http::assertNothingSent();
+    }
+
+    public function test_featured_image_pointing_at_cloud_metadata_ip_is_refused(): void
+    {
+        Storage::fake('public');
+        Http::fake();
+
+        $result = $this->service()->import($this->validJson([
+            'featured_image' => 'http://169.254.169.254/latest/meta-data/',
+        ]));
+
+        $this->assertNull($result['article']);
+        $this->assertStringContainsString('does not resolve to a public address', implode(' ', $result['errors']));
+        Http::assertNothingSent();
+    }
+
+    public function test_featured_image_pointing_at_private_lan_ip_is_refused(): void
+    {
+        Storage::fake('public');
+        Http::fake();
+
+        $result = $this->service()->import($this->validJson([
+            'featured_image' => 'http://192.168.1.50/photo.png',
+        ]));
+
+        $this->assertNull($result['article']);
+        $this->assertStringContainsString('does not resolve to a public address', implode(' ', $result['errors']));
+        Http::assertNothingSent();
+    }
+
+    public function test_featured_image_pointing_at_localhost_hostname_is_refused(): void
+    {
+        Storage::fake('public');
+        Http::fake();
+
+        $result = $this->service()->import($this->validJson([
+            'featured_image' => 'http://localhost/photo.png',
+        ]));
+
+        $this->assertNull($result['article']);
+        $this->assertStringContainsString('does not resolve to a public address', implode(' ', $result['errors']));
+        Http::assertNothingSent();
+    }
+
     // این تست قبلاً بررسی می‌کرد که tags/og نادیده گرفته می‌شوند — حالا که Tag واقعی و ستون‌های
     // og_title/og_description وجود دارند (One Click Publish)، این دو دیگر باید mapped باشند؛
     // canonical/robots/schema همچنان هیچ جای ذخیره‌ای در این سایت ندارند، پس auto می‌مانند
