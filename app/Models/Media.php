@@ -91,6 +91,21 @@ class Media extends Model
         return $warnings;
     }
 
+    // تصویری که ثبت شده ولی هیچ نسخه‌ی بهینه‌ای (WebP) برایش ساخته نشده — یعنی پردازشِ زمانِ
+    // آپلود (getimagesize/GD در MediaProcessor::generateDerivatives) شکست خورده (فایل خراب یا
+    // کدگذاریِ پشتیبانی‌نشده). چون تولیدِ مشتقات هم‌زمان با store()/adopt()/replace() و به‌صورت
+    // همگام اجرا می‌شود، نبودِ webp_path برای یک ردیفِ type=image به‌طور قابل‌اتکا یعنی «شکستِ
+    // پردازش»، نه «هنوز پردازش‌نشده».
+    //
+    // این عمداً از warnings() جداست: warnings() را هم AgentAuditService (دسته‌ی image_optimization)
+    // و هم ContentReviewService::scoreCard() مصرف می‌کنند؛ افزودنِ این سیگنال به آن‌جا یک یافته‌ی
+    // «بهینه‌سازی تصویر» و تغییرِ امتیازِ سلامت می‌ساخت. این فقط یک نشانگرِ مشاهده‌پذیریِ کتابخانه‌ی
+    // رسانه است و جای دیگری مصرف نمی‌شود.
+    public function processingFailed(): bool
+    {
+        return $this->type === 'image' && blank($this->webp_path);
+    }
+
     // کجاها استفاده شده — مقاله‌ها، صفحات، تنظیمات سایت (بر اساس تطبیق مسیر فایل)
     public function usages(): array
     {
@@ -100,6 +115,36 @@ class Media extends Model
     public function isInUse(): bool
     {
         return count($this->usages()) > 0;
+    }
+
+    // دایرکتوری‌هایی که سیستم خودش یک تصویرِ «قرار-است-ارجاع-شود» در آن‌ها می‌سازد: تصویر شاخصِ
+    // مقاله (articles/ — شاملِ articles/imported/ برای ایمپورت)، تصویر شاخصِ صفحه (pages/)، و
+    // هیروی تولیدشده با هوش مصنوعی (ai-generated/). این‌ها را MediaProcessor::store() از این مسیرها
+    // می‌نویسد؛ نگاه کنید به ArticleForm/PageForm (saveUploadedFileUsing)، GenerateHeroImage، و
+    // ArticleImportService::downloadImage(). عمدا شاملِ media/library/ (آپلودِ دستیِ ادمین) نیست.
+    // فاز ۴ که فیلدهای CMS (homepage/about/footer) هم DAM-managed شوند، دایرکتوری‌هایشان اینجا اضافه می‌شود.
+    private const SYSTEM_ATTACHED_DIRECTORIES = ['articles/', 'pages/', 'ai-generated/'];
+
+    // آیا این فایل در یکی از دایرکتوری‌هایی است که سیستم تصویرِ قابل-ارجاع می‌سازد؟ محاسبه‌ی محض
+    // روی disk_path — هیچ کوئری‌ای نمی‌زند (برخلافِ isInUse)، پس در حلقه‌ی رندرِ گرید امن است.
+    public function isInSystemAttachedDirectory(): bool
+    {
+        foreach (self::SYSTEM_ATTACHED_DIRECTORIES as $prefix) {
+            if (str_starts_with((string) $this->disk_path, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // «یتیم»: فایلی که سیستم به‌عنوان یک تصویرِ قابل-ارجاع ساخته ولی الان هیچ‌چیز ارجاعش نمی‌دهد —
+    // یعنی تصویر شاخص عوض شده، هیرو دوباره تولید شده، یا یک ایمپورت rollback شده. زیرمجموعه‌ی
+    // «استفاده‌نشده» است، ولی دقیق‌تر: آپلودهای دستیِ استفاده‌نشده‌ی media/library را (که عمداً
+    // منتظرِ استفاده‌اند) کنار می‌گذارد. طبق تصمیمِ کاربر هرگز خودکار حذف نمی‌شود — فقط دیده می‌شود.
+    public function isOrphan(): bool
+    {
+        return $this->isInSystemAttachedDirectory() && ! $this->isInUse();
     }
 
     // رکورد Media متناظر با تصویر شاخص یک Article/Page — با تطبیق disk_path (نه کلید خارجی، طبق

@@ -43,6 +43,25 @@ class MediaProcessor
         'application/zip' => 'zip',
     ];
 
+    // طبقه‌بندیِ نوعِ رسانه بر اساس MIME واقعی — ستونِ `type` روی رکورد Media از این نگاشت پر
+    // می‌شود. عمداً از فهرستِ سفیدِ بالا جداست: allowlist می‌گوید «آیا اجازه‌ی ذخیره دارد و با
+    // چه پسوندی»، این می‌گوید «چه نوعی است». هر MIME ای که اینجا نباشد (مثل application/zip یا
+    // هر نوعِ آینده‌ی هنوز-طبقه‌بندی‌نشده) به‌صورت امن 'other' می‌شود. افزودنِ یک فرمتِ جدید در
+    // آینده = یک ورودی در allowlist بالا + یک ورودی اینجا؛ نیازی به بازطراحیِ این کلاس نیست.
+    private const MIME_CATEGORIES = [
+        'image' => ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'],
+        'video' => ['video/mp4', 'video/webm', 'video/quicktime'],
+        'audio' => ['audio/mpeg', 'audio/wav'],
+        'document' => [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/vnd.ms-excel',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'text/plain',
+        ],
+    ];
+
     public function store(UploadedFile $file, string $directory, string $disk = 'public', ?int $folderId = null): Media
     {
         // getMimeType() محتوای واقعیِ فایل را می‌خواند (نه هدر Content-Type ارسالیِ کلاینت)
@@ -59,7 +78,7 @@ class MediaProcessor
             'disk' => $disk,
             'disk_path' => $storedPath,
             'url' => Storage::disk($disk)->url($storedPath),
-            'type' => $this->isProcessableImage($mimeType) ? 'image' : 'other',
+            'type' => $this->resolveType($mimeType),
             'mime_type' => $mimeType,
             'size' => $file->getSize(),
             'folder_id' => $folderId,
@@ -82,7 +101,7 @@ class MediaProcessor
             'disk' => $disk,
             'disk_path' => $path,
             'url' => Storage::disk($disk)->url($path),
-            'type' => $this->isProcessableImage($mimeType) ? 'image' : 'other',
+            'type' => $this->resolveType($mimeType),
             'mime_type' => $mimeType,
             'size' => Storage::disk($disk)->size($path),
             'folder_id' => $folderId,
@@ -114,7 +133,7 @@ class MediaProcessor
             'original_name' => $file->getClientOriginalName(),
             'mime_type' => $mimeType,
             'size' => $file->getSize(),
-            'type' => $this->isProcessableImage($mimeType) ? 'image' : 'other',
+            'type' => $this->resolveType($mimeType),
             'width' => null,
             'height' => null,
             'webp_path' => null,
@@ -134,19 +153,33 @@ class MediaProcessor
         $media->delete();
     }
 
+    // نقطه‌ی گسترش‌پذیریِ خط‌لوله: امروز فقط تصویرها مشتق می‌گیرند، ولی این dispatch عمداً باز
+    // است تا افزودنِ پردازش برای یک نوعِ جدید در آینده (مثلا poster/thumbnail برای ویدئو،
+    // waveform برای صوت) صرفاً یک شاخه‌ی match و یک متدِ generateXDerivatives باشد — نه
+    // بازنویسیِ این متد یا شکستنِ رفتارِ تصویرها.
     private function generateDerivatives(Media $media): void
     {
-        if ($media->type !== 'image') {
-            return;
-        }
+        match ($media->type) {
+            'image' => $this->generateImageDerivatives($media),
+            default => null,
+        };
+    }
 
+    private function generateImageDerivatives(Media $media): void
+    {
         $disk = Storage::disk($media->disk);
         $absolutePath = $disk->path($media->disk_path);
 
         $dimensions = @getimagesize($absolutePath);
         if ($dimensions === false) {
-            // فایلی که به‌صورت تصویر آپلود شده ولی خوانده نمی‌شود (مثلا SVG یا فایل خراب) —
-            // رکورد بدون مشتقات باقی می‌ماند، فایل اصلی هرگز حذف نمی‌شود
+            // فایلی که MIME‌اش تصویر تشخیص داده شده ولی محتوایش خوانده نمی‌شود (مثلا JPEG
+            // بریده/خراب یا کدگذاریِ پشتیبانی‌نشده) — رکورد بدون مشتقات باقی می‌ماند و فایل اصلی
+            // هرگز حذف نمی‌شود. پیش از این این شاخه کاملا خاموش بود؛ حالا گزارش می‌شود تا در لاگ
+            // دیده شود و Media::processingFailed() هم آن را در پنل نشان می‌دهد.
+            report(new \RuntimeException(
+                "MediaProcessor: could not read image dimensions for media #{$media->id} ({$media->disk_path}) — file may be corrupt or an unsupported encoding; stored without derivatives."
+            ));
+
             return;
         }
         [$width, $height] = $dimensions;
@@ -154,6 +187,10 @@ class MediaProcessor
         try {
             $manager = ImageManager::gd();
         } catch (Throwable $e) {
+            // GD در دسترس نیست/راه‌اندازی نمی‌شود — یک نقصِ سطحِ سرور، نه فایلِ خراب؛ باز هم
+            // به‌جای شکستِ خاموش گزارش می‌شود تا قابلِ تشخیص باشد چرا هیچ تصویری مشتق نمی‌گیرد.
+            report($e);
+
             return;
         }
 
@@ -207,9 +244,18 @@ class MediaProcessor
         return ($directory === '.' ? '' : $directory.'/').$base.$suffix;
     }
 
-    private function isProcessableImage(?string $mimeType): bool
+    // نوعِ رسانه‌ی یک MIME واقعی: image | video | audio | document | other. عمومی است تا
+    // مصرف‌کننده‌های دیگر (مثلا فیلترِ کتابخانه‌ی رسانه) هم بتوانند از همین منطقِ واحد استفاده
+    // کنند، به‌جای بازتولیدِ یک نگاشتِ موازی.
+    public function resolveType(?string $mimeType): string
     {
-        return in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/bmp'], true);
+        foreach (self::MIME_CATEGORIES as $type => $mimeTypes) {
+            if (in_array($mimeType, $mimeTypes, true)) {
+                return $type;
+            }
+        }
+
+        return 'other';
     }
 
     private function assertSafeExtension(?string $mimeType): string

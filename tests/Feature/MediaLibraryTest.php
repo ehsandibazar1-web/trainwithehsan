@@ -2,17 +2,20 @@
 
 namespace Tests\Feature;
 
+use App\Filament\Pages\MediaLibrary;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\MediaFolder;
 use App\Models\Page;
 use App\Models\SiteSetting;
+use App\Models\User;
 use App\Services\Media\MediaProcessor;
 use App\Services\Media\MediaUsageScanner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class MediaLibraryTest extends TestCase
@@ -85,7 +88,9 @@ class MediaLibraryTest extends TestCase
 
         $media = $this->processor()->store($pdf, 'media/library', 'public');
 
-        $this->assertSame('other', $media->type);
+        // از فاز ۱ (طبقه‌بندیِ عمومیِ رسانه) یک PDF به‌جای 'other' حالا 'document' می‌شود —
+        // به هر حال یک فایلِ غیرتصویری است و هیچ مشتقی نمی‌گیرد؛ فقط دسته‌بندی‌اش دقیق‌تر شد
+        $this->assertSame('document', $media->type);
         $this->assertStringEndsWith('.pdf', $media->disk_path);
         Storage::disk('public')->assertExists($media->disk_path);
     }
@@ -275,6 +280,213 @@ class MediaLibraryTest extends TestCase
             'alt_text' => 'ok',
         ]);
         $this->assertStringContainsString('small', implode(' ', $tiny->warnings()));
+    }
+
+    public function test_processing_failed_is_true_for_an_image_row_with_no_webp_and_false_once_processed(): void
+    {
+        // یک ردیفِ type=image بدون webp_path — یعنی پردازشِ زمانِ آپلود شکست خورده
+        $failed = Media::create([
+            'original_name' => 'corrupt.jpg', 'disk' => 'public', 'disk_path' => 'media/corrupt.jpg',
+            'url' => 'http://x/corrupt.jpg', 'type' => 'image',
+        ]);
+        $this->assertTrue($failed->processingFailed());
+
+        // یک تصویرِ واقعی که از MediaProcessor عبور کرده باید webp داشته باشد و شکست‌خورده نباشد
+        Storage::fake('public');
+        $processed = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+        $this->assertNotNull($processed->webp_path);
+        $this->assertFalse($processed->processingFailed());
+    }
+
+    public function test_processing_failed_is_false_for_non_image_files(): void
+    {
+        // فایلِ غیرتصویری (type=other) هرگز مشتق نمی‌گیرد، پس نبودِ webp «شکست» نیست
+        $other = Media::create([
+            'original_name' => 'notes.pdf', 'disk' => 'public', 'disk_path' => 'media/notes.pdf',
+            'url' => 'http://x/notes.pdf', 'type' => 'other',
+        ]);
+        $this->assertFalse($other->processingFailed());
+    }
+
+    public function test_processing_failed_state_does_not_leak_into_warnings(): void
+    {
+        // مشاهده‌پذیریِ «شکستِ پردازش» عمداً از warnings() جداست تا AgentAuditService/scoreCard
+        // را تحتِ تأثیر نگذارد — یک تصویرِ سالمِ فقط-بدونِ-webp نباید هیچ warning ای بسازد
+        $failed = Media::create([
+            'original_name' => 'corrupt.jpg', 'disk' => 'public', 'disk_path' => 'media/corrupt2.jpg',
+            'url' => 'http://x/corrupt2.jpg', 'type' => 'image', 'width' => 800, 'height' => 600,
+            'alt_text' => 'has alt', 'webp_path' => null,
+        ]);
+
+        $this->assertTrue($failed->processingFailed());
+        $this->assertSame([], $failed->warnings());
+    }
+
+    public function test_resolve_type_classifies_real_mimes_into_the_media_taxonomy(): void
+    {
+        $p = $this->processor();
+
+        $this->assertSame('image', $p->resolveType('image/png'));
+        $this->assertSame('image', $p->resolveType('image/webp'));
+        $this->assertSame('video', $p->resolveType('video/mp4'));
+        $this->assertSame('video', $p->resolveType('video/quicktime'));
+        $this->assertSame('audio', $p->resolveType('audio/mpeg'));
+        $this->assertSame('document', $p->resolveType('application/pdf'));
+        $this->assertSame('document', $p->resolveType('text/plain'));
+        // zip و هر MIME ناشناخته/خالی → 'other' (پیش‌فرضِ امن)
+        $this->assertSame('other', $p->resolveType('application/zip'));
+        $this->assertSame('other', $p->resolveType('application/x-unknown'));
+        $this->assertSame('other', $p->resolveType(null));
+    }
+
+    public function test_storing_a_real_image_still_resolves_to_type_image(): void
+    {
+        Storage::fake('public');
+
+        $media = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+
+        $this->assertSame('image', $media->type);
+        $this->assertNotNull($media->webp_path);
+    }
+
+    public function test_type_filters_partition_image_video_and_other_with_nothing_vanishing(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        $image = Media::create([
+            'original_name' => 'a.jpg', 'disk' => 'public', 'disk_path' => 'media/a.jpg',
+            'url' => 'http://x/a.jpg', 'type' => 'image',
+        ]);
+        $video = Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'media/clip.mp4',
+            'url' => 'http://x/clip.mp4', 'type' => 'video',
+        ]);
+        $doc = Media::create([
+            'original_name' => 'notes.pdf', 'disk' => 'public', 'disk_path' => 'media/notes.pdf',
+            'url' => 'http://x/notes.pdf', 'type' => 'document',
+        ]);
+        $other = Media::create([
+            'original_name' => 'bundle.zip', 'disk' => 'public', 'disk_path' => 'media/bundle.zip',
+            'url' => 'http://x/bundle.zip', 'type' => 'other',
+        ]);
+
+        $idsFor = fn (string $filter) => Livewire::actingAs($owner)->test(MediaLibrary::class)
+            ->set('typeFilter', $filter)
+            ->instance()->mediaItems->pluck('id');
+
+        // Images = فقط تصویر
+        $images = $idsFor('image');
+        $this->assertTrue($images->contains($image->id));
+        $this->assertFalse($images->contains($video->id));
+
+        // Videos = فقط ویدئو (فیلترِ اختصاصیِ فاز ۵)
+        $videos = $idsFor('video');
+        $this->assertTrue($videos->contains($video->id));
+        $this->assertFalse($videos->contains($image->id));
+        $this->assertFalse($videos->contains($doc->id));
+
+        // Other files = نه تصویر و نه ویدئو (سند/زیپ/…) — هیچ فایلی از هیچ فیلتری ناپدید نمی‌شود
+        $others = $idsFor('other');
+        $this->assertFalse($others->contains($image->id));
+        $this->assertFalse($others->contains($video->id));
+        $this->assertTrue($others->contains($doc->id));
+        $this->assertTrue($others->contains($other->id));
+    }
+
+    public function test_is_orphan_flags_unused_system_attached_files_but_not_manual_uploads_or_in_use_files(): void
+    {
+        // استفاده‌نشده + در articles/ → یتیم (تصویر شاخصِ عوض‌شده یا ایمپورتِ rollback‌شده)
+        $orphanArticle = Media::create([
+            'original_name' => 'old-hero.jpg', 'disk' => 'public', 'disk_path' => 'articles/old-hero.jpg',
+            'url' => 'http://x/old-hero.jpg', 'type' => 'image',
+        ]);
+        $this->assertTrue($orphanArticle->isOrphan());
+
+        // استفاده‌نشده + هیروی تولیدی → یتیم (regenerate شده)
+        $orphanHero = Media::create([
+            'original_name' => 'hero.png', 'disk' => 'public', 'disk_path' => 'ai-generated/hero.png',
+            'url' => 'http://x/hero.png', 'type' => 'image',
+        ]);
+        $this->assertTrue($orphanHero->isOrphan());
+
+        // آپلودِ دستیِ استفاده‌نشده‌ی media/library → یتیم نیست (عمداً منتظرِ استفاده)
+        $manual = Media::create([
+            'original_name' => 'staged.jpg', 'disk' => 'public', 'disk_path' => 'media/library/staged.jpg',
+            'url' => 'http://x/staged.jpg', 'type' => 'image',
+        ]);
+        $this->assertFalse($manual->isOrphan());
+
+        // در articles/ ولی در حال استفاده → یتیم نیست
+        $inUse = Media::create([
+            'original_name' => 'current.jpg', 'disk' => 'public', 'disk_path' => 'articles/current.jpg',
+            'url' => 'http://x/current.jpg', 'type' => 'image',
+        ]);
+        Article::create([
+            'locale' => 'en', 'title' => 'Uses current', 'slug' => 'uses-current',
+            'body' => '<p>x</p>', 'image_path' => 'articles/current.jpg', 'author_name' => 'Ehsan', 'status' => 'draft',
+        ]);
+        $this->assertFalse($inUse->isOrphan());
+    }
+
+    public function test_orphaned_filter_shows_only_unused_system_attached_files(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        $orphan = Media::create([
+            'original_name' => 'orphan.jpg', 'disk' => 'public', 'disk_path' => 'articles/orphan.jpg',
+            'url' => 'http://x/orphan.jpg', 'type' => 'image',
+        ]);
+        $manualUnused = Media::create([
+            'original_name' => 'staged.jpg', 'disk' => 'public', 'disk_path' => 'media/library/staged.jpg',
+            'url' => 'http://x/staged.jpg', 'type' => 'image',
+        ]);
+        $inUse = Media::create([
+            'original_name' => 'current.jpg', 'disk' => 'public', 'disk_path' => 'articles/current.jpg',
+            'url' => 'http://x/current.jpg', 'type' => 'image',
+        ]);
+        Article::create([
+            'locale' => 'en', 'title' => 'Uses current', 'slug' => 'uses-current',
+            'body' => '<p>x</p>', 'image_path' => 'articles/current.jpg', 'author_name' => 'Ehsan', 'status' => 'draft',
+        ]);
+
+        $ids = Livewire::actingAs($owner)->test(MediaLibrary::class)
+            ->set('onlyOrphaned', true)
+            ->instance()->mediaItems->pluck('id');
+
+        $this->assertTrue($ids->contains($orphan->id));
+        $this->assertFalse($ids->contains($manualUnused->id));
+        $this->assertFalse($ids->contains($inUse->id));
+    }
+
+    public function test_video_media_is_usage_tracked_when_referenced_from_settings(): void
+    {
+        // یک ویدئوی DAM-managed (type=video) که مسیرش در SiteSetting نشسته — دقیقاً همان چیزی که
+        // HomepageSettings::save() بعد از عبور از MediaProcessor ذخیره می‌کند
+        $video = Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'homepage/videos/clip.mp4',
+            'url' => 'http://x/clip.mp4', 'type' => 'video',
+        ]);
+        SiteSetting::set('home.en.video1_file', 'homepage/videos/clip.mp4');
+
+        // پس ویدئوها هم مثل تصویرها ردگیریِ استفاده می‌شوند و حذفشان محافظت‌شده است
+        $this->assertTrue($video->isInUse());
+        $this->assertNotEmpty($video->usages());
+    }
+
+    public function test_upload_size_policy_keeps_images_at_15mb_and_allows_other_media_up_to_128mb(): void
+    {
+        $mb = 1024 * 1024;
+
+        // تصویر: سقف ۱۵MB
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('image', 15 * $mb));
+        $this->assertTrue(MediaLibrary::isOverTypeLimit('image', 16 * $mb));
+
+        // ویدئو/صوت/سند/سایر: سقف ۱۲۸MB — یک ویدئوی ۱۰۰MB مجاز، ۲۰MB قطعاً مجاز
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('video', 100 * $mb));
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('video', 20 * $mb));
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('document', 20 * $mb));
+        $this->assertFalse(MediaLibrary::isOverTypeLimit('audio', 20 * $mb));
+        $this->assertTrue(MediaLibrary::isOverTypeLimit('video', 129 * $mb));
     }
 
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void
