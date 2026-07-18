@@ -52,6 +52,34 @@ class RichEditorMediaPickerTest extends TestCase
         $this->assertSame('Existing alt', $node2['attrs']['alt']);
     }
 
+    public function test_alt_prefill_returns_the_media_alt_for_an_image(): void
+    {
+        Media::create([
+            'original_name' => 'hero.jpg', 'disk' => 'public', 'disk_path' => 'articles/hero.jpg',
+            'url' => 'http://localhost/storage/articles/hero.jpg', 'type' => 'image', 'alt_text' => 'Existing alt',
+        ]);
+
+        $this->assertSame('Existing alt', MediaLibraryRichContentPlugin::altPrefillFor('articles/hero.jpg'));
+    }
+
+    public function test_alt_prefill_returns_null_for_blank_missing_no_alt_or_non_image(): void
+    {
+        $this->assertNull(MediaLibraryRichContentPlugin::altPrefillFor(null));
+        $this->assertNull(MediaLibraryRichContentPlugin::altPrefillFor('nope/none.webp'));
+
+        Media::create([
+            'original_name' => 'noalt.jpg', 'disk' => 'public', 'disk_path' => 'articles/noalt.jpg',
+            'url' => 'http://localhost/storage/articles/noalt.jpg', 'type' => 'image', 'alt_text' => null,
+        ]);
+        $this->assertNull(MediaLibraryRichContentPlugin::altPrefillFor('articles/noalt.jpg'));
+
+        Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'videos/clip.mp4',
+            'url' => 'http://localhost/storage/videos/clip.mp4', 'type' => 'video', 'alt_text' => 'ignored',
+        ]);
+        $this->assertNull(MediaLibraryRichContentPlugin::altPrefillFor('videos/clip.mp4'));
+    }
+
     public function test_insert_content_for_a_document_builds_a_download_link(): void
     {
         $media = Media::create([
