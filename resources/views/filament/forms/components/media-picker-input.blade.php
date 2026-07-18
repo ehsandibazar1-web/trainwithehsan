@@ -4,6 +4,7 @@
     $state = $getState();
     $onlyImages = $isOnlyImages();
     $uploadDir = $getUploadDirectory();
+    $initialType = $getInitialType();
     $previewUrl = $media && $media->type === 'image'
         ? $media->thumbnail_url
         : ($onlyImages && filled($state) ? \Illuminate\Support\Facades\Storage::disk('public')->url($state) : null);
@@ -20,9 +21,10 @@
             pickTarget: @js($statePath),
             onlyImages: @js($onlyImages),
             uploadDir: @js($uploadDir),
+            initialType: @js($initialType),
             openPicker() {
                 window.dispatchEvent(new CustomEvent('open-media-picker', {
-                    detail: { target: this.pickTarget, onlyImages: this.onlyImages, uploadDirectory: this.uploadDir },
+                    detail: { target: this.pickTarget, onlyImages: this.onlyImages, uploadDirectory: this.uploadDir, initialType: this.initialType },
                 }));
             },
         }"

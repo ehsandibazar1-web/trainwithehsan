@@ -3,10 +3,8 @@
 namespace App\Filament\Pages;
 
 use App\Filament\Forms\Components\MediaPickerInput;
-use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -175,14 +173,11 @@ class HomepageSettings extends Page implements HasForms
             $fields[] = TextInput::make("$l.video{$i}_embed")
                 ->label("Video $i — Embed URL (YouTube/Aparat)")
                 ->helperText('Paste an embed link here, OR upload a file below — not both.');
-            $fields[] = FileUpload::make("$l.video{$i}_file")
+            $fields[] = MediaPickerInput::make("$l.video{$i}_file")
                 ->label("Video $i — File (mp4)")
-                ->helperText('Up to 128 MB. Very large uploads also need the server\'s PHP upload limit raised to match.')
-                ->disk('public')
-                ->directory('homepage/videos')
-                ->acceptedFileTypes(['video/mp4'])
-                ->maxSize(131072)
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->helperText('Pick or upload a video in the Media Library. Up to 128 MB.')
+                ->initialType('video')
+                ->uploadDirectory('homepage/videos')
                 ->nullable();
         }
 
@@ -237,25 +232,20 @@ class HomepageSettings extends Page implements HasForms
                 ->label('Members')
                 ->schema([
                     TextInput::make('name')->label('Name'),
-                    FileUpload::make('photo')
+                    MediaPickerInput::make('photo')
                         ->label('Photo')
-                        ->image()
-                        ->disk('public')
-                        ->directory('homepage/members')
-                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                        ->onlyImages()
+                        ->uploadDirectory('homepage/members')
                         ->nullable(),
                     TextInput::make('video_embed')
                         ->label('Video embed URL (YouTube)')
-                        ->helperText('Paste a YouTube link here, OR upload a video file below — not both. Clicking this member\'s photo will open the video, just like the videos at the top of the homepage.')
+                        ->helperText('Paste a YouTube link here, OR pick a video file below — not both. Clicking this member\'s photo will open the video, just like the videos at the top of the homepage.')
                         ->nullable(),
-                    FileUpload::make('video_file')
+                    MediaPickerInput::make('video_file')
                         ->label('Video file (mp4)')
-                        ->helperText('Up to 128 MB. Very large uploads also need the server\'s PHP upload limit raised to match.')
-                        ->disk('public')
-                        ->directory('homepage/members')
-                        ->acceptedFileTypes(['video/mp4'])
-                        ->maxSize(131072)
-                        ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                        ->helperText('Pick or upload a video in the Media Library. Up to 128 MB.')
+                        ->initialType('video')
+                        ->uploadDirectory('homepage/members')
                         ->nullable(),
                 ])
                 ->defaultItems(0)

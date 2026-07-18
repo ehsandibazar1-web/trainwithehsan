@@ -30,6 +30,10 @@ class MediaPickerInput extends Field
     // شاخصِ مقاله می‌تواند 'articles' بدهد تا ردگیریِ «یتیم» (isInSystemAttachedDirectory) دست‌نخورده بماند
     protected string|Closure $uploadDirectory = 'media/library';
 
+    // نوعِ پیش‌فرضی که پیکر با آن باز می‌شود (مثلاً 'video' برای فیلدِ فایلِ ویدئو) — یک نمای اولیه،
+    // نه یک قفل؛ همه‌ی نوع‌ها همچنان قابلِ انتخاب می‌مانند. برای فیلدهای فقط-تصویر بی‌اثر است.
+    protected string|Closure|null $initialType = null;
+
     public function onlyImages(bool|Closure $condition = true): static
     {
         $this->onlyImages = $condition;
@@ -42,6 +46,18 @@ class MediaPickerInput extends Field
         $this->uploadDirectory = $directory;
 
         return $this;
+    }
+
+    public function initialType(string|Closure|null $type): static
+    {
+        $this->initialType = $type;
+
+        return $this;
+    }
+
+    public function getInitialType(): ?string
+    {
+        return $this->evaluate($this->initialType);
     }
 
     public function isOnlyImages(): bool
