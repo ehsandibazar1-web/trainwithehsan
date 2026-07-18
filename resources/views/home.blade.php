@@ -77,7 +77,10 @@
     /* موبایل — دقیقاً مثل سایت اصلی: یکی‌یکی، تمام‌عرض، اسلاید افقی (نه ۳تا فشرده) */
     @@media (max-width:640px){
         .row-video{
-            margin-top:-28px;display:flex;gap:15px;padding:0 15px;overflow-x:auto;
+            margin-top:-28px;display:flex;gap:15px;padding:0 15px;overflow-x:auto;overflow-y:hidden;
+            /* overflow-x:auto بدون overflow-y صریح باعث می‌شد طبق اسپک CSS مرورگر overflow-y را
+               هم به auto تبدیل کند؛ چون محتوای کارت‌ها چند پیکسل از قاب بلندتر بود، یک اسکرول
+               عمودیِ داخلیِ ناخواسته ساخته می‌شد که کشیدنِ لمسی روی کارت‌ها را قاپ می‌زد */
             scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
         }
         .row-video::-webkit-scrollbar{display:none}
@@ -160,7 +163,10 @@
     .sun-counter{text-align:center;color:#ddd;font-size:14px;margin-top:8px;max-width:44rem;margin-left:auto;margin-right:auto}
     .courses-carousel{position:relative;margin-top:40px}
     .learn-grid{
-        display:flex;gap:20px;overflow-x:auto;
+        display:flex;gap:20px;overflow-x:auto;overflow-y:hidden;
+        /* بدون overflow-y صریح، مرورگر آن را هم auto حساب می‌کرد (طبق اسپک CSS) و چون کارت‌ها
+           چند پیکسل از قاب بلندتر بودند، یک اسکرول عمودیِ داخلیِ ناخواسته می‌ساخت که کشیدنِ
+           لمسی روی کارت‌ها را به‌جای اسکرول افقیِ کاروسل قاپ می‌زد */
         scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
         padding-bottom:10px;scrollbar-width:thin;
     }
@@ -217,7 +223,7 @@
     .articles-carousel .car-arrow{color:#555}
     .articles-carousel .car-arrow:hover{color:var(--gold-dark,#c09d4c)}
     .news-grid{
-        display:flex;gap:20px;overflow-x:auto;
+        display:flex;gap:20px;overflow-x:auto;overflow-y:hidden;
         scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
         padding-bottom:10px;scrollbar-width:thin;
     }
