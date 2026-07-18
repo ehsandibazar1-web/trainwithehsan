@@ -50,14 +50,14 @@ class Media extends Model
         return $paths->mapWithKeys(fn ($path, $width) => [(int) $width => Storage::disk($this->disk)->url($path)])->all();
     }
 
-    public function getHumanSizeAttribute(): string
+    public static function humanBytes(?int $bytes): string
     {
-        if (! $this->size) {
+        if (! $bytes) {
             return '—';
         }
 
         $units = ['B', 'KB', 'MB', 'GB'];
-        $size = (float) $this->size;
+        $size = (float) $bytes;
         $i = 0;
         while ($size >= 1024 && $i < count($units) - 1) {
             $size /= 1024;
@@ -65,6 +65,46 @@ class Media extends Model
         }
 
         return round($size, $i === 0 ? 0 : 1).' '.$units[$i];
+    }
+
+    public function getHumanSizeAttribute(): string
+    {
+        return self::humanBytes($this->size);
+    }
+
+    // حجمِ فایلِ WebP روی دیسک (بایت) — null اگر WebP ساخته نشده یا فایلش نیست
+    public function getWebpSizeAttribute(): ?int
+    {
+        if (! $this->webp_path) {
+            return null;
+        }
+
+        try {
+            return Storage::disk($this->disk)->exists($this->webp_path)
+                ? Storage::disk($this->disk)->size($this->webp_path)
+                : null;
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    public function getWebpHumanSizeAttribute(): string
+    {
+        return self::humanBytes($this->webp_size);
+    }
+
+    // درصدِ صرفه‌جویی نسبت به فایلِ اصلی — مثلا 74 یعنی WebP ۷۴٪ کوچک‌تر است. null اگر یکی از
+    // دو اندازه معلوم نباشد. می‌تواند منفی هم باشد (اگر WebP از اصل بزرگ‌تر شود، برای تصاویرِ
+    // خیلی کوچکِ از-پیش-فشرده) — عمداً clamp نمی‌شود تا واقعیت را نشان دهد.
+    public function getWebpSavingsPercentAttribute(): ?int
+    {
+        $webp = $this->webp_size;
+
+        if (! $this->size || ! $webp) {
+            return null;
+        }
+
+        return (int) round((1 - $webp / $this->size) * 100);
     }
 
     // هشدارهای کیفیت — برای نشان دادن نشان هشدار روی هر آیتم کتابخانه‌ی رسانه

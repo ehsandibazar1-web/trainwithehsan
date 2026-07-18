@@ -271,6 +271,19 @@
                     <label>WebP optimization</label>
                     @if($this->selectedMedia->webp_path)
                         <div style="font-size:.8rem;color:#15803d">✓ WebP generated — <code>{{ $this->selectedMedia->webp_path }}</code></div>
+                        <div style="font-size:.8rem;color:#374151;margin-top:.35rem;line-height:1.7">
+                            Original: <strong>{{ $this->selectedMedia->human_size }}</strong><br>
+                            WebP: <strong>{{ $this->selectedMedia->webp_human_size }}</strong>
+                            @php($saved = $this->selectedMedia->webp_savings_percent)
+                            @if(! is_null($saved))
+                                <br>
+                                @if($saved >= 0)
+                                    Saved: <strong style="color:#15803d">{{ $saved }}%</strong>
+                                @else
+                                    <span style="color:#b45309">WebP is {{ abs($saved) }}% larger (already-compressed image)</span>
+                                @endif
+                            @endif
+                        </div>
                     @else
                         <div style="font-size:.8rem;color:#b45309">No WebP version yet. Click below to generate it — if it fails, you'll see the exact reason.</div>
                     @endif
