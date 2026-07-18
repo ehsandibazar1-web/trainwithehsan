@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Articles\Schemas;
 
 use App\Filament\RichContent\MediaLibraryRichContentPlugin;
+use App\Filament\Support\MediaLibraryUploads;
 use App\Models\Article;
 use App\Services\Media\MediaProcessor;
 use Filament\Forms\Components\BaseFileUpload;
@@ -153,6 +154,7 @@ class ArticleForm
                     ->saveUploadedFileUsing(fn (BaseFileUpload $component, TemporaryUploadedFile $file) => app(MediaProcessor::class)
                         ->store($file, $component->getDirectory(), $component->getDiskName())
                         ->disk_path)
+                    ->hintAction(MediaLibraryUploads::altHintAction())
                     ->nullable(),
 
                 Section::make('AI Image Prompts (optional)')

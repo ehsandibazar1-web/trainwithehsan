@@ -278,6 +278,30 @@ class MediaLibrary extends Page implements HasForms
         Notification::make()->success()->title('ALT text saved')->send();
     }
 
+    // caption/description ستون‌های واقعیِ Media هستند (از خط‌لوله‌ی تصویرِ هوش مصنوعی) که تا حالا
+    // فقط توسط AI پر می‌شدند — این‌ها اجازه‌ی ویرایشِ دستی می‌دهند
+    public function saveCaption(string $caption): void
+    {
+        if (! $this->selectedMediaId) {
+            return;
+        }
+
+        Media::whereKey($this->selectedMediaId)->update(['caption' => trim($caption) ?: null]);
+
+        Notification::make()->success()->title('Caption saved')->send();
+    }
+
+    public function saveDescription(string $description): void
+    {
+        if (! $this->selectedMediaId) {
+            return;
+        }
+
+        Media::whereKey($this->selectedMediaId)->update(['description' => trim($description) ?: null]);
+
+        Notification::make()->success()->title('Description saved')->send();
+    }
+
     public function moveSelectedToFolder(string $folderId): void
     {
         if (! $this->selectedMediaId) {

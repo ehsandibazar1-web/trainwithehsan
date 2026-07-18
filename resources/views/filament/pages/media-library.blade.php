@@ -249,6 +249,23 @@
                 </div>
             @endif
 
+            {{-- caption/description متادیتای عمومیِ Media است (نه فقط تصویر) — برای هر نوع فایل --}}
+            <div class="field">
+                <label for="mediaCaptionInput">Caption</label>
+                <input type="text" id="mediaCaptionInput" x-ref="captionInput" value="{{ $this->selectedMedia->caption }}" placeholder="A short caption for this file…">
+                <div style="margin-top:.4rem">
+                    <x-filament::button size="sm" color="gray" wire:click="saveCaption($refs.captionInput.value)">Save caption</x-filament::button>
+                </div>
+            </div>
+
+            <div class="field">
+                <label for="mediaDescriptionInput">Description</label>
+                <input type="text" id="mediaDescriptionInput" x-ref="descriptionInput" value="{{ $this->selectedMedia->description }}" placeholder="A longer description…">
+                <div style="margin-top:.4rem">
+                    <x-filament::button size="sm" color="gray" wire:click="saveDescription($refs.descriptionInput.value)">Save description</x-filament::button>
+                </div>
+            </div>
+
             <div class="field">
                 <label for="mediaFolderSelect">Folder</label>
                 <select id="mediaFolderSelect" wire:change="moveSelectedToFolder($event.target.value)">
