@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Forms\Components\MediaPickerInput;
 use App\Filament\Support\MediaLibraryUploads;
 use App\Models\SiteSetting;
 use BackedEnum;
@@ -121,12 +122,10 @@ class AboutPageSettings extends Page implements HasForms
     private static function heroFields(string $l): array
     {
         return [
-            FileUpload::make("$l.hero_image")
+            MediaPickerInput::make("$l.hero_image")
                 ->label('Hero photo')
-                ->image()
-                ->disk('public')
-                ->directory('about/hero')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('about/hero')
                 ->nullable(),
             TextInput::make("$l.hero_name")
                 ->label('Name'),
@@ -269,12 +268,10 @@ class AboutPageSettings extends Page implements HasForms
                 ->label('Button text'),
             TextInput::make("$l.cta_button_url")
                 ->label('Button URL'),
-            FileUpload::make("$l.cta_bg_image")
+            MediaPickerInput::make("$l.cta_bg_image")
                 ->label('Background image (optional)')
-                ->image()
-                ->disk('public')
-                ->directory('about/cta')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('about/cta')
                 ->nullable()
                 ->helperText('Leave empty to keep the default dark gradient background.'),
         ];
@@ -288,12 +285,10 @@ class AboutPageSettings extends Page implements HasForms
             Textarea::make("$l.seo_description")
                 ->label('Meta description')
                 ->rows(3),
-            FileUpload::make("$l.seo_og_image")
+            MediaPickerInput::make("$l.seo_og_image")
                 ->label('Open Graph image')
-                ->image()
-                ->disk('public')
-                ->directory('about/seo')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('about/seo')
                 ->nullable()
                 ->helperText('Shown as the preview image when this page is shared on social media.'),
         ];

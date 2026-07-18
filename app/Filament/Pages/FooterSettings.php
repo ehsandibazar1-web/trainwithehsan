@@ -2,10 +2,9 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Support\MediaLibraryUploads;
+use App\Filament\Forms\Components\MediaPickerInput;
 use App\Models\SiteSetting;
 use BackedEnum;
-use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -115,20 +114,16 @@ class FooterSettings extends Page implements HasForms
     private static function lookFields(string $l): array
     {
         return [
-            FileUpload::make("$l.bg_image")
+            MediaPickerInput::make("$l.bg_image")
                 ->label('Footer background image')
-                ->image()
-                ->disk('public')
-                ->directory('footer')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('footer')
                 ->nullable()
                 ->helperText('Leave empty to keep the current background.'),
-            FileUpload::make("$l.logo")
+            MediaPickerInput::make("$l.logo")
                 ->label('Footer logo')
-                ->image()
-                ->disk('public')
-                ->directory('footer')
-                ->saveUploadedFileUsing(MediaLibraryUploads::callback())
+                ->onlyImages()
+                ->uploadDirectory('footer')
                 ->nullable()
                 ->helperText('Leave empty to keep the current logo.'),
             Textarea::make("$l.description")

@@ -70,4 +70,41 @@ class CmsUploadWiringTest extends TestCase
         Livewire::actingAs($owner)->test(FooterSettings::class)->call('save')->assertHasNoErrors();
         Livewire::actingAs($owner)->test(HomepageSettings::class)->call('save')->assertHasNoErrors();
     }
+
+    // فاز ۲: فیلدهای تصویرِ CMS حالا MediaPickerInput هستند که مقدارشان یک رشته‌ی disk_path است
+    // (نه آرایه‌ی FileUpload). این تست‌ها تأیید می‌کنند همان مقدارِ رشته‌ای از پنجره‌ی انتخابِ رسانه
+    // بی‌کم‌وکاست از mount/save عبور کرده و در SiteSetting می‌نشیند — یعنی سیم‌کشیِ جدید backward-compatible است.
+    public function test_homepage_media_picker_image_value_persists_to_site_setting(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        Livewire::actingAs($owner)
+            ->test(HomepageSettings::class)
+            ->set('data.en.hero1_image', 'homepage/hero/picked.jpg')
+            ->set('data.en.app_image', 'homepage/app-shot.png')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('homepage/hero/picked.jpg', SiteSetting::get('home.en.hero1_image'));
+        $this->assertSame('homepage/app-shot.png', SiteSetting::get('home.en.app_image'));
+    }
+
+    public function test_about_and_footer_media_picker_image_values_persist(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        Livewire::actingAs($owner)
+            ->test(AboutPageSettings::class)
+            ->set('data.en.hero_image', 'about/hero/picked.jpg')
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertSame('about/hero/picked.jpg', SiteSetting::get('about.en.hero_image'));
+
+        Livewire::actingAs($owner)
+            ->test(FooterSettings::class)
+            ->set('data.en.logo', 'footer/logo.png')
+            ->call('save')
+            ->assertHasNoErrors();
+        $this->assertSame('footer/logo.png', SiteSetting::get('footer.en.logo'));
+    }
 }

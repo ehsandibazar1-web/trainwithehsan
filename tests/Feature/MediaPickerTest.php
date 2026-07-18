@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Filament\Forms\Components\MediaPickerInput;
 use App\Filament\Resources\Articles\Pages\EditArticle;
+use App\Filament\Resources\Pages\Pages\CreatePage;
 use App\Livewire\MediaPicker;
 use App\Models\Article;
 use App\Models\Media;
@@ -141,6 +142,25 @@ class MediaPickerTest extends TestCase
 
         $this->assertTrue($field->isOnlyImages());
         $this->assertSame('articles', $field->getUploadDirectory());
+    }
+
+    public function test_page_featured_image_is_stored_as_a_disk_path_via_the_picker_field(): void
+    {
+        // PageForm هم مثل ArticleForm از MediaPickerInput استفاده می‌کند — مقدار همان disk_path است
+        $media = $this->image('pages/hero.jpg');
+
+        Livewire::actingAs($this->owner())
+            ->test(CreatePage::class)
+            ->fillForm([
+                'locale' => 'en', 'title' => 'Picked page', 'slug' => 'picked-page',
+                'body' => '<p>Body</p>', 'status' => 'draft',
+                'image_path' => $media->disk_path,
+            ])
+            ->call('create')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('pages', ['slug' => 'picked-page', 'image_path' => 'pages/hero.jpg']);
+        $this->assertSame(1, Media::where('disk_path', 'pages/hero.jpg')->count());
     }
 
     public function test_article_edit_page_renders_the_media_picker_field_for_an_existing_image(): void
