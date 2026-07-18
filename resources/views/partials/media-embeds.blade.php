@@ -23,10 +23,31 @@
     .twe-embed iframe,.twe-embed video{position:absolute;inset:0;width:100%;height:100%;border:0}
     .twe-embed--audio.twe-embed--loaded{background:transparent;border:0;min-height:0;padding:0}
     .twe-embed--audio audio{width:100%}
+    /* اینستاگرام/تیک‌تاک عمودی‌اند و blockquote خودش را اندازه می‌کند — قابِ رزروِ عمودی + پاک‌سازی هنگامِ لود */
+    .twe-embed--instagram,.twe-embed--tiktok{aspect-ratio:auto;min-height:560px;max-width:400px;margin-left:auto;margin-right:auto}
+    .twe-embed--loaded.twe-embed--instagram,.twe-embed--loaded.twe-embed--tiktok{background:transparent;border:0;min-height:0;display:block;max-width:540px;position:static}
+    .twe-embed--loaded.twe-embed--instagram iframe,.twe-embed--loaded.twe-embed--tiktok iframe{position:static}
     @media (prefers-reduced-motion: reduce){.twe-embed__play{transition:none}}
 </style>
 <script>
     (function () {
+        // اسکریپتِ شخص‌ثالث را یک‌بار و فقط هنگامِ نیاز (کلیک) بار می‌کند
+        function loadScript(src, cb) {
+            var existing = document.querySelector('script[data-embed-script="' + src + '"]');
+            if (existing) { if (cb) { existing.dataset.loaded ? cb() : existing.addEventListener('load', cb); } return; }
+            var s = document.createElement('script');
+            s.src = src; s.async = true; s.setAttribute('data-embed-script', src);
+            s.addEventListener('load', function () { s.dataset.loaded = '1'; if (cb) cb(); });
+            document.body.appendChild(s);
+        }
+
+        function markLoaded(el) {
+            el.classList.add('twe-embed--loaded');
+            el.removeAttribute('role');
+            el.removeAttribute('tabindex');
+            el.style.cursor = 'default';
+        }
+
         // منبعِ ثالث فقط هنگامِ تعامل ساخته می‌شود — نه در زمانِ بارگذاریِ صفحه
         function activate(el) {
             if (el.dataset.embedLoaded) return;
@@ -34,6 +55,29 @@
             var kind = el.getAttribute('data-embed-kind');
             var src = el.getAttribute('data-embed-src');
             if (!src) return;
+
+            if (kind === 'instagram') {
+                var iq = document.createElement('blockquote');
+                iq.className = 'instagram-media';
+                iq.setAttribute('data-instgrm-permalink', src);
+                iq.setAttribute('data-instgrm-version', '14');
+                el.innerHTML = ''; el.appendChild(iq); markLoaded(el);
+                loadScript('https://www.instagram.com/embed.js', function () {
+                    if (window.instgrm && window.instgrm.Embeds) window.instgrm.Embeds.process();
+                });
+                return;
+            }
+
+            if (kind === 'tiktok') {
+                var tq = document.createElement('blockquote');
+                tq.className = 'tiktok-embed';
+                tq.setAttribute('cite', src);
+                if (el.getAttribute('data-embed-id')) tq.setAttribute('data-video-id', el.getAttribute('data-embed-id'));
+                tq.appendChild(document.createElement('section'));
+                el.innerHTML = ''; el.appendChild(tq); markLoaded(el);
+                loadScript('https://www.tiktok.com/embed.js');
+                return;
+            }
 
             var node;
             if (kind === 'iframe') {
@@ -55,10 +99,7 @@
 
             el.innerHTML = '';
             el.appendChild(node);
-            el.classList.add('twe-embed--loaded');
-            el.removeAttribute('role');
-            el.removeAttribute('tabindex');
-            el.style.cursor = 'default';
+            markLoaded(el);
         }
 
         document.addEventListener('click', function (e) {

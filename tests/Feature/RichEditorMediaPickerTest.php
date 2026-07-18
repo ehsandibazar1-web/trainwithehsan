@@ -70,6 +70,30 @@ class RichEditorMediaPickerTest extends TestCase
         $this->assertStringContainsString('/storage/content-images/guide.pdf', $clean);
     }
 
+    public function test_a_video_media_is_inserted_as_a_standalone_embed_link(): void
+    {
+        // ویدئوی خودمیزبان به لینکِ تنهای پاراگراف تبدیل می‌شود تا EmbedRenderer پخش‌کننده بسازد
+        $media = Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'articles/inline/clip.mp4',
+            'url' => 'http://localhost/storage/articles/inline/clip.mp4', 'type' => 'video',
+        ]);
+
+        $html = MediaLibraryRichContentPlugin::insertContentFor($media);
+
+        $this->assertIsString($html);
+        $this->assertStringContainsString('<p><a href="http://localhost/storage/articles/inline/clip.mp4"', $html);
+        $this->assertStringEndsWith('</a></p>', $html);
+    }
+
+    public function test_embed_link_html_is_a_standalone_paragraph_link(): void
+    {
+        // لینکِ تنهای پاراگراف — همان چیزی که EmbedRenderer به facade تبدیل می‌کند
+        $html = MediaLibraryRichContentPlugin::embedLinkHtml('https://www.youtube.com/watch?v=abcdefghijk');
+
+        $this->assertStringStartsWith('<p><a href="https://www.youtube.com/watch?v=abcdefghijk"', $html);
+        $this->assertStringEndsWith('</a></p>', $html);
+    }
+
     public function test_inserted_image_keeps_the_media_usage_tracked(): void
     {
         $media = Media::create([

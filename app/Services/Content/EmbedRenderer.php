@@ -3,7 +3,9 @@
 namespace App\Services\Content;
 
 use App\Services\Content\Embeds\EmbedProvider;
+use App\Services\Content\Embeds\InstagramEmbedProvider;
 use App\Services\Content\Embeds\SelfHostedEmbedProvider;
+use App\Services\Content\Embeds\TikTokEmbedProvider;
 use App\Services\Content\Embeds\VimeoEmbedProvider;
 use App\Services\Content\Embeds\YouTubeEmbedProvider;
 use Illuminate\Support\Str;
@@ -28,7 +30,7 @@ class EmbedRenderer
     private array $providers;
 
     // نشانه‌های سریع — اگر هیچ‌کدام در بدنه نباشد، اصلاً وارد regex نمی‌شویم و ورودی دست‌نخورده برمی‌گردد
-    private const HINTS = ['youtube.com', 'youtu.be', 'vimeo.com', '.mp4', '.webm', '.mov', '.ogv', '.mp3', '.wav', '.ogg', '.m4a'];
+    private const HINTS = ['youtube.com', 'youtu.be', 'vimeo.com', 'instagram.com', 'tiktok.com', '.mp4', '.webm', '.mov', '.ogv', '.mp3', '.wav', '.ogg', '.m4a'];
 
     /**
      * @param  EmbedProvider[]|null  $providers
@@ -46,6 +48,8 @@ class EmbedRenderer
         return [
             new YouTubeEmbedProvider,
             new VimeoEmbedProvider,
+            new InstagramEmbedProvider,
+            new TikTokEmbedProvider,
             new SelfHostedEmbedProvider,
         ];
     }
@@ -102,9 +106,11 @@ class EmbedRenderer
         $provider = htmlspecialchars($match['provider'], ENT_QUOTES);
         $src = htmlspecialchars($match['src'], ENT_QUOTES);
         $label = htmlspecialchars($match['label'], ENT_QUOTES);
+        // شناسه‌ی اختیاری (فعلاً فقط تیک‌تاک) → data-video-id در blockquoteِ سمتِ کلاینت
+        $id = isset($match['id']) ? ' data-embed-id="'.htmlspecialchars((string) $match['id'], ENT_QUOTES).'"' : '';
 
         return '<div class="twe-embed twe-embed--'.$provider.' twe-embed--'.$kind.'"'
-            .' data-embed-kind="'.$kind.'" data-embed-src="'.$src.'"'
+            .' data-embed-kind="'.$kind.'" data-embed-src="'.$src.'"'.$id
             .' role="button" tabindex="0" aria-label="'.$label.'">'
             .'<span class="twe-embed__play" aria-hidden="true"></span>'
             .'<span class="twe-embed__label">'.$label.'</span>'
