@@ -165,84 +165,116 @@ class MediaProcessor
         };
     }
 
+    // مسیرِ آپلود: هرگز نباید به‌خاطرِ شکستِ مشتقات بشکند — هر خطا گرفته و گزارش می‌شود، فایلِ
+    // اصلی و رکورد سالم می‌مانند، و Media::processingFailed() موضوع را در پنل نشان می‌دهد.
     private function generateImageDerivatives(Media $media): void
+    {
+        try {
+            $this->buildImageDerivatives($media);
+        } catch (Throwable $e) {
+            report($e);
+        }
+    }
+
+    /**
+     * کارِ واقعیِ ساختِ مشتقات — برخلافِ generateImageDerivatives، در صورتِ شکست استثنا پرتاب
+     * می‌کند (نه گزارشِ خاموش) تا regenerate() بتواند دلیلِ دقیق را به ادمین نشان دهد.
+     * ابعاد مستقل از WebP ثبت می‌شود، پس حتی اگر WebP شکست بخورد اندازه/ابعاد درست می‌ماند.
+     */
+    private function buildImageDerivatives(Media $media): void
     {
         $disk = Storage::disk($media->disk);
         $absolutePath = $disk->path($media->disk_path);
 
         $dimensions = @getimagesize($absolutePath);
         if ($dimensions === false) {
-            // فایلی که MIME‌اش تصویر تشخیص داده شده ولی محتوایش خوانده نمی‌شود (مثلا JPEG
-            // بریده/خراب یا کدگذاریِ پشتیبانی‌نشده) — رکورد بدون مشتقات باقی می‌ماند و فایل اصلی
-            // هرگز حذف نمی‌شود. پیش از این این شاخه کاملا خاموش بود؛ حالا گزارش می‌شود تا در لاگ
-            // دیده شود و Media::processingFailed() هم آن را در پنل نشان می‌دهد.
-            report(new \RuntimeException(
-                "MediaProcessor: could not read image dimensions for media #{$media->id} ({$media->disk_path}) — file may be corrupt or an unsupported encoding; stored without derivatives."
-            ));
-
-            return;
+            throw new \RuntimeException("could not read image dimensions ({$media->disk_path}) — the file may be corrupt or an unsupported encoding.");
         }
         [$width, $height] = $dimensions;
-
-        // ابعاد مستقل از WebP معلوم است — همیشه ثبتش می‌کنیم، حتی اگر تولیدِ WebP روی این هاست
-        // شکست بخورد (تا Media Library باز هم اندازه/ابعاد را درست نشان دهد).
         $media->update(['width' => $width, 'height' => $height]);
 
-        try {
-            $manager = ImageManager::gd();
-        } catch (Throwable $e) {
-            // GD در دسترس نیست/راه‌اندازی نمی‌شود — یک نقصِ سطحِ سرور، نه فایلِ خراب؛ باز هم
-            // به‌جای شکستِ خاموش گزارش می‌شود تا قابلِ تشخیص باشد چرا هیچ تصویری مشتق نمی‌گیرد.
-            report($e);
+        $manager = ImageManager::gd();
 
-            return;
-        }
-
-        // اگر GDِ این سرور از WebP پشتیبانی نکند (یا imagewebp در disable_functions باشد — همان
-        // نوع محدودیتی که روی این هاست exec/symlink را هم بسته)، تولیدِ WebP ممکن نیست. به‌جای
-        // اینکه استثنا بالا برود و کلِ آپلود «ناموفق» نشان داده شود، این‌جا شفاف گزارش می‌شود و
-        // فایلِ اصلی سالم می‌ماند؛ سایت از همان فایلِ اصل سِرو می‌کند (Article/Page::optimized_image_url
-        // به فایلِ اصلی fallback می‌کند) و Media::processingFailed() موضوع را در پنل نشان می‌دهد.
         if (! function_exists('imagewebp')) {
-            report(new \RuntimeException(
-                "MediaProcessor: this server's GD build has no WebP support (imagewebp() is unavailable/disabled) — media #{$media->id} ({$media->disk_path}) was stored without a WebP derivative. Ask the host to enable WebP support in the PHP GD extension."
-            ));
-
-            return;
+            throw new \RuntimeException("this server's GD build has no WebP support (imagewebp() is unavailable/disabled).");
         }
 
-        // خودِ تولید/ذخیره‌ی مشتقات در try/catch است تا هر شکستی (کدگذاری، حافظه، مجوزِ دیسک)
-        // آپلود را نشکند و فایلِ اصلی و رکورد سالم بمانند — پیش از این این بخش محافظت‌نشده بود و
-        // یک شکستِ WebP کلِ آپلود را «ناموفق» نشان می‌داد.
-        try {
-            $webpPath = $this->siblingPath($media->disk_path, '.webp');
-            $manager->read($absolutePath)->toWebp(quality: 82)->save($disk->path($webpPath));
-            $disk->setVisibility($webpPath, 'public');
+        $webpPath = $this->siblingPath($media->disk_path, '.webp');
+        $manager->read($absolutePath)->toWebp(quality: 82)->save($disk->path($webpPath));
+        $disk->setVisibility($webpPath, 'public');
 
-            $thumbPath = $this->siblingPath($media->disk_path, '-thumb.webp');
-            $manager->read($absolutePath)->scaleDown(width: self::THUMBNAIL_WIDTH)->toWebp(quality: 75)->save($disk->path($thumbPath));
-            $disk->setVisibility($thumbPath, 'public');
+        $thumbPath = $this->siblingPath($media->disk_path, '-thumb.webp');
+        $manager->read($absolutePath)->scaleDown(width: self::THUMBNAIL_WIDTH)->toWebp(quality: 75)->save($disk->path($thumbPath));
+        $disk->setVisibility($thumbPath, 'public');
 
-            $responsivePaths = [];
-            foreach (self::RESPONSIVE_WIDTHS as $targetWidth) {
-                if ($targetWidth >= $width) {
-                    continue;
-                }
-
-                $variantPath = $this->siblingPath($media->disk_path, "-{$targetWidth}w.webp");
-                $manager->read($absolutePath)->scaleDown(width: $targetWidth)->toWebp(quality: 80)->save($disk->path($variantPath));
-                $disk->setVisibility($variantPath, 'public');
-                $responsivePaths[$targetWidth] = $variantPath;
+        $responsivePaths = [];
+        foreach (self::RESPONSIVE_WIDTHS as $targetWidth) {
+            if ($targetWidth >= $width) {
+                continue;
             }
 
-            $media->update([
-                'webp_path' => $webpPath,
-                'thumbnail_path' => $thumbPath,
-                'responsive_paths' => $responsivePaths ?: null,
-            ]);
-        } catch (Throwable $e) {
-            report($e);
+            $variantPath = $this->siblingPath($media->disk_path, "-{$targetWidth}w.webp");
+            $manager->read($absolutePath)->scaleDown(width: $targetWidth)->toWebp(quality: 80)->save($disk->path($variantPath));
+            $disk->setVisibility($variantPath, 'public');
+            $responsivePaths[$targetWidth] = $variantPath;
         }
+
+        $media->update([
+            'webp_path' => $webpPath,
+            'thumbnail_path' => $thumbPath,
+            'responsive_paths' => $responsivePaths ?: null,
+        ]);
+    }
+
+    /**
+     * تشخیص + بازتولیدِ مشتقاتِ یک رسانه‌ی موجود — پاسخِ زنده به «چرا WebP ساخته نمی‌شود؟».
+     * مشتقاتِ قبلی را پاک و از نو می‌سازد و یک گزارشِ دقیق برمی‌گرداند (فایلِ اصلی هست؟ WebP
+     * ساخته شد؟ روی دیسک هست؟ مسیرش ذخیره شد؟ اگر نه، دلیلِ دقیقِ خطا).
+     *
+     * @return array{type: string, original_exists: bool, webp_created: bool, webp_path: ?string, webp_exists_on_disk: bool, error: ?string}
+     */
+    public function regenerate(Media $media): array
+    {
+        $disk = Storage::disk($media->disk);
+
+        $report = [
+            'type' => $media->type,
+            'original_exists' => $disk->exists($media->disk_path),
+            'webp_created' => false,
+            'webp_path' => null,
+            'webp_exists_on_disk' => false,
+            'error' => null,
+        ];
+
+        if (! $report['original_exists']) {
+            $report['error'] = "The original file is missing on disk ({$media->disk_path}).";
+
+            return $report;
+        }
+
+        if ($media->type !== 'image') {
+            $report['error'] = "This is a {$media->type} file, not an image — no WebP derivative is generated for it.";
+
+            return $report;
+        }
+
+        $this->deleteDerivatives($media);
+        $media->update(['webp_path' => null, 'thumbnail_path' => null, 'responsive_paths' => null]);
+
+        try {
+            $this->buildImageDerivatives($media->fresh());
+        } catch (Throwable $e) {
+            $report['error'] = $e->getMessage();
+
+            return $report;
+        }
+
+        $fresh = $media->fresh();
+        $report['webp_path'] = $fresh->webp_path;
+        $report['webp_created'] = filled($fresh->webp_path);
+        $report['webp_exists_on_disk'] = filled($fresh->webp_path) && $disk->exists($fresh->webp_path);
+
+        return $report;
     }
 
     private function deleteDerivatives(Media $media): void

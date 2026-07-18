@@ -266,6 +266,22 @@
                 </div>
             </div>
 
+            @if($this->selectedMedia->type === 'image')
+                <div class="field">
+                    <label>WebP optimization</label>
+                    @if($this->selectedMedia->webp_path)
+                        <div style="font-size:.8rem;color:#15803d">✓ WebP generated — <code>{{ $this->selectedMedia->webp_path }}</code></div>
+                    @else
+                        <div style="font-size:.8rem;color:#b45309">No WebP version yet. Click below to generate it — if it fails, you'll see the exact reason.</div>
+                    @endif
+                    <div style="margin-top:.4rem">
+                        <x-filament::button size="sm" color="gray" icon="heroicon-o-arrow-path" wire:click="regenerateDerivatives({{ $this->selectedMedia->id }})" wire:loading.attr="disabled" wire:target="regenerateDerivatives">
+                            Regenerate WebP
+                        </x-filament::button>
+                    </div>
+                </div>
+            @endif
+
             <div class="field">
                 <label for="mediaFolderSelect">Folder</label>
                 <select id="mediaFolderSelect" wire:change="moveSelectedToFolder($event.target.value)">
