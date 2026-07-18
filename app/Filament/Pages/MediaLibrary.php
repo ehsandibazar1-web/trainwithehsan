@@ -313,6 +313,42 @@ class MediaLibrary extends Page implements HasForms
         Notification::make()->success()->title('Moved')->send();
     }
 
+    // تشخیص + بازتولیدِ WebP/مشتقاتِ یک تصویر — دقیقاً می‌گوید چه اتفاقی می‌افتد (ساخته شد؟
+    // روی دیسک هست؟ مسیرش ذخیره شد؟ یا خطای دقیق). هم ابزارِ عیب‌یابی است هم رفعِ تصاویرِ قدیمی.
+    public function regenerateDerivatives(int $mediaId): void
+    {
+        $media = Media::findOrFail($mediaId);
+        $report = app(MediaProcessor::class)->regenerate($media);
+
+        if ($report['error']) {
+            Notification::make()
+                ->danger()
+                ->title('WebP could not be generated')
+                ->body($report['error'])
+                ->persistent()
+                ->send();
+
+            return;
+        }
+
+        if ($report['webp_created'] && $report['webp_exists_on_disk']) {
+            Notification::make()
+                ->success()
+                ->title('WebP generated successfully')
+                ->body('Saved to: '.$report['webp_path'])
+                ->send();
+
+            return;
+        }
+
+        Notification::make()
+            ->warning()
+            ->title('Ran without error, but no WebP file was produced')
+            ->body('The encode reported success but the file is not on disk — likely a disk-write/permission issue in '.dirname((string) $report['webp_path']).'.')
+            ->persistent()
+            ->send();
+    }
+
     public function deleteMedia(int $mediaId): void
     {
         $media = Media::findOrFail($mediaId);

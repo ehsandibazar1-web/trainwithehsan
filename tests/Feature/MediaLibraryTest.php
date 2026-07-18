@@ -489,6 +489,69 @@ class MediaLibraryTest extends TestCase
         $this->assertTrue(MediaLibrary::isOverTypeLimit('video', 129 * $mb));
     }
 
+    public function test_regenerate_rebuilds_the_webp_and_reports_success(): void
+    {
+        Storage::fake('public');
+        $media = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+
+        // شبیه‌سازیِ رکوردی که WebP ندارد (مثلا آپلودِ پیش از رفعِ باگ) و بازتولیدش
+        $media->update(['webp_path' => null, 'thumbnail_path' => null, 'responsive_paths' => null]);
+
+        $report = $this->processor()->regenerate($media->fresh());
+
+        $this->assertNull($report['error']);
+        $this->assertTrue($report['webp_created']);
+        $this->assertTrue($report['webp_exists_on_disk']);
+        $this->assertNotNull($report['webp_path']);
+        // و روی خودِ رکورد هم ذخیره شده
+        $this->assertNotNull($media->fresh()->webp_path);
+        Storage::disk('public')->assertExists($media->fresh()->webp_path);
+    }
+
+    public function test_regenerate_reports_a_clear_error_when_the_original_is_missing(): void
+    {
+        Storage::fake('public');
+        $media = Media::create([
+            'original_name' => 'gone.jpg', 'disk' => 'public', 'disk_path' => 'media/library/gone.jpg',
+            'url' => 'http://x/gone.jpg', 'type' => 'image',
+        ]);
+
+        $report = $this->processor()->regenerate($media);
+
+        $this->assertFalse($report['webp_created']);
+        $this->assertStringContainsString('missing on disk', $report['error']);
+    }
+
+    public function test_regenerate_reports_a_clear_error_for_a_non_image(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('media/library/clip.mp4', 'x');
+        $media = Media::create([
+            'original_name' => 'clip.mp4', 'disk' => 'public', 'disk_path' => 'media/library/clip.mp4',
+            'url' => 'http://x/clip.mp4', 'type' => 'video',
+        ]);
+
+        $report = $this->processor()->regenerate($media);
+
+        $this->assertFalse($report['webp_created']);
+        $this->assertStringContainsString('not an image', strtolower($report['error']));
+    }
+
+    public function test_media_library_regenerate_action_generates_the_webp(): void
+    {
+        Storage::fake('public');
+        $media = $this->processor()->store($this->fakeImage(800, 600), 'media/library', 'public');
+        $media->update(['webp_path' => null]);
+
+        Livewire::actingAs(User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']))
+            ->test(MediaLibrary::class)
+            ->set('selectedMediaId', $media->id)
+            ->call('regenerateDerivatives', $media->id)
+            ->assertHasNoErrors();
+
+        $this->assertNotNull($media->fresh()->webp_path);
+    }
+
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void
     {
         Storage::fake('public');
