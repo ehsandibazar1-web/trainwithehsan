@@ -77,6 +77,8 @@
             width:100%;border:1px solid rgb(209 213 219);border-radius:.5rem;padding:.4rem .6rem;font-size:.85rem;
         }
         .media-lib-warning{background:#fffbeb;border:1px solid #fde68a;border-radius:.5rem;padding:.5rem .7rem;font-size:.78rem;color:#92400e;margin-bottom:.4rem}
+        .media-lib-info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:.5rem;padding:.55rem .75rem;font-size:.8rem;color:#1e40af;margin-bottom:.85rem}
+        .media-lib-orphan{background:#fff7ed;border:1px solid #fed7aa;border-radius:.5rem;padding:.5rem .7rem;font-size:.78rem;color:#9a3412;margin-bottom:.6rem}
         .media-lib-usage-list{font-size:.8rem;color:#92400e;margin:.4rem 0 0;padding-left:1.1rem}
         .media-lib-panel .actions{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1.25rem}
         .media-lib-close{position:absolute;top:1rem;right:1rem;background:none;border:none;cursor:pointer;font-size:1.1rem;color:#6b7280}
@@ -117,6 +119,7 @@
                 </select>
 
                 <label><input type="checkbox" wire:model.live="onlyUnused"> Unused only</label>
+                <label title="Files the system attached as a featured or hero image that nothing references anymore — safe to delete."><input type="checkbox" wire:model.live="onlyOrphaned"> Orphaned</label>
                 <label><input type="checkbox" wire:model.live="onlyMissingAlt"> Missing ALT</label>
                 <label><input type="checkbox" wire:model.live="onlyLarge"> Large files (&gt;500KB)</label>
 
@@ -162,8 +165,12 @@
                 @endif
             @endif
 
+            @if($onlyOrphaned)
+                <div class="media-lib-info">Showing <strong>orphaned</strong> files — the system attached these as a featured or hero image, but nothing references them anymore (the image was replaced, a hero was regenerated, or an import was rolled back). They're safe to delete. Nothing is deleted automatically.</div>
+            @endif
+
             {{-- شبکه‌ی رسانه --}}
-            <div class="media-lib-grid" wire:loading.class="opacity-50" wire:target="search,typeFilter,onlyUnused,onlyMissingAlt,onlyLarge,openFolder">
+            <div class="media-lib-grid" wire:loading.class="opacity-50" wire:target="search,typeFilter,onlyUnused,onlyOrphaned,onlyMissingAlt,onlyLarge,openFolder">
                 @forelse($this->mediaItems as $item)
                     <button type="button" class="media-lib-item" wire:click="selectMedia({{ $item->id }})" title="{{ $item->original_name }}">
                         @if($item->type === 'image')
@@ -218,6 +225,12 @@
             @foreach($this->selectedMedia->warnings() as $warning)
                 <div class="media-lib-warning">⚠ {{ $warning }}</div>
             @endforeach
+
+            {{-- یتیم: از $usages که همین بالا محاسبه شده استفاده می‌کند + بررسیِ محضِ مسیر (بدونِ
+                 کوئریِ اضافه)، پس هزینه‌ی اسکنِ دومی ندارد --}}
+            @if(count($usages) === 0 && $this->selectedMedia->isInSystemAttachedDirectory())
+                <div class="media-lib-orphan">🔗 Orphaned — this file was attached as a featured or hero image but nothing references it anymore. It's safe to delete.</div>
+            @endif
 
             @if($this->selectedMedia->type === 'image')
                 <div class="field">

@@ -38,6 +38,8 @@ class MediaLibrary extends Page implements HasForms
 
     public bool $onlyUnused = false;
 
+    public bool $onlyOrphaned = false;
+
     public bool $onlyMissingAlt = false;
 
     public bool $onlyLarge = false;
@@ -341,6 +343,12 @@ class MediaLibrary extends Page implements HasForms
 
         if ($this->onlyUnused) {
             $items = $items->filter(fn (Media $media) => ! $media->isInUse())->values();
+        }
+
+        // «یتیم» زیرمجموعه‌ی «استفاده‌نشده» است ولی باریک‌تر — همان الگوی فیلترِ پس‌از-کوئریِ
+        // onlyUnused (اسکنِ per-item)، فقط وقتی فیلتر فعال است، نه در هر رندر
+        if ($this->onlyOrphaned) {
+            $items = $items->filter(fn (Media $media) => $media->isOrphan())->values();
         }
 
         return $items;

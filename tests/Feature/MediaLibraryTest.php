@@ -390,6 +390,71 @@ class MediaLibraryTest extends TestCase
         $this->assertFalse($imageIds->contains($doc->id));
     }
 
+    public function test_is_orphan_flags_unused_system_attached_files_but_not_manual_uploads_or_in_use_files(): void
+    {
+        // استفاده‌نشده + در articles/ → یتیم (تصویر شاخصِ عوض‌شده یا ایمپورتِ rollback‌شده)
+        $orphanArticle = Media::create([
+            'original_name' => 'old-hero.jpg', 'disk' => 'public', 'disk_path' => 'articles/old-hero.jpg',
+            'url' => 'http://x/old-hero.jpg', 'type' => 'image',
+        ]);
+        $this->assertTrue($orphanArticle->isOrphan());
+
+        // استفاده‌نشده + هیروی تولیدی → یتیم (regenerate شده)
+        $orphanHero = Media::create([
+            'original_name' => 'hero.png', 'disk' => 'public', 'disk_path' => 'ai-generated/hero.png',
+            'url' => 'http://x/hero.png', 'type' => 'image',
+        ]);
+        $this->assertTrue($orphanHero->isOrphan());
+
+        // آپلودِ دستیِ استفاده‌نشده‌ی media/library → یتیم نیست (عمداً منتظرِ استفاده)
+        $manual = Media::create([
+            'original_name' => 'staged.jpg', 'disk' => 'public', 'disk_path' => 'media/library/staged.jpg',
+            'url' => 'http://x/staged.jpg', 'type' => 'image',
+        ]);
+        $this->assertFalse($manual->isOrphan());
+
+        // در articles/ ولی در حال استفاده → یتیم نیست
+        $inUse = Media::create([
+            'original_name' => 'current.jpg', 'disk' => 'public', 'disk_path' => 'articles/current.jpg',
+            'url' => 'http://x/current.jpg', 'type' => 'image',
+        ]);
+        Article::create([
+            'locale' => 'en', 'title' => 'Uses current', 'slug' => 'uses-current',
+            'body' => '<p>x</p>', 'image_path' => 'articles/current.jpg', 'author_name' => 'Ehsan', 'status' => 'draft',
+        ]);
+        $this->assertFalse($inUse->isOrphan());
+    }
+
+    public function test_orphaned_filter_shows_only_unused_system_attached_files(): void
+    {
+        $owner = User::factory()->create(['email' => 'ehsan.dibazar1@gmail.com']);
+
+        $orphan = Media::create([
+            'original_name' => 'orphan.jpg', 'disk' => 'public', 'disk_path' => 'articles/orphan.jpg',
+            'url' => 'http://x/orphan.jpg', 'type' => 'image',
+        ]);
+        $manualUnused = Media::create([
+            'original_name' => 'staged.jpg', 'disk' => 'public', 'disk_path' => 'media/library/staged.jpg',
+            'url' => 'http://x/staged.jpg', 'type' => 'image',
+        ]);
+        $inUse = Media::create([
+            'original_name' => 'current.jpg', 'disk' => 'public', 'disk_path' => 'articles/current.jpg',
+            'url' => 'http://x/current.jpg', 'type' => 'image',
+        ]);
+        Article::create([
+            'locale' => 'en', 'title' => 'Uses current', 'slug' => 'uses-current',
+            'body' => '<p>x</p>', 'image_path' => 'articles/current.jpg', 'author_name' => 'Ehsan', 'status' => 'draft',
+        ]);
+
+        $ids = Livewire::actingAs($owner)->test(MediaLibrary::class)
+            ->set('onlyOrphaned', true)
+            ->instance()->mediaItems->pluck('id');
+
+        $this->assertTrue($ids->contains($orphan->id));
+        $this->assertFalse($ids->contains($manualUnused->id));
+        $this->assertFalse($ids->contains($inUse->id));
+    }
+
     public function test_article_form_featured_image_upload_registers_a_media_library_row(): void
     {
         Storage::fake('public');
