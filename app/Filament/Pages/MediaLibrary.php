@@ -60,6 +60,14 @@ class MediaLibrary extends Page implements HasForms
     // بیشترین تعداد آیتمی که یک‌جا نشان داده می‌شود — در این مقیاس محتوا کافی است، نیازی به صفحه‌بندی واقعی نیست
     private const MAX_ITEMS = 300;
 
+    // اعتبارسنجیِ اولیه‌ی سطح فرم (بر اساس محتوای واقعی فایل، نه پسوند/Content-Type ادعاشده
+    // توسط کلاینت — قانون mimes: خودِ لاراول همین‌طور کار می‌کند) — لاراول به‌طور جداگانه هر
+    // آپلودی که پسوندِ کلاینتش php/php3/php4/php5/php7/php8/phtml/phar باشد را هم رد می‌کند.
+    // MediaProcessor::store() علاوه بر این، همین فهرست را دوباره (بر اساس MIME واقعی) اعمال
+    // می‌کند تا حتی اگر این اعتبارسنجی به هر دلیلی دور زده شود، پسوندِ ذخیره‌شده هرگز از این
+    // فهرست بیرون نرود
+    private const ALLOWED_UPLOAD_EXTENSIONS = 'jpg,jpeg,png,webp,gif,bmp,pdf,doc,docx,xls,xlsx,txt,mp4,webm,mov,mp3,wav,zip';
+
     // لینک مستقیم از جاهای دیگر پنل (مثلا SEO Center) با ?media=ID — پوشه‌ی درست باز و آیتم انتخاب می‌شود
     public function mount(): void
     {
@@ -79,7 +87,7 @@ class MediaLibrary extends Page implements HasForms
 
     public function updatedUploads(): void
     {
-        $this->validate(['uploads.*' => ['file', 'max:15360']]);
+        $this->validate(['uploads.*' => ['file', 'max:15360', 'mimes:'.self::ALLOWED_UPLOAD_EXTENSIONS]]);
 
         $processor = app(MediaProcessor::class);
         $count = 0;
@@ -114,7 +122,7 @@ class MediaLibrary extends Page implements HasForms
             return;
         }
 
-        $this->validate(['replaceFile' => ['file', 'max:15360']]);
+        $this->validate(['replaceFile' => ['file', 'max:15360', 'mimes:'.self::ALLOWED_UPLOAD_EXTENSIONS]]);
 
         $media = Media::findOrFail($this->selectedMediaId);
         app(MediaProcessor::class)->replace($media, $this->replaceFile);
