@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Page;
+use App\Services\Seo\VideoSchemaService;
 
 class PageController extends Controller
 {
@@ -29,6 +30,9 @@ class PageController extends Controller
         $translation = $page->translation
             ?? $page->translations()->first();
 
-        return view($view, compact('page', 'translation'));
+        // Video SEO — VideoObject برای ویدیوهای درون‌متنیِ صفحه
+        $videoSchemas = app(VideoSchemaService::class)->forPage($page);
+
+        return view($view, compact('page', 'translation', 'videoSchemas'));
     }
 }

@@ -32,6 +32,11 @@ class EmbedRenderer
     // نشانه‌های سریع — اگر هیچ‌کدام در بدنه نباشد، اصلاً وارد regex نمی‌شویم و ورودی دست‌نخورده برمی‌گردد
     private const HINTS = ['youtube.com', 'youtu.be', 'vimeo.com', 'instagram.com', 'tiktok.com', '.mp4', '.webm', '.mov', '.ogv', '.mp3', '.wav', '.ogg', '.m4a'];
 
+    // پاراگرافی که تنها محتوایش یک <a> است (با هر ویژگیِ <p>، و هر متن/فرمتِ درونِ خودِ لینک). یک‌جا
+    // تعریف می‌شود تا render() و extractVideos() از یک الگوی واحد استفاده کنند — نه دو نسخه‌ی موازی.
+    // گروهِ ۱ = ویژگی‌های <a>، گروهِ ۲ = متنِ درونِ لینک (برای نامِ VideoObject).
+    private const P_STANDALONE_LINK = '~<p[^>]*>\s*<a\b([^>]*)>((?:(?!</a>).)*)</a>\s*</p>~is';
+
     /**
      * @param  EmbedProvider[]|null  $providers
      */
@@ -62,7 +67,7 @@ class EmbedRenderer
 
         // پاراگرافی که تنها محتوایش یک <a> است (با هر ویژگیِ <p>، و هر متن/فرمتِ درونِ خودِ لینک)
         return preg_replace_callback(
-            '~<p[^>]*>\s*<a\b([^>]*)>(?:(?!</a>).)*</a>\s*</p>~is',
+            self::P_STANDALONE_LINK,
             function (array $m): string {
                 if (! preg_match('~\bhref="([^"]+)"~i', $m[1], $h)) {
                     return $m[0];
@@ -92,6 +97,46 @@ class EmbedRenderer
         }
 
         return null;
+    }
+
+    /**
+     * فهرستِ همان embedهایی که render() در بدنه به facade تبدیل می‌کند — بدونِ تغییرِ بدنه، فقط برای
+     * تشخیص (مثلاً ساختِ VideoObject در VideoSchemaService). چون از همان الگو (P_STANDALONE_LINK) و
+     * همان detect() استفاده می‌کند، schema و رندرِ واقعی هرگز از هم جدا نمی‌افتند — یک منبعِ واحدِ حقیقت.
+     *
+     * @return array<int, array{href: string, text: string, match: array{kind: string, provider: string, src: string, label: string}}>
+     */
+    public function extractVideos(string $html): array
+    {
+        if (trim($html) === '' || ! Str::contains($html, self::HINTS)) {
+            return [];
+        }
+
+        $out = [];
+
+        if (preg_match_all(self::P_STANDALONE_LINK, $html, $all, PREG_SET_ORDER)) {
+            foreach ($all as $m) {
+                if (! preg_match('~\bhref="([^"]+)"~i', $m[1], $h)) {
+                    continue;
+                }
+
+                // html_entity_decode مثلِ render() — sanitizer «=» را به &#61; کد می‌کند
+                $href = html_entity_decode($h[1], ENT_QUOTES | ENT_HTML5);
+                $match = $this->detect($href);
+
+                if (! $match) {
+                    continue;
+                }
+
+                $out[] = [
+                    'href' => $href,
+                    'text' => trim(strip_tags($m[2] ?? '')),
+                    'match' => $match,
+                ];
+            }
+        }
+
+        return $out;
     }
 
     /**

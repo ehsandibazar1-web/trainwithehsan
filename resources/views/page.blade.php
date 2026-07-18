@@ -40,6 +40,7 @@
 }
 </script>
 @endif
+@include('partials.video-schema')
 @endsection
 
 @section('page-css')
