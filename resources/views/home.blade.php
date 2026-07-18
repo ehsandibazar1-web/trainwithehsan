@@ -78,10 +78,7 @@
     @@media (max-width:640px){
         .row-video{
             margin-top:-28px;display:flex;gap:15px;padding:0 15px;overflow-x:auto;
-            /* پراپرتیِ momentum-scroll مخصوص iOS<13 حذف شد — روی مرورگرهای مدرن هیچ کاری
-               نمی‌کند و فقط با overflow:hidden تودرتو (کارت‌های ویدیو) باگ شناخته‌شده‌ای دارد:
-               تصویر داخل قابش حین اسکرول لمسی جابه‌جا/لغزنده دیده می‌شود */
-            scroll-snap-type:x mandatory;scrollbar-width:none;
+            scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;
         }
         .row-video::-webkit-scrollbar{display:none}
         .row-video>.video-card{flex:0 0 85%;scroll-snap-align:start}
@@ -164,7 +161,7 @@
     .courses-carousel{position:relative;margin-top:40px}
     .learn-grid{
         display:flex;gap:20px;overflow-x:auto;
-        scroll-snap-type:x mandatory;
+        scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
         padding-bottom:10px;scrollbar-width:thin;
     }
     .learn-grid::-webkit-scrollbar{height:6px}
@@ -221,7 +218,7 @@
     .articles-carousel .car-arrow:hover{color:var(--gold-dark,#c09d4c)}
     .news-grid{
         display:flex;gap:20px;overflow-x:auto;
-        scroll-snap-type:x mandatory;
+        scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;
         padding-bottom:10px;scrollbar-width:thin;
     }
     .news-grid::-webkit-scrollbar{height:6px}
