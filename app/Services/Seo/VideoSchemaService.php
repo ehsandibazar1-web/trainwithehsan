@@ -115,6 +115,42 @@ class VideoSchemaService
     }
 
     /**
+     * متادیتای Open Graph / Twitter Player برای ویدیوی *اصلیِ* (اولین) یک صفحه — یا null اگر هیچ
+     * ویدیویی نباشد. از همان خروجیِ forArticle()/forPage() (منبعِ واحد) خوانده می‌شود، پس بدونِ
+     * محاسبه‌ی دوباره. ویدیوی embed (یوتیوب/ویمئو) علاوه بر og:video یک Twitter *Player* Card هم
+     * می‌گیرد؛ فایلِ خودمیزبان فقط og:video (video/mp4) می‌گیرد و Player Card نه — چون X برای
+     * twitter:player یک URLِ iframe لازم دارد و یک mp4ِ خام iframe نیست (کارتِ خراب بهتر از هیچ نیست).
+     *
+     * @param  array<int, array<string, mixed>>  $videoObjects
+     * @return array{url: string, secure: bool, type: string, is_embed: bool, title: string, description: string, thumbnail: ?string}|null
+     */
+    public function primarySocialVideo(array $videoObjects): ?array
+    {
+        $v = $videoObjects[0] ?? null;
+        if (! $v) {
+            return null;
+        }
+
+        $embed = $v['embedUrl'] ?? null;
+        $content = $v['contentUrl'] ?? null;
+        $url = $embed ?: $content;
+
+        if (! $url) {
+            return null;
+        }
+
+        return [
+            'url' => $url,
+            'secure' => Str::startsWith($url, 'https://'),
+            'type' => $embed ? 'text/html' : 'video/mp4',
+            'is_embed' => (bool) $embed,
+            'title' => (string) ($v['name'] ?? ''),
+            'description' => (string) ($v['description'] ?? ''),
+            'thumbnail' => $v['thumbnailUrl'] ?? null,
+        ];
+    }
+
+    /**
      * موتورِ مشترکِ ویدیوهای درون‌متنی — از EmbedRenderer::extractVideos() (منبعِ واحدِ تشخیص) عبور
      * می‌کند و هر لینکِ یوتیوب/ویمئو/فایلِ خودمیزبانِ معتبر را به یک VideoObject نگاشت می‌کند.
      *

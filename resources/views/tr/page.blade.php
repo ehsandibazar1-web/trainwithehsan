@@ -43,6 +43,10 @@
 @include('partials.video-schema')
 @endsection
 
+@section('social_video')
+@include('partials.video-og-tags')
+@endsection
+
 @section('page-css')
 <style>
     .site-page{background-color:#f6f6f6;padding:0 0 50px}
