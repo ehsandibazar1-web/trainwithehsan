@@ -41,6 +41,35 @@ class PagesModuleTest extends TestCase
         $this->get('/tr/ornek-sayfa')->assertOk()->assertSee('Örnek Sayfa');
     }
 
+    public function test_standalone_page_hreflang_uses_the_real_translation_slug_not_a_prefix_guess(): void
+    {
+        // اسلاگِ EN و TR فرق دارند (test-standalone-page ↔ ornek-sayfa) — hreflang باید به مسیرِ
+        // واقعیِ ترجمه اشاره کند، نه /tr/test-standalone-page که وجود ندارد
+        $en = $this->makePage();
+        $this->makePage(['locale' => 'tr', 'title' => 'Örnek Sayfa', 'slug' => 'ornek-sayfa', 'translation_of' => $en->id]);
+
+        $enHtml = $this->get('/test-standalone-page')->assertOk()->getContent();
+        $this->assertStringContainsString('<link rel="alternate" hreflang="en" href="'.url('/test-standalone-page').'">', $enHtml);
+        $this->assertStringContainsString('<link rel="alternate" hreflang="tr" href="'.url('/tr/ornek-sayfa').'">', $enHtml);
+        $this->assertStringNotContainsString(url('/tr/test-standalone-page'), $enHtml);
+
+        // سمتِ TR باید متقابلِ همان باشد
+        $trHtml = $this->get('/tr/ornek-sayfa')->assertOk()->getContent();
+        $this->assertStringContainsString('<link rel="alternate" hreflang="en" href="'.url('/test-standalone-page').'">', $trHtml);
+        $this->assertStringContainsString('<link rel="alternate" hreflang="tr" href="'.url('/tr/ornek-sayfa').'">', $trHtml);
+    }
+
+    public function test_standalone_page_without_a_translation_omits_the_other_locale_hreflang(): void
+    {
+        // صفحه‌ی EN بدونِ ترجمه نباید hreflang=tr به یک URLِ ناموجود ادعا کند
+        $this->makePage(['slug' => 'solo-page']);
+
+        $html = $this->get('/solo-page')->assertOk()->getContent();
+
+        $this->assertStringContainsString('<link rel="alternate" hreflang="en" href="'.url('/solo-page').'">', $html);
+        $this->assertStringNotContainsString('hreflang="tr"', $html);
+    }
+
     public function test_page_body_is_sanitized_at_render_time(): void
     {
         // page.blade.php/tr/page.blade.php از {!! !!} استفاده می‌کنند؛ چون صفحات از طریق پنل

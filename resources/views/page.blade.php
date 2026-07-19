@@ -13,6 +13,19 @@
 @section('og_image', $page->image_path ? asset('storage/' . $page->image_path) : '')
 @section('og_image_alt', $page->image_alt ?: $page->title)
 
+{{-- hreflang اختصاصی: اسلاگِ EN/TRِ یک صفحه لزوماً یکی نیست (ادمین می‌تواند اسلاگِ ترجمه را بومی
+     کند، مثل contact ↔ iletisim)، پس نمی‌توان مثل بلوکِ پیش‌فرضِ master صرفاً پیشوندِ /tr را
+     اضافه کرد. اگر ترجمه‌ای ثبت نشده باشد، اصلاً ادعای hreflang به زبانِ دیگر نمی‌کنیم — همان
+     الگوی blog-post.blade.php --}}
+@php($translation = $page->translation ?: $page->translations->first())
+@section('hreflang')
+<link rel="alternate" hreflang="en" href="{{ url($page->path()) }}">
+@if($translation)
+<link rel="alternate" hreflang="tr" href="{{ url($translation->path()) }}">
+@endif
+<link rel="alternate" hreflang="x-default" href="{{ url($page->path()) }}">
+@endsection
+
 @section('json-ld')
 <script type="application/ld+json">
 {
