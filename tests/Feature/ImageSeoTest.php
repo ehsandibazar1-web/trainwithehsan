@@ -120,15 +120,27 @@ class ImageSeoTest extends TestCase
         $this->assertStringContainsString('alt="Fallback Title"', $html);
     }
 
-    public function test_article_without_an_image_renders_no_hero_img_and_no_og_image(): void
+    public function test_article_without_an_image_renders_no_hero_img_but_falls_back_to_the_brand_og_image(): void
     {
         $article = $this->makeArticle(['slug' => 'noimg', 'image_path' => null]);
 
         $html = $this->get($article->path())->assertOk()->getContent();
 
+        // بدونِ عکسِ شاخص، تگِ هیرو رندر نمی‌شود...
         $this->assertStringNotContainsString('class="post-hero-image"><img', str_replace(["\n", ' '], '', $html));
-        // og:image is emitted only when non-empty (master guards on yieldContent)
-        $this->assertStringNotContainsString('property="og:image"', $html);
+        // ...ولی og:image به لوگوی برند به‌عنوان پیش‌فرضِ سایت‌گستر برمی‌گردد (هر اشتراک‌گذاری پیش‌نمایشِ تصویری دارد)
+        $this->assertStringContainsString('<meta property="og:image" content="'.asset('storage/homepage/logo.header.png').'">', $html);
+    }
+
+    public function test_home_page_has_a_default_brand_og_image_and_twitter_card(): void
+    {
+        $html = $this->get('/')->assertOk()->getContent();
+
+        // صفحه‌ی اصلی عکسِ اختصاصی ندارد → لوگوی برند به‌عنوان og:image و twitter:image پیش‌فرض
+        $this->assertStringContainsString('<meta property="og:image" content="'.asset('storage/homepage/logo.header.png').'">', $html);
+        $this->assertStringContainsString('<meta name="twitter:card" content="summary_large_image">', $html);
+        $this->assertStringContainsString('<meta name="twitter:image" content="'.asset('storage/homepage/logo.header.png').'">', $html);
+        $this->assertStringContainsString('<meta property="og:locale" content="en_US">', $html);
     }
 
     public function test_page_hero_renders_a_real_img_with_its_own_alt(): void

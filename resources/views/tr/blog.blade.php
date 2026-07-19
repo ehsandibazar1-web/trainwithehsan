@@ -3,6 +3,8 @@
 @section('title', 'Blog — Kendini Savunma ve Dövüş Sanatları Makaleleri | Ehsan Dibazar')
 @section('meta_description', 'Ehsan Dibazar\'dan kendini savunma, Brezilya Jiu-Jitsu ve dövüş sanatları eğitimi üzerine pratik makaleler.')
 @section('canonical', url('/tr/blog'))
+@section('og_title', 'Blog — Kendini Savunma ve Dövüş Sanatları Makaleleri | Ehsan Dibazar')
+@section('og_description', 'Ehsan Dibazar\'dan kendini savunma, Brezilya Jiu-Jitsu ve dövüş sanatları eğitimi üzerine pratik makaleler.')
 
 @section('json-ld')
 <script type="application/ld+json">
