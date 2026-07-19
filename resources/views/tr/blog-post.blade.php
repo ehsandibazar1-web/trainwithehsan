@@ -9,6 +9,7 @@
 @section('og_title', ($article->og_title ?: $article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
 @section('og_description', $article->og_description ?: $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
 @section('og_image', $article->image_path ? asset('storage/' . $article->image_path) : '')
+@section('og_image_alt', $article->image_alt ?: $article->title)
 
 {{-- hreflang اختصاصی: اسلاگ EN/TR یک مقاله لزوماً یکی نیست (مثلاً dovus-zekasi در برابر
      combat-intelligence)، پس نمی‌توان مثل صفحات ثابت از یک path_suffix مشترک استفاده کرد. اگر
@@ -31,7 +32,7 @@
   "headline": @json($article->title),
   "url": @json(url('/tr/blog/' . $article->slug)),
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
-  @if($article->image_path)"image": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)),@endif
+  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title)},@endif
   "author": {"@@type": "Person", "name": @json($article->author_name)},
   "publisher": {"@@id": "https://trainwithehsan.com/#organization"}
 }

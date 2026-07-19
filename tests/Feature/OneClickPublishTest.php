@@ -280,6 +280,58 @@ class OneClickPublishTest extends TestCase
         $this->assertSame('Reused alt text', Media::first()->alt_text);
     }
 
+    public function test_json_image_alt_is_written_to_the_articles_own_image_alt_column(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('articles/existing.jpg', 'fake');
+        Media::create(['original_name' => 'existing.jpg', 'disk' => 'public', 'disk_path' => 'articles/existing.jpg', 'url' => 'x', 'type' => 'other']);
+
+        $json = json_encode([
+            'language' => 'en', 'title' => 'Hero Alt From Json', 'content' => '<p>x</p>', 'publish_status' => 'draft',
+            'featured_image' => 'articles/existing.jpg', 'image_alt' => 'Instructor showing an open-hand de-escalation stance',
+        ]);
+
+        $result = $this->service()->import($json);
+
+        // اولویت ۱: image_alt در JSON روی ستونِ articles.image_alt می‌نشیند (نه عنوان مقاله)
+        $this->assertSame('Instructor showing an open-hand de-escalation stance', $result['article']->image_alt);
+    }
+
+    public function test_hero_alt_falls_back_to_media_library_alt_when_json_omits_it(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('articles/library.jpg', 'fake');
+        // این عکس از قبل در کتابخانه‌ی رسانه ALT دارد، ولی JSON آلت نمی‌فرستد
+        Media::create(['original_name' => 'library.jpg', 'disk' => 'public', 'disk_path' => 'articles/library.jpg', 'url' => 'x', 'type' => 'other', 'alt_text' => 'Existing library ALT']);
+
+        $json = json_encode([
+            'language' => 'en', 'title' => 'No Alt In Json', 'content' => '<p>x</p>', 'publish_status' => 'draft',
+            'featured_image' => 'articles/library.jpg',
+        ]);
+
+        $result = $this->service()->import($json);
+
+        // اولویت ۲: وقتی JSON آلت ندارد، ALTِ کتابخانه‌ی رسانه استفاده می‌شود
+        $this->assertSame('Existing library ALT', $result['article']->image_alt);
+    }
+
+    public function test_hero_alt_is_left_blank_when_neither_json_nor_media_provides_one(): void
+    {
+        Storage::fake('public');
+        Storage::disk('public')->put('articles/bare.jpg', 'fake');
+        Media::create(['original_name' => 'bare.jpg', 'disk' => 'public', 'disk_path' => 'articles/bare.jpg', 'url' => 'x', 'type' => 'other']);
+
+        $json = json_encode([
+            'language' => 'en', 'title' => 'Title Only Fallback', 'content' => '<p>x</p>', 'publish_status' => 'draft',
+            'featured_image' => 'articles/bare.jpg',
+        ]);
+
+        $result = $this->service()->import($json);
+
+        // اولویت ۳: هیچ آلتی نیست → ستون خالی می‌ماند تا تمپلیت به عنوانِ مقاله برگردد
+        $this->assertNull($result['article']->image_alt);
+    }
+
     // نکته‌ی عمدی: import() به‌صورت خودکار GenerateInternalLinkSuggestions (بازتولید مبتنی‌بر
     // قاعده) را صف نمی‌کند — چون SuggestionEngine::generateAndPersist() هر پیشنهاد pending‌ای که
     // در محاسبه‌ی تازه‌ی قاعده‌ای دوباره کشف نشود پاک می‌کند (صرف‌نظر از origin)؛ اگر همین‌جا صف

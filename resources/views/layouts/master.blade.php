@@ -37,6 +37,10 @@
     @php($ogImage = trim($__env->yieldContent('og_image')))
     @if($ogImage)
     <meta property="og:image" content="{{ $ogImage }}">
+    @php($ogImageAlt = trim($__env->yieldContent('og_image_alt')))
+    @if($ogImageAlt)
+    <meta property="og:image:alt" content="{{ $ogImageAlt }}">
+    @endif
     @php($ogImageWidth = trim($__env->yieldContent('og_image_width')))
     @php($ogImageHeight = trim($__env->yieldContent('og_image_height')))
     @php($ogImageType = trim($__env->yieldContent('og_image_type')))

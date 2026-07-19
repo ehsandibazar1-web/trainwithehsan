@@ -77,9 +77,24 @@ class ImageSeoTest extends TestCase
         $this->assertStringContainsString('<img src="'.asset('storage/articles/muay.png').'" alt="Muay Thai training in Istanbul"', $html);
         // og:image (original file) present
         $this->assertStringContainsString('<meta property="og:image" content="'.asset('storage/articles/muay.png').'">', $html);
-        // Article JSON-LD carries the image
-        $this->assertStringContainsString('"image":', $html);
+        // og:image:alt carries the featured image's own ALT
+        $this->assertStringContainsString('<meta property="og:image:alt" content="Muay Thai training in Istanbul">', $html);
+        // Article JSON-LD carries the image as an ImageObject with a caption = ALT
+        $this->assertStringContainsString('"image": {"@type": "ImageObject"', $html);
+        $this->assertStringContainsString('"caption": "Muay Thai training in Istanbul"', $html);
         $this->assertStringContainsString(asset('storage/articles/muay.png'), $html);
+    }
+
+    public function test_og_image_alt_and_schema_caption_fall_back_to_the_title(): void
+    {
+        $article = $this->makeArticle([
+            'slug' => 'ogalt-fallback', 'title' => 'The Fallback Headline', 'image_path' => 'articles/x.png', 'image_alt' => null,
+        ]);
+
+        $html = $this->get($article->path())->assertOk()->getContent();
+
+        $this->assertStringContainsString('<meta property="og:image:alt" content="The Fallback Headline">', $html);
+        $this->assertStringContainsString('"caption": "The Fallback Headline"', $html);
     }
 
     public function test_turkish_article_hero_uses_its_own_localized_alt(): void

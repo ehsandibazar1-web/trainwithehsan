@@ -227,6 +227,14 @@ class ArticleImportService
             if (! empty($payload['image_path'])) {
                 $imageCount = 1;
             }
+            // ALTِ عکسِ هیرو روی خودِ مقاله (ستونِ articles.image_alt که تمپلیتِ عمومی برای <img alt>،
+            // og:image:alt و image در schema می‌خواند). اولویت: image_alt در JSON → ALTِ ذخیره‌شده‌ی
+            // همان عکس در کتابخانه‌ی رسانه → خالی (آن‌وقت تمپلیت به عنوانِ مقاله برمی‌گردد). alt_textِ
+            // فعلیِ Media را *پیش از* آپدیت می‌خوانیم تا وقتی JSON آلت دارد، آلتِ JSON برنده شود.
+            $heroAlt = trim((string) ($payload['image_alt'] ?? '')) !== ''
+                ? trim((string) $payload['image_alt'])
+                : ($media?->alt_text ?: null);
+
             if ($media && ! empty($payload['image_alt'])) {
                 $media->update(['alt_text' => $payload['image_alt']]);
             }
@@ -246,6 +254,7 @@ class ArticleImportService
                 'og_description' => $payload['og_description'] ?? null,
                 'faqs' => $payload['faqs'] ?? null,
                 'image_path' => $payload['image_path'] ?? null,
+                'image_alt' => $heroAlt,
                 'author_name' => $payload['author_name'],
                 'reading_time' => $payload['reading_time'],
                 'status' => $payload['status'],
