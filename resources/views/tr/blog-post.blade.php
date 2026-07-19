@@ -6,6 +6,7 @@
 @section('title', ($article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
 @section('meta_description', $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
 @section('canonical', url('/tr/blog/' . $article->slug))
+@section('og_type', 'article')
 @section('og_title', ($article->og_title ?: $article->seo_title ?: $article->title) . ' — Ehsan Dibazar')
 @section('og_description', $article->og_description ?: $article->meta_description ?: ($article->excerpt ?? Str::limit(strip_tags($article->body), 150)))
 @section('og_image', $article->image_path ? asset('storage/' . $article->image_path) : '')

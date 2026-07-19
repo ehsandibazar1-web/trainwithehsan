@@ -30,12 +30,14 @@
     @endif
 
     <meta property="og:site_name" content="Train with Ehsan">
+    <meta property="og:locale" content="en_US">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
     <meta property="og:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
-    @php($ogImage = trim($__env->yieldContent('og_image')))
-    @if($ogImage)
+    {{-- og:image همیشه ست می‌شود: عکسِ اختصاصیِ صفحه، وگرنه لوگوی برند به‌عنوان پیش‌فرضِ سایت‌گستر —
+         تا هیچ اشتراک‌گذاری‌ای (واتساپ/فیسبوک/لینکدین/X) بدونِ پیش‌نمایشِ تصویری نماند --}}
+    @php($ogImage = trim($__env->yieldContent('og_image')) ?: asset('storage/homepage/logo.header.png'))
     <meta property="og:image" content="{{ $ogImage }}">
     @php($ogImageAlt = trim($__env->yieldContent('og_image_alt')))
     @if($ogImageAlt)
@@ -53,8 +55,18 @@
     @if($ogImageType)
     <meta property="og:image:type" content="{{ $ogImageType }}">
     @endif
+    {{-- کارت X/توییتر: صفحاتِ ویدیویی کارتِ player اختصاصیِ خودشان را دارند (social_video)؛ بقیه‌ی
+         صفحات یک کارتِ summary_large_image پیش‌فرض می‌گیرند تا اشتراک در X هم پیش‌نمایشِ بزرگ داشته باشد.
+         social_video را یک‌بار می‌خوانیم و همان را echo می‌کنیم (نه دوبار رندر) --}}
+    @php($socialVideo = trim($__env->yieldContent('social_video')))
+    @if($socialVideo !== '')
+    {!! $socialVideo !!}
+    @else
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
+    <meta name="twitter:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">
+    <meta name="twitter:image" content="{{ $ogImage }}">
     @endif
-    @yield('social_video')
     <meta name="theme-color" content="#d9bb75">
 
     <script src="https://analytics.ahrefs.com/analytics.js" data-key="eou7/AHP2woEpfdpW9t1cQ" async></script>
