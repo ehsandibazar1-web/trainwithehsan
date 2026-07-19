@@ -11,6 +11,7 @@
 @section('og_title', ($page->og_title ?: $page->seo_title ?: $page->title) . ' — Ehsan Dibazar')
 @section('og_description', $page->og_description ?: $page->meta_description ?: Str::limit(trim(strip_tags($page->body)), 150))
 @section('og_image', $page->image_path ? asset('storage/' . $page->image_path) : '')
+@section('og_image_alt', $page->image_alt ?: $page->title)
 
 @section('json-ld')
 <script type="application/ld+json">
@@ -20,7 +21,7 @@
   "name": @json($page->title),
   "url": @json(url('/' . $page->slug)),
   "dateModified": @json(optional($page->updated_at)->toIso8601String()),
-  @if($page->image_path)"image": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)),@endif
+  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title)},@endif
   "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"}
 }
 </script>
