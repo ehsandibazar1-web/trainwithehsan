@@ -23,9 +23,11 @@ class HreflangTest extends TestCase
         $response = $this->get('/');
 
         $response->assertOk();
-        $response->assertSee('<link rel="alternate" hreflang="en" href="https://trainwithehsan.com">', false);
-        $response->assertSee('<link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr">', false);
-        $response->assertSee('<link rel="alternate" hreflang="x-default" href="https://trainwithehsan.com">', false);
+        // URLها از url() (یعنی APP_URL) ساخته می‌شوند، نه دامنه‌ی hard-code — هماهنگ با
+        // تگ canonical و با hreflangِ مقاله‌ها پایین‌تر (که همیشه url() بوده‌اند)
+        $response->assertSee('<link rel="alternate" hreflang="en" href="'.url('').'">', false);
+        $response->assertSee('<link rel="alternate" hreflang="tr" href="'.url('/tr').'">', false);
+        $response->assertSee('<link rel="alternate" hreflang="x-default" href="'.url('').'">', false);
     }
 
     public function test_turkish_homepage_has_hreflang_pointing_to_both_language_roots(): void
@@ -33,8 +35,8 @@ class HreflangTest extends TestCase
         $response = $this->get('/tr');
 
         $response->assertOk();
-        $response->assertSee('<link rel="alternate" hreflang="en" href="https://trainwithehsan.com">', false);
-        $response->assertSee('<link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr">', false);
+        $response->assertSee('<link rel="alternate" hreflang="en" href="'.url('').'">', false);
+        $response->assertSee('<link rel="alternate" hreflang="tr" href="'.url('/tr').'">', false);
     }
 
     public function test_english_about_page_hreflang_points_to_the_turkish_about_page_not_the_root(): void
@@ -42,8 +44,8 @@ class HreflangTest extends TestCase
         $response = $this->get('/about');
 
         $response->assertOk();
-        $response->assertSee('<link rel="alternate" hreflang="en" href="https://trainwithehsan.com/about">', false);
-        $response->assertSee('<link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr/about">', false);
+        $response->assertSee('<link rel="alternate" hreflang="en" href="'.url('/about').'">', false);
+        $response->assertSee('<link rel="alternate" hreflang="tr" href="'.url('/tr/about').'">', false);
     }
 
     public function test_turkish_about_page_hreflang_points_to_the_english_about_page(): void
@@ -51,8 +53,8 @@ class HreflangTest extends TestCase
         $response = $this->get('/tr/about');
 
         $response->assertOk();
-        $response->assertSee('<link rel="alternate" hreflang="en" href="https://trainwithehsan.com/about">', false);
-        $response->assertSee('<link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr/about">', false);
+        $response->assertSee('<link rel="alternate" hreflang="en" href="'.url('/about').'">', false);
+        $response->assertSee('<link rel="alternate" hreflang="tr" href="'.url('/tr/about').'">', false);
     }
 
     public function test_article_with_a_translation_points_to_its_actual_sibling_slug(): void

@@ -24,9 +24,9 @@
     @hasSection('hreflang')
         @yield('hreflang')
     @else
-    <link rel="alternate" hreflang="en" href="https://trainwithehsan.com{{ $pathSuffix }}">
-    <link rel="alternate" hreflang="tr" href="https://trainwithehsan.com/tr{{ $pathSuffix }}">
-    <link rel="alternate" hreflang="x-default" href="https://trainwithehsan.com{{ $pathSuffix }}">
+    <link rel="alternate" hreflang="en" href="{{ url($pathSuffix) }}">
+    <link rel="alternate" hreflang="tr" href="{{ url('/tr'.$pathSuffix) }}">
+    <link rel="alternate" hreflang="x-default" href="{{ url($pathSuffix) }}">
     @endif
 
     <meta property="og:site_name" content="Train with Ehsan">
