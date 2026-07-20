@@ -33,7 +33,7 @@
   "headline": @json($article->title),
   "url": @json(url('/blog/' . $article->slug)),
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
-  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title)},@endif
+  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
   "author": {"@@type": "Person", "name": @json($article->author_name)},
   "publisher": {"@@id": "https://trainwithehsan.com/#organization"}
 }

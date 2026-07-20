@@ -39,7 +39,11 @@
     "width": {{ (int) $v('hero_image_width') }},
     "height": {{ (int) $v('hero_image_height') }},
     "caption": @json($v('hero_name', 'Ehsan Dibazar')),
-    "creator": {"@@id": "https://trainwithehsan.com/tr/about#person"}
+    "creator": {"@@id": "https://trainwithehsan.com/tr/about#person"},
+    "license": @json(url('/tr/terms-and-conditions')),
+    "acquireLicensePage": @json(url('/tr/contact')),
+    "copyrightNotice": "\u00a9 Ehsan Dibazar",
+    "creditText": "Ehsan Dibazar"
   },
   @endif
   "sameAs": [

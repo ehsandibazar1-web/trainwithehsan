@@ -34,7 +34,7 @@
   "name": @json($page->title),
   "url": @json(url('/' . $page->slug)),
   "dateModified": @json(optional($page->updated_at)->toIso8601String()),
-  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title)},@endif
+  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title), "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
   "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"}
 }
 </script>
