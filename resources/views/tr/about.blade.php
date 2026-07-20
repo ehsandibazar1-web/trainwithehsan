@@ -6,6 +6,8 @@
 @php($gallery = $gallery ?? [])
 @php($timeline = $timeline ?? [])
 @php($v = fn($k, $d = '') => (($about[$k] ?? null) !== null && ($about[$k] ?? '') !== '') ? $about[$k] : $d)
+{{-- URLِ بهینه‌ی تصویر: WebPِ مشتقِ کتابخانه‌ی رسانه اگر موجود باشد، وگرنه فایلِ اصلی (Section 21) --}}
+@php($optImg = fn($path) => \App\Models\Media::optimizedUrl($path))
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
 @section('meta_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi.'))
@@ -144,7 +146,7 @@ body{background:var(--dark)!important}
     <header class="hero">
         <div class="glow"></div>
         <div class="hero-photo-wrap">
-            <img id="heroPhoto" class="hero-photo" src="{{ $v('hero_image') ? asset('storage/' . $v('hero_image')) : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%232a2416'/%3E%3C/svg%3E" }}" alt="{{ $v('hero_name', 'Ehsan Dibazar') }}" fetchpriority="high" decoding="async">
+            <img id="heroPhoto" class="hero-photo" src="{{ $v('hero_image') ? $optImg($v('hero_image')) : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%232a2416'/%3E%3C/svg%3E" }}" alt="{{ $v('hero_name', 'Ehsan Dibazar') }}" fetchpriority="high" decoding="async">
         </div>
         <h1>{{ $v('hero_name', 'Ehsan Dibazar') }}</h1>
         <div class="sub">{{ $v('hero_title', 'Dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisansı') }}</div>
@@ -189,7 +191,7 @@ body{background:var(--dark)!important}
             <div class="masonry reveal-group" id="masonry">
                 @foreach($certList as $cert)
                 @php($capText = implode(' — ', array_filter([$cert['title'] ?? null, $cert['subtitle'] ?? null, $cert['description'] ?? null])))
-                <figure class="cred reveal" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) style="background:url('{{ asset('storage/' . $cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
+                <figure class="cred reveal" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) style="background:url('{{ $optImg($cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
                 @endforeach
             </div>
         </div>
@@ -203,7 +205,7 @@ body{background:var(--dark)!important}
             <div class="masonry reveal-group">
                 @foreach($gallery as $img)
                 @continue(empty($img['image']))
-                <figure class="cred reveal" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" style="background:url('{{ asset('storage/' . $img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
+                <figure class="cred reveal" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" style="background:url('{{ $optImg($img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
                 @endforeach
             </div>
         </div>
@@ -234,7 +236,7 @@ body{background:var(--dark)!important}
     </section>
 
     {{-- ============ CTA مگنتیک ============ --}}
-    <section class="cta reveal" @if($v('cta_bg_image')) style="background-image:linear-gradient(135deg,rgba(26,26,26,.85),rgba(0,0,0,.85)),url('{{ asset('storage/' . $v('cta_bg_image')) }}')" @endif>
+    <section class="cta reveal" @if($v('cta_bg_image')) style="background-image:linear-gradient(135deg,rgba(26,26,26,.85),rgba(0,0,0,.85)),url('{{ $optImg($v('cta_bg_image')) }}')" @endif>
         @if($v('cta_title'))
         <h3>{{ $v('cta_title') }}</h3>
         @endif
