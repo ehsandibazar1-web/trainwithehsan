@@ -206,6 +206,35 @@ class VideoSeoTest extends TestCase
         $this->assertArrayNotHasKey('contentUrl', $out[0]);
     }
 
+    public function test_homepage_embed_video_carries_uploaddate_from_the_fallback_and_a_nonempty_name(): void
+    {
+        // Google خطای «Missing field uploadDate» را برای ویدیوهای embedِ صفحه‌ی اصلی داد — چون
+        // یوتیوب/ویمئو تاریخِ فایل ندارند. حالا fallbackِ سطحِ صفحه (زمانِ آخرین ذخیره‌ی تنظیمات)
+        // به همه‌ی VideoObjectها uploadDate می‌دهد، و name/description همیشه غیرخالی‌اند.
+        $out = $this->service()->forHomepage([
+            'video1_caption' => 'How the training works',
+            'video1_embed' => 'https://www.youtube.com/watch?v=abcdefghijk',
+        ], [], '2026-07-01T10:00:00+00:00');
+
+        $this->assertCount(1, $out);
+        foreach (['name', 'description', 'thumbnailUrl', 'uploadDate'] as $required) {
+            $this->assertArrayHasKey($required, $out[0]);
+            $this->assertNotSame('', $out[0][$required]);
+        }
+        $this->assertSame('2026-07-01T10:00:00+00:00', $out[0]['uploadDate']);
+    }
+
+    public function test_homepage_member_video_without_a_name_still_gets_a_nonempty_name_and_uploaddate(): void
+    {
+        $out = $this->service()->forHomepage([], [
+            ['name' => '', 'video_embed' => 'https://www.youtube.com/watch?v=abcdefghijk', 'photo' => ''],
+        ], '2026-07-01T10:00:00+00:00');
+
+        $this->assertCount(1, $out);
+        $this->assertNotSame('', $out[0]['name']);
+        $this->assertSame('2026-07-01T10:00:00+00:00', $out[0]['uploadDate']);
+    }
+
     // ---- HTTP rendering: valid JSON-LD, privacy preserved ----------------------
 
     public function test_article_page_renders_valid_videoobject_json_ld_and_no_eager_iframe(): void
