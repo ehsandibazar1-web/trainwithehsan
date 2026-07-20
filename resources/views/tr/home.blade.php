@@ -6,6 +6,13 @@
 @section('og_title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
 @section('og_description', 'Ehsan Dibazar ile İstanbul\'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, 15+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.')
 
+{{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — preload + fetchpriority=high برای دانلودِ فوری --}}
+@if(!empty($s['hero1_image']))
+@section('head_preload')
+<link rel="preload" as="image" href="{{ asset('storage/' . $s['hero1_image']) }}" fetchpriority="high">
+@endsection
+@endif
+
 @section('json-ld')
 <script type="application/ld+json">
 {
