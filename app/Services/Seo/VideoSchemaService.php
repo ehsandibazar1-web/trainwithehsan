@@ -47,7 +47,7 @@ class VideoSchemaService
      * @param  array<int, array<string, mixed>>  $members  ردیف‌های ریپیترِ اعضا
      * @return array<int, array<string, mixed>> فهرستِ VideoObjectها (خالی اگر هیچ ویدیویی نباشد)
      */
-    public function forHomepage(array $s, array $members): array
+    public function forHomepage(array $s, array $members, ?string $fallbackUploadDate = null): array
     {
         $videos = [];
 
@@ -65,6 +65,7 @@ class VideoSchemaService
                 $this->value($s, "video{$i}_embed"),
                 $this->value($s, "video{$i}_file"),
                 $this->value($s, "video{$i}_thumb"),
+                $fallbackUploadDate,
             );
             if ($video) {
                 $videos[] = $video;
@@ -80,6 +81,7 @@ class VideoSchemaService
                 (string) ($m['video_embed'] ?? ''),
                 (string) ($m['video_file'] ?? ''),
                 (string) ($m['photo'] ?? ''),
+                $fallbackUploadDate,
             );
             if ($video) {
                 $videos[] = $video;
@@ -102,7 +104,7 @@ class VideoSchemaService
             $article->title,
             $this->firstNonEmpty([$article->meta_description, $article->excerpt, $this->plainSummary($article->body), $article->title]),
             $this->recordImageUrl($article->image_path),
-            optional($article->published_at)->toIso8601String(),
+            optional($article->published_at ?? $article->updated_at)->toIso8601String(),
         );
     }
 
@@ -200,8 +202,8 @@ class VideoSchemaService
             $schema = [
                 '@context' => 'https://schema.org',
                 '@type' => 'VideoObject',
-                'name' => $name,
-                'description' => $description !== '' ? $description : $name,
+                'name' => $name !== '' ? $name : 'Video',
+                'description' => $description !== '' ? $description : ($name !== '' ? $name : 'Video'),
                 'thumbnailUrl' => $thumbnailUrl,
             ];
 
@@ -262,7 +264,7 @@ class VideoSchemaService
      *
      * @return array<string, mixed>|null
      */
-    private function build(string $name, string $description, string $embedRaw, string $filePath, string $thumbPath): ?array
+    private function build(string $name, string $description, string $embedRaw, string $filePath, string $thumbPath, ?string $fallbackUploadDate = null): ?array
     {
         $embedUrl = $embedRaw !== '' ? $this->embedUrlFromMatch($this->embeds->detect($embedRaw)) : null;
         $contentUrl = filled($filePath) ? asset('storage/'.ltrim($filePath, '/')) : null;
@@ -286,18 +288,21 @@ class VideoSchemaService
         $schema = [
             '@context' => 'https://schema.org',
             '@type' => 'VideoObject',
-            'name' => $name,
-            'description' => $description,
+            // name و description همیشه غیرخالی — Google هر دو را می‌خواهد (name الزامی)
+            'name' => $name !== '' ? $name : ($description !== '' ? $description : 'Video'),
+            'description' => $description !== '' ? $description : ($name !== '' ? $name : 'Video'),
             'thumbnailUrl' => $thumbnailUrl,
         ];
 
+        // uploadDate برای Google الزامی است — برای *همه‌ی* VideoObjectها، نه فقط فایل‌ها. فایلِ
+        // خودمیزبان → created_atِ Media؛ وگرنه (از جمله embedِ یوتیوب/ویمئو) → fallbackِ سطحِ صفحه‌ی
+        // اصلی (زمانِ آخرین ذخیره‌ی تنظیماتِ ویدیو) تا هیچ ویدیویی بدونِ uploadDate منتشر نشود.
+        if ($uploadDate = ($media?->created_at?->toIso8601String() ?: $fallbackUploadDate)) {
+            $schema['uploadDate'] = $uploadDate;
+        }
+
         if ($contentUrl) {
             $schema['contentUrl'] = $contentUrl;
-            // uploadDate فقط برای فایلِ آپلودشده که ردیفِ Media دارد (created_at) — برای embed حذف
-            // می‌شود (Google آن را «توصیه‌شده» می‌داند نه «الزامی»)
-            if ($uploadDate = $media?->created_at?->toIso8601String()) {
-                $schema['uploadDate'] = $uploadDate;
-            }
             // duration فقط برای فایلِ خودمیزبان که مدتش هنگامِ آپلود خوانده شده — یوتیوب/ویمئو منبعِ
             // مطمئنی بدونِ API ندارند، پس عمداً بدونِ duration می‌مانند (H2)
             if ($duration = $media?->duration_iso8601) {

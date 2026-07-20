@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Models\SiteSetting;
 use App\Services\Seo\VideoSchemaService;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class BlogController extends Controller
@@ -20,8 +21,10 @@ class BlogController extends Controller
 
         [$s, $members] = $this->homeSettings('en');
 
-        // Video SEO — داده‌ی ساختاریِ VideoObject برای ویدیوهای همین صفحه (نامرئی، افزایشی)
-        $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members);
+        // Video SEO — داده‌ی ساختاریِ VideoObject برای ویدیوهای همین صفحه (نامرئی، افزایشی).
+        // fallbackِ uploadDate: ویدیوهای embed (یوتیوب/ویمئو) تاریخِ فایل ندارند، پس زمانِ آخرین
+        // ذخیره‌ی تنظیماتِ صفحه‌ی اصلی را به‌عنوان «تاریخِ انتشار روی سایت» می‌دهیم (Google الزامی می‌داند)
+        $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members, $this->homeVideoUploadDate('en'));
 
         return view('home', compact('latestArticles', 's', 'members', 'videoSchemas'));
     }
@@ -37,7 +40,7 @@ class BlogController extends Controller
 
         [$s, $members] = $this->homeSettings('tr');
 
-        $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members);
+        $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members, $this->homeVideoUploadDate('tr'));
 
         return view('tr.home', compact('latestArticles', 's', 'members', 'videoSchemas'));
     }
@@ -59,6 +62,17 @@ class BlogController extends Controller
         unset($s['members']);
 
         return [$s, $members];
+    }
+
+    // تاریخِ fallbackِ uploadDate برای ویدیوهای embedِ صفحه‌ی اصلی (که تاریخِ فایل ندارند): آخرین
+    // باری که هر یک از تنظیماتِ صفحه‌ی اصلی ذخیره شده — یعنی «کِی این محتوا روی سایت منتشر شد».
+    // اگر هیچ ردیفی نبود (نصبِ تازه، بدونِ ویدیو) به now برمی‌گردیم؛ چون بدونِ ویدیو اصلاً
+    // VideoObjectی ساخته نمی‌شود، این حالت هیچ‌وقت روی خروجی اثر ندارد.
+    private function homeVideoUploadDate(string $locale): string
+    {
+        $latest = SiteSetting::where('key', 'like', "home.$locale.%")->max('updated_at');
+
+        return ($latest ? Carbon::parse($latest) : now())->toIso8601String();
     }
 
     // صفحه درباره ما — انگلیسی
