@@ -76,9 +76,12 @@
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
     /* نقطه‌های اسلایدر — از پایین/چپ (که با ردیف ویدیوهای زیرش تداخل داشت) به بالا/راست
        منتقل شد و کوچک‌تر شد؛ همچنان یک ردیف افقی است */
-    .hero-dots{position:absolute;top:20px;right:20px;display:flex;flex-direction:column;align-items:center;gap:6px;z-index:2}
-    .hero-dot{width:10px;height:10px;border-radius:50%;background:#a3a5a8;border:0;cursor:pointer;padding:0}
-    .hero-dot.active{background:var(--gold)}
+    .hero-dots{position:absolute;top:20px;right:20px;display:flex;flex-direction:column;align-items:center;gap:0;z-index:2}
+    /* ناحیه‌ی لمسِ ۲۴px (حداقلِ WCAG 2.2 / Lighthouse) با نقطه‌ی دیداریِ همان ۱۰px داخلش —
+       ظاهرِ نقطه‌ها عوض نمی‌شود، فقط هدفِ لمسی بزرگ‌تر و بدونِ هم‌پوشانی می‌شود */
+    .hero-dot{width:24px;height:24px;background:none;border:0;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center}
+    .hero-dot::before{content:"";width:10px;height:10px;border-radius:50%;background:#a3a5a8}
+    .hero-dot.active::before{background:var(--gold)}
 
     /* ===== ردیف ویدیو — .row-video {margin-top:-94px} overlap روی اسلایدر ===== */
     /* بدون فاصلهٔ پایین: بخش «درباره» بلافاصله زیر کارت‌های ویدیو شروع می‌شود (مثل سایت مرجع) */
@@ -574,6 +577,7 @@
             'button_text' => $v('insta_showcase_button_text', 'Instagram\'da takip edin'),
             'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'),
             'fallback_image' => $v('insta_showcase_fallback_image') ? $img($v('insta_showcase_fallback_image')) : '',
+            'fallback_srcset' => \App\Models\Media::srcsetFor($v('insta_showcase_fallback_image')),
         ],
         [
             'section_class' => ' insta-showcase--row2',
@@ -585,6 +589,7 @@
             'button_text' => $v('insta_showcase2_button_text', 'Instagram\'da takip edin'),
             'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://instagram.com'),
             'fallback_image' => $v('insta_showcase2_fallback_image') ? $img($v('insta_showcase2_fallback_image')) : '',
+            'fallback_srcset' => \App\Models\Media::srcsetFor($v('insta_showcase2_fallback_image')),
         ],
     ])
     @foreach ($instaRows as $row)
@@ -618,7 +623,7 @@
                         @else
                             <div class="insta-embed-wrap">
                                 @if($row['fallback_image'])
-                                    <img src="{{ $row['fallback_image'] }}" alt="Instagram" class="insta-embed-fallback-img">
+                                    <img src="{{ $row['fallback_image'] }}"@if($row['fallback_srcset']) srcset="{{ $row['fallback_srcset'] }}" sizes="(max-width: 640px) 100vw, 270px"@endif alt="Instagram" class="insta-embed-fallback-img">
                                 @endif
                                 <div class="insta-embed-fallback-overlay">
                                     <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">

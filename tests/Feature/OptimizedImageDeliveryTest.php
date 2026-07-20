@@ -160,6 +160,43 @@ class OptimizedImageDeliveryTest extends TestCase
         $this->assertNull(Media::optimizedUrl(''));
     }
 
+    public function test_srcset_for_builds_a_width_descriptor_list_and_is_null_without_variants(): void
+    {
+        Media::create([
+            'original_name' => 'insta.jpg', 'disk' => 'public', 'disk_path' => 'media/library/insta-z.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'media/library/insta-z.webp',
+            'responsive_paths' => [800 => 'media/library/insta-z-800.webp', 480 => 'media/library/insta-z-480.webp'],
+        ]);
+        Media::create([
+            'original_name' => 'small.jpg', 'disk' => 'public', 'disk_path' => 'media/library/small.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'media/library/small.webp',
+        ]);
+
+        // مرتب از کوچک به بزرگ (responsive_urls خودش sortKeys می‌کند)
+        $srcset = Media::srcsetFor('media/library/insta-z.jpg');
+        $this->assertStringContainsString('insta-z-480.webp 480w', $srcset);
+        $this->assertStringContainsString('insta-z-800.webp 800w', $srcset);
+        $this->assertLessThan(strpos($srcset, '800w'), strpos($srcset, '480w'));
+        // بدونِ واریانت / بدونِ ردیفِ Media / ورودیِ خالی → null (بدونِ srcset، رفتارِ قبلی)
+        $this->assertNull(Media::srcsetFor('media/library/small.jpg'));
+        $this->assertNull(Media::srcsetFor('homepage/no-row.png'));
+        $this->assertNull(Media::srcsetFor(null));
+    }
+
+    public function test_homepage_instagram_fallback_image_gets_a_responsive_srcset(): void
+    {
+        SiteSetting::updateOrCreate(['key' => 'home.en.insta_showcase_fallback_image'], ['value' => 'media/library/insta-w.jpg']);
+        Media::create([
+            'original_name' => 'insta.jpg', 'disk' => 'public', 'disk_path' => 'media/library/insta-w.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'media/library/insta-w.webp',
+            'responsive_paths' => [480 => 'media/library/insta-w-480.webp'],
+        ]);
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $this->assertStringContainsString('insta-w-480.webp 480w" sizes="(max-width: 640px) 100vw, 270px"', $html);
+    }
+
     public function test_homepage_hero_background_and_preload_use_the_webp_derivative(): void
     {
         SiteSetting::updateOrCreate(['key' => 'home.en.hero1_image'], ['value' => 'media/library/hero-y.jpg']);
