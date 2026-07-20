@@ -343,7 +343,9 @@
 <div class="cookie-consent" id="cookieConsent" hidden role="dialog" aria-live="polite" aria-label="Cookie consent">
     <div class="cookie-consent__text">
         We use cookies to understand how visitors use this site (Google Analytics, Microsoft Clarity). You can accept or decline non-essential cookies.
-        <a href="{{ url('/privacy-policy') }}">Learn more</a>
+        {{-- متنِ لینک توصیفی (نه «Learn more» عمومی) — هم برای موتورهای جست‌وجو (auditِ link-text
+             در Lighthouse) هم برای صفحه‌خوان‌ها روشن است لینک به کجا می‌رود --}}
+        <a href="{{ url('/privacy-policy') }}">Read our Privacy Policy</a>
     </div>
     <div class="cookie-consent__actions">
         <button type="button" id="cookieDecline" class="cookie-consent__btn cookie-consent__btn--ghost">Decline</button>

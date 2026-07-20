@@ -339,7 +339,8 @@
 <div class="cookie-consent" id="cookieConsent" hidden role="dialog" aria-live="polite" aria-label="Çerez izni">
     <div class="cookie-consent__text">
         Bu siteyi nasıl kullandığınızı anlamak için çerezler kullanıyoruz (Google Analytics, Microsoft Clarity). Zorunlu olmayan çerezleri kabul edebilir veya reddedebilirsiniz.
-        <a href="{{ url('/tr/privacy-policy') }}">Daha fazla bilgi</a>
+        {{-- متنِ لینک توصیفی — همان دلیلِ نسخه‌ی انگلیسی (auditِ link-textِ Lighthouse) --}}
+        <a href="{{ url('/tr/privacy-policy') }}">Gizlilik Politikamızı okuyun</a>
     </div>
     <div class="cookie-consent__actions">
         <button type="button" id="cookieDecline" class="cookie-consent__btn cookie-consent__btn--ghost">Reddet</button>

@@ -226,6 +226,21 @@ class Media extends Model
                 ?: asset('storage/'.ltrim($diskPath, '/')));
     }
 
+    // srcsetِ ریسپانسیو برای یک تصویرِ SiteSetting-محور — از واریانت‌های WebPی که MediaProcessor
+    // هنگامِ آپلود ساخته (responsive_paths: 1600/1200/800/480px). null اگر ردیفِ Media یا واریانتی
+    // نباشد → صداکننده srcset نمی‌گذارد و رفتار مثلِ قبل می‌ماند (سازگاریِ عقب‌رو).
+    public static function srcsetFor(?string $diskPath): ?string
+    {
+        if (blank($diskPath)) {
+            return null;
+        }
+
+        $entries = collect(self::where('disk_path', $diskPath)->first()?->responsive_urls ?? [])
+            ->map(fn ($url, $width) => $url.' '.$width.'w');
+
+        return $entries->isEmpty() ? null : $entries->implode(', ');
+    }
+
     // جهت معکوسِ forRecord() — کدام Article/Page این تصویر را به‌عنوان تصویر شاخص استفاده می‌کند
     // (اگر اصلا کسی استفاده کند). برای App\Services\AiAgent\AgentAuditService لازم است تا بفهمد
     // یک یافته‌ی «ALT گمشده» روی یک Media، آیا واقعا رفع‌پذیر است (فیلد alt_text فقط روی تصویر
