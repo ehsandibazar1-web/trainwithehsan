@@ -91,7 +91,7 @@
     .article-body h3{font-size:17px;font-weight:700;color:#333;margin:1.6rem 0 .8rem}
     .article-body img{max-width:100%;height:auto;border-radius:6px;margin:1rem 0}
     .article-body ul,.article-body ol{padding-left:22px;margin-bottom:1.1rem;color:#555}
-    .article-body a{color:var(--gold-dark,#c09d4c)}
+    .article-body a{color:#8a6d1f;text-decoration:underline;text-underline-offset:2px}
 
     .share-box{background:#f9f7f2;border:1px solid #e8e3d5;border-radius:10px;padding:16px 18px;margin:1.5rem 0}
     .share-box h3{font-size:15px;color:#333;margin-bottom:10px}
@@ -131,7 +131,7 @@
 
     .sidebar-last-item{display:flex;gap:12px;border-bottom:1px dashed #d8d8d8;padding:12px 0}
     .sidebar-last-item .thumb{width:70px;height:60px;flex-shrink:0;border-radius:4px;background:linear-gradient(135deg,#d8d3c4,#d9bb75);background-size:cover;background-position:center}
-    .sidebar-last-item h5{font-size:14px;color:#3a3a3a;margin-bottom:4px}
+    .sidebar-last-item .sidebar-last-title{font-size:14px;font-weight:700;color:#3a3a3a;margin-bottom:4px}
     .sidebar-last-item span{font-size:11px;color:#999}
 </style>
 @endsection
@@ -254,7 +254,7 @@
                     <div class="sidebar-last-item reveal">
                         <div class="thumb" @if($item->image_path) style="background-image:url('{{ $item->optimized_image_url ?? asset('storage/' . $item->image_path) }}')" @endif></div>
                         <div>
-                            <h5><a href="{{ url('/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></h5>
+                            <p class="sidebar-last-title"><a href="{{ url('/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></p>
                             <span>{{ optional($item->published_at)->format('F Y') }}</span>
                         </div>
                     </div>

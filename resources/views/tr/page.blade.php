@@ -86,7 +86,7 @@
     .page-body h3{font-size:17px;font-weight:700;color:#333;margin:1.6rem 0 .8rem}
     .page-body img{max-width:100%;height:auto;border-radius:6px;margin:1rem 0}
     .page-body ul,.page-body ol{padding-left:22px;margin-bottom:1.1rem;color:#555}
-    .page-body a{color:var(--gold-dark,#c09d4c)}
+    .page-body a{color:#8a6d1f;text-decoration:underline;text-underline-offset:2px}
 
     /* ===== پرسش‌های متداول — عیناً همان الگوی blog-post.blade.php: آکاردئون نیتیو، بدون JS ===== */
     .faq-section{margin:1.8rem 0}
