@@ -93,22 +93,23 @@ class OptimizedImageDeliveryTest extends TestCase
 
     // ============ Public templates ============
 
-    public function test_home_page_prefers_the_webp_url_for_a_dam_backed_article_image(): void
+    public function test_home_page_serves_the_width_capped_webp_variant_for_article_cards(): void
     {
         Storage::fake('public');
         $media = app(MediaProcessor::class)->store($this->fakeImage(), 'articles', 'public');
         $this->makeArticle(['image_path' => $media->disk_path]);
 
-        $this->get('/')->assertOk()->assertSee($media->webp_url, false);
+        // کارتِ ~۲۷۰px سقفِ ۸۰۰px می‌گیرد — نه WebPِ فول‌سایز (یافته‌ی GTmetrix: اتلافِ ۳۶۵KiB)
+        $this->get('/')->assertOk()->assertSee($media->responsive_urls[800], false);
     }
 
-    public function test_blog_index_prefers_the_webp_url(): void
+    public function test_blog_index_serves_the_width_capped_webp_variant(): void
     {
         Storage::fake('public');
         $media = app(MediaProcessor::class)->store($this->fakeImage(), 'articles', 'public');
         $this->makeArticle(['image_path' => $media->disk_path]);
 
-        $this->get('/blog')->assertOk()->assertSee($media->webp_url, false);
+        $this->get('/blog')->assertOk()->assertSee($media->responsive_urls[800], false);
     }
 
     public function test_blog_post_prefers_the_webp_url_for_the_hero_image(): void
@@ -158,6 +159,29 @@ class OptimizedImageDeliveryTest extends TestCase
         $this->assertSame(asset('storage/homepage/no-row.png'), Media::optimizedUrl('homepage/no-row.png'));
         $this->assertNull(Media::optimizedUrl(null));
         $this->assertNull(Media::optimizedUrl(''));
+    }
+
+    public function test_optimized_url_with_max_width_picks_the_largest_variant_that_fits(): void
+    {
+        Media::create([
+            'original_name' => 'card.jpg', 'disk' => 'public', 'disk_path' => 'articles/card-v.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'articles/card-v.webp',
+            'responsive_paths' => [480 => 'articles/card-v-480.webp', 800 => 'articles/card-v-800.webp', 1200 => 'articles/card-v-1200.webp'],
+        ]);
+        Media::create([
+            'original_name' => 'small.jpg', 'disk' => 'public', 'disk_path' => 'articles/small-v.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'articles/small-v.webp',
+        ]);
+
+        // بزرگ‌ترین واریانتِ ≤ سقف — نه کوچک‌ترین، نه بزرگ‌تر از سقف
+        $this->assertStringEndsWith('card-v-800.webp', Media::optimizedUrl('articles/card-v.jpg', 800));
+        $this->assertStringEndsWith('card-v-480.webp', Media::optimizedUrl('articles/card-v.jpg', 480));
+        $this->assertStringEndsWith('card-v-1200.webp', Media::optimizedUrl('articles/card-v.jpg', 5000));
+        // بدونِ سقف → WebPِ کامل (رفتارِ قبلی دست‌نخورده)
+        $this->assertStringEndsWith('card-v.webp', Media::optimizedUrl('articles/card-v.jpg'));
+        // بدونِ واریانت → WebPِ کامل؛ بدونِ ردیفِ Media → فایلِ اصلی
+        $this->assertStringEndsWith('small-v.webp', Media::optimizedUrl('articles/small-v.jpg', 480));
+        $this->assertSame(asset('storage/no/row-v.jpg'), Media::optimizedUrl('no/row-v.jpg', 800));
     }
 
     public function test_srcset_for_builds_a_width_descriptor_list_and_is_null_without_variants(): void

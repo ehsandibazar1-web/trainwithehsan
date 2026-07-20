@@ -203,7 +203,7 @@
                 <div class="hoosh-box reveal">
                     <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px">
                         <div class="hoosh-avatar @if($authorPhoto) hoosh-avatar--photo @endif"
-                             @if($authorPhoto) style="background-image:url('{{ asset('storage/' . $authorPhoto) }}')" @endif
+                             @if($authorPhoto) style="background-image:url('{{ \App\Models\Media::optimizedUrl($authorPhoto, 480) }}')" @endif
                              role="img" aria-label="Ehsan Dibazar">{{ $authorPhoto ? '' : 'ED' }}</div>
                         <div>
                             <div style="font-size:16px;font-weight:800;color:#fff">Hi, I'm Ehsan Dibazar</div>
@@ -232,7 +232,7 @@
                 <div class="related-grid reveal-group">
                     @foreach($related as $rel)
                     <a href="{{ url('/blog/' . $rel->slug) }}" class="related-card reveal">
-                        <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ $rel->optimized_image_url ?? asset('storage/' . $rel->image_path) }}')" @endif></div>
+                        <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($rel->image_path, 800) }}')" @endif></div>
                         <h4>{{ $rel->title }}</h4>
                         <p>{{ Str::limit($rel->excerpt, 80) }}</p>
                     </a>
@@ -252,7 +252,7 @@
                 <div class="reveal-group" style="margin-top:10px">
                     @foreach($latest as $item)
                     <div class="sidebar-last-item reveal">
-                        <div class="thumb" @if($item->image_path) style="background-image:url('{{ $item->optimized_image_url ?? asset('storage/' . $item->image_path) }}')" @endif></div>
+                        <div class="thumb" @if($item->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($item->image_path, 480) }}')" @endif></div>
                         <div>
                             <p class="sidebar-last-title"><a href="{{ url('/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></p>
                             <span>{{ optional($item->published_at)->format('F Y') }}</span>

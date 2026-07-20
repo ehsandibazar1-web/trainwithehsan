@@ -507,7 +507,7 @@
                 <div class="news-grid carousel-track reveal-group">
                 @forelse($latestArticles ?? collect() as $article)
                 <a class="news-card reveal" href="{{ url('/blog/' . $article->slug) }}">
-                    <div class="img-news" @if($article->image_path) style="background-image:url('{{ $article->optimized_image_url ?? asset('storage/' . $article->image_path) }}');background-size:cover;background-position:center" @endif>
+                    <div class="img-news" @if($article->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($article->image_path, 800) }}');background-size:cover;background-position:center" @endif>
                         @unless($article->image_path)<b>{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</b>@endunless
                     </div>
                     <div class="title-news">{{ $article->title }}</div>
