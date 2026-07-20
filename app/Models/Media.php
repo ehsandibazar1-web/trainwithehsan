@@ -208,6 +208,24 @@ class Media extends Model
         return self::where('disk_path', $record->image_path)->first();
     }
 
+    // URLِ بهینه‌ی یک تصویرِ SiteSetting-محور (هیرو/درباره/دوره‌ها/تامبنیل‌ها در صفحه‌ی اصلی): WebPِ
+    // مشتق اگر ردیفِ Media با همین disk_path موجود و WebP دارد، وگرنه همان فایلِ اصلی — دقیقاً همان
+    // الگوی optimized_image_urlِ Article/Page (Section 21)، فقط برای مسیرِ خام به‌جای رکورد. کشِ
+    // درون-درخواستی تا چند فراخوانی در یک رندرِ صفحه، چند کوئریِ تکراری نزند.
+    /** @var array<string, string> */
+    protected static array $optimizedUrlCache = [];
+
+    public static function optimizedUrl(?string $diskPath): ?string
+    {
+        if (blank($diskPath)) {
+            return null;
+        }
+
+        return self::$optimizedUrlCache[$diskPath] ??=
+            (self::where('disk_path', $diskPath)->first()?->webp_url
+                ?: asset('storage/'.ltrim($diskPath, '/')));
+    }
+
     // جهت معکوسِ forRecord() — کدام Article/Page این تصویر را به‌عنوان تصویر شاخص استفاده می‌کند
     // (اگر اصلا کسی استفاده کند). برای App\Services\AiAgent\AgentAuditService لازم است تا بفهمد
     // یک یافته‌ی «ALT گمشده» روی یک Media، آیا واقعا رفع‌پذیر است (فیلد alt_text فقط روی تصویر
