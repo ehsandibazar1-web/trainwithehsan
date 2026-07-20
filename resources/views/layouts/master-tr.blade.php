@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- اسلاتِ preloadِ منابعِ حیاتی (مثلِ عکسِ LCPِ هیرو) — هر صفحه مهم‌ترین منبعش را زودتر اعلام می‌کند --}}
+    @yield('head_preload')
+
     <title>@yield('title', 'Ehsan Dibazar — İstanbul\'da Kendini Savunma ve Martial Intelligence Eğitimi')</title>
     <meta name="description" content="@yield('meta_description', 'İstanbul\'da tam başlangıç seviyesi için kendini savunma ve Brezilya Jiu-Jitsu eğitimi. Baskı altında doğru kararı vermeyi öğrenin — Ehsan Dibazar\'ın Martial Intelligence metodu.')">
     @php($metaKeywords = trim($__env->yieldContent('meta_keywords')))
@@ -75,8 +78,9 @@
          از FOIT (متن نامرئی هنگام لود فونت) — همان الگوی preconnect قبلی، فقط با فونت جدید --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {{-- فونتِ غیرمسدودکننده: preload به‌عنوان style، سپس onload→stylesheet تا رندر بلاک نشود (display=swap) --}}
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 
     @yield('json-ld')
 

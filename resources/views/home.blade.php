@@ -6,6 +6,14 @@
 @section('og_title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
 @section('og_description', 'Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, 15+ years of experience. Courses for complete beginners, women and men, in person or through the training app.')
 
+{{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — با preload + fetchpriority=high مرورگر فوراً دانلودش
+     می‌کند (به‌جای کشفِ دیرهنگام از داخلِ CSS). فقط وقتی واقعاً عکسی تنظیم شده باشد --}}
+@if(!empty($s['hero1_image']))
+@section('head_preload')
+<link rel="preload" as="image" href="{{ asset('storage/' . $s['hero1_image']) }}" fetchpriority="high">
+@endsection
+@endif
+
 @section('json-ld')
 <script type="application/ld+json">
 {

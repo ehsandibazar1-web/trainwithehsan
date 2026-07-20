@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- اسلاتِ preloadِ منابعِ حیاتی (مثلِ عکسِ LCPِ هیرو) — هر صفحه می‌تواند این‌جا مهم‌ترین
+         منبعش را زودتر به مرورگر اعلام کند تا LCP سریع‌تر شود --}}
+    @yield('head_preload')
+
     <title>@yield('title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence Training in Istanbul')</title>
     <meta name="description" content="@yield('meta_description', 'Self-defense and Brazilian Jiu-Jitsu training in Istanbul for complete beginners. Learn to make the right decision under pressure — the Martial Intelligence method by Ehsan Dibazar.')">
     @php($metaKeywords = trim($__env->yieldContent('meta_keywords')))
@@ -76,8 +80,11 @@
          از FOIT (متن نامرئی هنگام لود فونت) — همان الگوی preconnect قبلی، فقط با فونت جدید --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    {{-- فونتِ غیرمسدودکننده: به‌عنوان style پیش‌بارگذاری و با onload به stylesheet سوییچ می‌شود تا
+         رندرِ اولیه را بلاک نکند (FCP/LCP بهتر)؛ display=swap متن را فوراً با فونتِ سیستمی نشان می‌دهد
+         و بعد به Manrope جابه‌جا می‌کند. <noscript> برای مرورگرهای بدونِ JS همان رفتارِ قبلی را نگه می‌دارد --}}
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet"></noscript>
 
     @yield('json-ld')
 
