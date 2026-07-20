@@ -224,6 +224,22 @@ class VideoSeoTest extends TestCase
         $this->assertSame('2026-07-01T10:00:00+00:00', $out[0]['uploadDate']);
     }
 
+    public function test_homepage_video_row_with_a_whitespace_only_caption_falls_back_to_a_real_name(): void
+    {
+        // باگِ واقعیِ سایتِ زنده: کپشن روی یک «فاصله» (" ") تنظیم شده بود؛ Google آن را
+        // «Missing field name» شمرد. حالا فاصله مثلِ خالی رفتار می‌کند و به کپشنِ پیش‌فرض برمی‌گردد.
+        $out = $this->service()->forHomepage([
+            'video1_caption' => ' ',
+            'video1_file' => 'homepage/videos/a.mp4',
+            'video1_thumb' => 'homepage/videos/a.jpg',
+        ], [], '2026-07-01T10:00:00+00:00');
+
+        $this->assertCount(1, $out);
+        $this->assertSame('Why train martial arts & self-defense', $out[0]['name']);
+        $this->assertNotSame('', trim($out[0]['description']));
+        $this->assertSame('2026-07-01T10:00:00+00:00', $out[0]['uploadDate']);
+    }
+
     public function test_homepage_member_video_without_a_name_still_gets_a_nonempty_name_and_uploaddate(): void
     {
         $out = $this->service()->forHomepage([], [

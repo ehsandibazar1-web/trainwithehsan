@@ -58,7 +58,8 @@ class VideoSchemaService
             'What is self-defense & martial sport',
         ];
         foreach ([1, 2, 3] as $i) {
-            $name = $this->value($s, "video{$i}_caption") ?: $captionDefaults[$i - 1];
+            // trim تا کپشنِ فقط‌فاصله (" ") مثلِ خالی باشد و به کپشنِ پیش‌فرضِ معنادار برگردد
+            $name = trim($this->value($s, "video{$i}_caption")) ?: $captionDefaults[$i - 1];
             $video = $this->build(
                 $name,
                 $name,
@@ -196,14 +197,18 @@ class VideoSchemaService
             }
             $seen[$key] = true;
 
-            // نامِ لینک اگر واقعی باشد (نه خودِ URL)، وگرنه عنوانِ مقاله/صفحه
-            $name = ($item['text'] !== '' && ! $this->looksLikeUrl($item['text'])) ? $item['text'] : $fallbackName;
+            // نامِ لینک اگر واقعی باشد (نه خودِ URL و نه فقط‌فاصله)، وگرنه عنوانِ مقاله/صفحه
+            $linkText = trim($item['text']);
+            $name = ($linkText !== '' && ! $this->looksLikeUrl($linkText)) ? $linkText : $fallbackName;
+            // trim تا name/descriptionِ فقط‌فاصله (" ") مثلِ خالی رفتار کند — Google آن را «Missing field» می‌شمارد
+            $cleanName = trim($name) !== '' ? trim($name) : 'Video';
+            $cleanDescription = trim($description) !== '' ? trim($description) : $cleanName;
 
             $schema = [
                 '@context' => 'https://schema.org',
                 '@type' => 'VideoObject',
-                'name' => $name !== '' ? $name : 'Video',
-                'description' => $description !== '' ? $description : ($name !== '' ? $name : 'Video'),
+                'name' => $cleanName,
+                'description' => $cleanDescription,
                 'thumbnailUrl' => $thumbnailUrl,
             ];
 
@@ -285,12 +290,16 @@ class VideoSchemaService
         // ردیفِ Media یک‌بار خوانده می‌شود و هم uploadDate (created_at) هم duration را می‌دهد — نه دو کوئری
         $media = ($contentUrl && filled($filePath)) ? $this->mediaForDiskPath($filePath) : null;
 
+        // trim تا کپشنِ فقط‌فاصله (" ") هم مثلِ خالی رفتار کند و به مقدارِ معنادار برگردد — Google یک
+        // name/descriptionِ فقط‌فضای‌خالی را «Missing field» می‌شمارد (همان باگی که در Search Console دیدیم)
+        $cleanName = trim($name) !== '' ? trim($name) : (trim($description) !== '' ? trim($description) : 'Video');
+        $cleanDescription = trim($description) !== '' ? trim($description) : $cleanName;
+
         $schema = [
             '@context' => 'https://schema.org',
             '@type' => 'VideoObject',
-            // name و description همیشه غیرخالی — Google هر دو را می‌خواهد (name الزامی)
-            'name' => $name !== '' ? $name : ($description !== '' ? $description : 'Video'),
-            'description' => $description !== '' ? $description : ($name !== '' ? $name : 'Video'),
+            'name' => $cleanName,
+            'description' => $cleanDescription,
             'thumbnailUrl' => $thumbnailUrl,
         ];
 
