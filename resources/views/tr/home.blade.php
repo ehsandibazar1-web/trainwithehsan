@@ -9,7 +9,8 @@
 {{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — preload + fetchpriority=high برای دانلودِ فوری --}}
 @if(!empty($s['hero1_image']))
 @section('head_preload')
-<link rel="preload" as="image" href="{{ asset('storage/' . $s['hero1_image']) }}" fetchpriority="high">
+{{-- همان URLی که CSSِ اسلاید استفاده می‌کند (WebP اگر موجود باشد) --}}
+<link rel="preload" as="image" href="{{ \App\Models\Media::optimizedUrl($s['hero1_image']) }}" fetchpriority="high">
 @endsection
 @endif
 
@@ -375,6 +376,8 @@
     @php($members = $members ?? [])
     {{-- مقدار فقط-فاصله عمداً «پر» حساب می‌شود — راه مدیر سایت برای مخفی‌کردن متن پیش‌فرض بدون کد --}}
     @php($v = fn($k, $d = '') => (($s[$k] ?? null) !== null && ($s[$k] ?? '') !== '') ? $s[$k] : $d)
+    {{-- URLِ بهینه‌ی تصویر: WebPِ مشتق اگر موجود باشد، وگرنه فایلِ اصلی (Section 21) --}}
+    @php($img = fn($path) => \App\Models\Media::optimizedUrl($path))
     {{-- لینکِ ویدیو را به دادهٔ embed تبدیل می‌کند — همان موتورِ embedِ بدنهٔ مقاله
          (App\Services\Content\EmbedRenderer): یوتیوب/ویمئو/اینستاگرام/تیک‌تاک را می‌شناسد.
          ناشناخته (مثلِ آپارات) → مثلِ قبل یک iframe با همان لینک (سازگاریِ عقب‌رو). null اگر خالی باشد. --}}
@@ -387,7 +390,7 @@
     {{-- ============ اسلایدر هیرو ============ --}}
     {{-- فقط اسلاید اول h1 دارد (تنها H1 قابل‌مشاهده صفحه) — بقیه h2 هستند تا چند H1 در DOM نداشته باشیم --}}
     <div class="hero-slider">
-        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:url('{{ asset('storage/' . $v('hero1_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:url('{{ $img($v('hero1_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1 class="hero-title">{{ $v('hero1_title', 'Kendini Savunma ve Dövüş Sanatları Eğitimi') }}</h1>
@@ -395,7 +398,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:url('{{ asset('storage/' . $v('hero2_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:url('{{ $img($v('hero2_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h2 class="hero-title">{{ $v('hero2_title', 'Brezilya Jiu-Jitsu: kaldıraç sanatı') }}</h2>
@@ -403,7 +406,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:url('{{ asset('storage/' . $v('hero3_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:url('{{ $img($v('hero3_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h2 class="hero-title">{{ $v('hero3_title', 'Martial Intelligence') }}</h2>
@@ -428,7 +431,7 @@
                 @php($vFile = $v("video{$i}_file"))
                 @php($vThumb = $v("video{$i}_thumb"))
                 <div class="video-card js-video reveal" data-embed-kind="{{ $vMatch['kind'] ?? '' }}" data-embed-src="{{ $vMatch['src'] ?? '' }}" @if(!empty($vMatch['id'])) data-embed-id="{{ $vMatch['id'] }}" @endif data-file="{{ $vFile ? asset('storage/' . $vFile) : '' }}">
-                    <div class="video-card__img" @if($vThumb) style="background:url('{{ asset('storage/' . $vThumb) }}') center/cover no-repeat" @endif>
+                    <div class="video-card__img" @if($vThumb) style="background:url('{{ $img($vThumb) }}') center/cover no-repeat" @endif>
                         <span class="video-icon">▶</span>
                     </div>
                     <div class="text-video">{{ $v("video{$i}_caption", $videoDefaults[$i - 1]) }}</div>
@@ -451,7 +454,7 @@
             </div>
         </div>
         @if($v('app_image'))
-            <img src="{{ asset('storage/' . $v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img reveal">
+            <img src="{{ $img($v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img reveal">
         @else
             <div class="img-about-box reveal"><span>Uygulama</span></div>
         @endif
@@ -472,7 +475,7 @@
                 @php($courseLink = trim($v("course{$i}_link")))
                 @php($courseHref = $courseLink !== '' ? (str_starts_with($courseLink, 'http') ? $courseLink : url($courseLink)) : url('/tr/blog'))
                 <a href="{{ $courseHref }}" class="l-box reveal">
-                    <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ asset('storage/' . $v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
+                    <div class="img-learn" @if($v("course{$i}_image")) style="background-image:url('{{ $img($v("course{$i}_image")) }}');background-size:cover;background-position:center" @endif>
                         @unless($v("course{$i}_image"))<b>{{ $courseDefaults[$i - 1][0] }}</b>@endunless
                     </div>
                     <span class="l-title">{{ $v("course{$i}_label", $courseDefaults[$i - 1][1]) }}</span>
@@ -541,7 +544,7 @@
                                  data-embed-kind="{{ $mMatch['kind'] ?? '' }}" data-embed-src="{{ $mMatch['src'] ?? '' }}" @if(!empty($mMatch['id'])) data-embed-id="{{ $mMatch['id'] }}" @endif data-file="{{ $mFile }}"
                                  role="button" tabindex="0" aria-label="{{ 'Play ' . $mName . '’s video' }}"
                                  @endif
-                                 @if(!empty($m['photo'])) style="background-image:url('{{ asset('storage/' . $m['photo']) }}');background-size:cover;background-position:center" @endif>
+                                 @if(!empty($m['photo'])) style="background-image:url('{{ $img($m['photo']) }}');background-size:cover;background-position:center" @endif>
                                 @if(empty($m['photo'])){{ mb_substr($mName, 0, 1) }}@endif
                                 @if($mHasVideo)<span class="img-user__play" aria-hidden="true">▶</span>@endif
                             </div>{{ $mName }}
@@ -570,7 +573,7 @@
             'subtitle' => $v('insta_showcase_subtitle', 'Gerçek antrenman anları, doğrudan Instagram\'dan.'),
             'button_text' => $v('insta_showcase_button_text', 'Instagram\'da takip edin'),
             'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'),
-            'fallback_image' => $v('insta_showcase_fallback_image') ? asset('storage/' . $v('insta_showcase_fallback_image')) : '',
+            'fallback_image' => $v('insta_showcase_fallback_image') ? $img($v('insta_showcase_fallback_image')) : '',
         ],
         [
             'section_class' => ' insta-showcase--row2',
@@ -581,7 +584,7 @@
             'subtitle' => $v('insta_showcase2_subtitle', 'Sayfamızdan daha fazla öne çıkan an.'),
             'button_text' => $v('insta_showcase2_button_text', 'Instagram\'da takip edin'),
             'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://instagram.com'),
-            'fallback_image' => $v('insta_showcase2_fallback_image') ? asset('storage/' . $v('insta_showcase2_fallback_image')) : '',
+            'fallback_image' => $v('insta_showcase2_fallback_image') ? $img($v('insta_showcase2_fallback_image')) : '',
         ],
     ])
     @foreach ($instaRows as $row)

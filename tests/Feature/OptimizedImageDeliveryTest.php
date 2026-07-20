@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Article;
 use App\Models\Media;
 use App\Models\Page;
+use App\Models\SiteSetting;
 use App\Services\Media\MediaProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -141,5 +142,37 @@ class OptimizedImageDeliveryTest extends TestCase
         // og:image must keep pointing at the original file — WebP support in social-media
         // link-preview crawlers is unreliable, this is a deliberate, permanent decision
         $response->assertSee('og:image" content="'.asset('storage/'.$page->image_path).'"', false);
+    }
+
+    // ---- Media::optimizedUrl() — تصاویرِ SiteSetting-محورِ صفحه‌ی اصلی (هیرو/درباره/...) ----
+
+    public function test_media_optimized_url_prefers_webp_and_falls_back_to_the_original(): void
+    {
+        Media::create([
+            'original_name' => 'hero.jpg', 'disk' => 'public', 'disk_path' => 'media/library/hero-x.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'media/library/hero-x.webp',
+        ]);
+
+        $this->assertStringEndsWith('media/library/hero-x.webp', Media::optimizedUrl('media/library/hero-x.jpg'));
+        // بدونِ ردیفِ Media → فایلِ اصلی (سازگاریِ عقب‌رو، مثلِ optimized_image_url)
+        $this->assertSame(asset('storage/homepage/no-row.png'), Media::optimizedUrl('homepage/no-row.png'));
+        $this->assertNull(Media::optimizedUrl(null));
+        $this->assertNull(Media::optimizedUrl(''));
+    }
+
+    public function test_homepage_hero_background_and_preload_use_the_webp_derivative(): void
+    {
+        SiteSetting::updateOrCreate(['key' => 'home.en.hero1_image'], ['value' => 'media/library/hero-y.jpg']);
+        Media::create([
+            'original_name' => 'hero.jpg', 'disk' => 'public', 'disk_path' => 'media/library/hero-y.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'media/library/hero-y.webp',
+        ]);
+
+        $html = $this->get('/')->assertOk()->getContent();
+
+        $webp = Storage::disk('public')->url('media/library/hero-y.webp');
+        // پس‌زمینه‌ی اسلاید و preload هر دو باید *همان* WebP باشند — وگرنه preload دوباره‌کاری می‌شود
+        $this->assertStringContainsString("background:url('".$webp."')", $html);
+        $this->assertStringContainsString('<link rel="preload" as="image" href="'.$webp.'" fetchpriority="high">', $html);
     }
 }
