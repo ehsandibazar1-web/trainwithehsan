@@ -215,15 +215,35 @@ class Media extends Model
     /** @var array<string, string> */
     protected static array $optimizedUrlCache = [];
 
-    public static function optimizedUrl(?string $diskPath): ?string
+    public static function optimizedUrl(?string $diskPath, ?int $maxWidth = null): ?string
     {
         if (blank($diskPath)) {
             return null;
         }
 
-        return self::$optimizedUrlCache[$diskPath] ??=
-            (self::where('disk_path', $diskPath)->first()?->webp_url
-                ?: asset('storage/'.ltrim($diskPath, '/')));
+        $key = $diskPath.'|'.($maxWidth ?? 'full');
+
+        return self::$optimizedUrlCache[$key] ??= (function () use ($diskPath, $maxWidth) {
+            $media = self::where('disk_path', $diskPath)->first();
+            if (! $media) {
+                return asset('storage/'.ltrim($diskPath, '/'));
+            }
+
+            // برای جاهای کوچک (کارت/تامبنیل/آواتار) بزرگ‌ترین واریانتِ ریسپانسیوِ ≤ maxWidth کافی است —
+            // سروِ فایلِ فول‌سایز برای یک کارتِ ۲۷۰px اتلافِ خالص است (یافته‌ی GTmetrix). واریانتی
+            // نبود (عکسِ اصلی کوچک بوده) → WebPِ کامل → فایلِ اصلی، همان زنجیره‌ی همیشگی.
+            if ($maxWidth !== null) {
+                $best = collect($media->responsive_urls)
+                    ->filter(fn ($url, $width) => (int) $width <= $maxWidth)
+                    ->sortKeys()
+                    ->last();
+                if ($best) {
+                    return $best;
+                }
+            }
+
+            return $media->webp_url ?: asset('storage/'.ltrim($diskPath, '/'));
+        })();
     }
 
     // srcsetِ ریسپانسیو برای یک تصویرِ SiteSetting-محور — از واریانت‌های WebPی که MediaProcessor
