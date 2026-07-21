@@ -168,12 +168,14 @@
             object-fit:cover;object-position:left top;
         }
     }
-    {{-- تبلت: عکس با نسبتِ طبیعیِ خودش کامل داخلِ نیمه‌ی چپ — نه height:100% + cover که
-         وقتی سقفِ عرض می‌گیرد از لبه‌ی راستِ عکس (دست/پای فایتر) می‌بُرد --}}
+    {{-- تبلت: مثل سایت مرجع از بالا به کادرِ ویدیوها چسبیده و تمام‌قد؛ contain یعنی کلِ عکس
+         همیشه دیده می‌شود (هرگز برشِ پهلو — دست/پای فایتر — مثل cover) و اگر سقفِ عرضِ ۵۲٪
+         جا را تنگ کند، فقط از پایین کوتاه می‌شود --}}
     @@media (min-width:768px) and (max-width:1023px){
         .about-bleed-img{
-            position:absolute;left:0;bottom:0;top:auto;margin-top:0;
-            width:auto;height:auto;max-width:48%;max-height:100%;
+            position:absolute;left:0;top:0;bottom:0;margin-top:0;
+            height:100%;width:auto;max-width:52%;
+            object-fit:contain;object-position:left top;
         }
     }
     .img-about-box{
