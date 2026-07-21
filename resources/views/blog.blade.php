@@ -1,8 +1,10 @@
 @extends('layouts.master')
 
-@section('title', 'Blog — Self-Defense & Martial Arts Articles | Ehsan Dibazar')
+{{-- صفحه‌های ۲ به بعد عنوان/canonical مخصوصِ خودشان را می‌گیرند — عنوانِ تکراری و
+     canonicalِ اشتباه (اشاره‌ی همه‌ی صفحه‌ها به صفحه‌ی ۱) دو خطای کلاسیکِ سئوی صفحه‌بندی‌اند --}}
+@section('title', 'Blog — Self-Defense & Martial Arts Articles | Ehsan Dibazar'.($articles->currentPage() > 1 ? ' — Page '.$articles->currentPage() : ''))
 @section('meta_description', 'Practical articles on self-defense, Brazilian Jiu-Jitsu, and martial arts training by Ehsan Dibazar — for complete beginners, women and men.')
-@section('canonical', url('/blog'))
+@section('canonical', $articles->currentPage() > 1 ? $articles->url($articles->currentPage()) : url('/blog'))
 @section('og_title', 'Blog — Self-Defense & Martial Arts Articles | Ehsan Dibazar')
 @section('og_description', 'Practical articles on self-defense, Brazilian Jiu-Jitsu, and martial arts training by Ehsan Dibazar — for complete beginners, women and men.')
 
@@ -80,6 +82,15 @@
     .post-item__desc__list span:not(:last-child)::after{content:"·";margin:0 5px}
     .post-item__desc__detail{font-size:13.5px;color:#666;text-align:justify}
     .blog-note{grid-column:1/-1;color:#888;font-size:13px;text-align:center;padding:20px 0 4px}
+    .blog-pagination{display:flex;justify-content:center;gap:8px;margin-top:28px;flex-wrap:wrap}
+    .pg-btn{
+        display:flex;align-items:center;justify-content:center;min-width:40px;height:40px;
+        padding:0 12px;border:1px solid #ddd;border-radius:4px;background:#fff;
+        color:#555;font-size:14px;font-weight:600;transition:all .2s;
+    }
+    a.pg-btn:hover{border-color:var(--gold);color:#1d1d1d;background:var(--gold)}
+    .pg-current{background:#1d1d1d;border-color:#1d1d1d;color:var(--gold)}
+    .pg-disabled{opacity:.4;cursor:default}
 </style>
 @endsection
 
@@ -165,6 +176,32 @@
                         <p class="blog-note">No articles published yet — check back soon.</p>
                         @endforelse
                     </div>
+
+                    {{-- صفحه‌بندی — دست‌ساز مطابقِ CSSِ خودِ سایت (ویوی پیش‌فرضِ Laravel به Tailwindِ
+                         کامپایل‌شده وابسته است که قالب‌های عمومی ندارند)؛ دکمه‌ها ۴۰px برای تاچ‌تارگت --}}
+                    @if($articles->hasPages())
+                    <nav class="blog-pagination" aria-label="Blog pages">
+                        @if($articles->onFirstPage())
+                            <span class="pg-btn pg-disabled" aria-hidden="true">&lsaquo;</span>
+                        @else
+                            <a class="pg-btn" href="{{ $articles->previousPageUrl() }}" rel="prev" aria-label="Previous page">&lsaquo;</a>
+                        @endif
+
+                        @foreach($articles->getUrlRange(1, $articles->lastPage()) as $page => $url)
+                            @if($page === $articles->currentPage())
+                                <span class="pg-btn pg-current" aria-current="page">{{ $page }}</span>
+                            @else
+                                <a class="pg-btn" href="{{ $url }}" aria-label="Page {{ $page }}">{{ $page }}</a>
+                            @endif
+                        @endforeach
+
+                        @if($articles->hasMorePages())
+                            <a class="pg-btn" href="{{ $articles->nextPageUrl() }}" rel="next" aria-label="Next page">&rsaquo;</a>
+                        @else
+                            <span class="pg-btn pg-disabled" aria-hidden="true">&rsaquo;</span>
+                        @endif
+                    </nav>
+                    @endif
                 </div>
 
             </div>

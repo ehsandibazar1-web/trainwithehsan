@@ -177,10 +177,13 @@ class BlogController extends Controller
 
     private function renderIndex(string $locale, string $view)
     {
+        // صفحه‌بندی — ۱۲تایی (گریدِ دوستونه، ۶ ردیف) تا با رشدِ آرشیو صفحه سنگین نشود؛
+        // withQueryString پارامترهای احتمالیِ آینده را در لینک‌های صفحه‌ها حفظ می‌کند
         $articles = Article::published()
             ->locale($locale)
             ->orderByDesc('published_at')
-            ->get();
+            ->paginate(12)
+            ->withQueryString();
 
         $popular = Article::published()
             ->locale($locale)

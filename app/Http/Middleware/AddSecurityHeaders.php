@@ -19,8 +19,9 @@ class AddSecurityHeaders
 {
     private const CSP_REPORT_ONLY = "default-src 'self'; "
         ."script-src 'self' 'unsafe-inline' https://analytics.ahrefs.com https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://www.instagram.com https://www.tiktok.com; "
-        ."style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
-        ."font-src 'self' https://fonts.gstatic.com data:; "
+        // فونت‌ها از 2026-07-21 خودمیزبان‌اند (public/fonts) — میزبان‌های Google Fonts از سیاست حذف شدند
+        ."style-src 'self' 'unsafe-inline'; "
+        ."font-src 'self' data:; "
         ."img-src 'self' data: https:; "
         ."connect-src 'self' https://analytics.ahrefs.com https://www.googletagmanager.com https://www.clarity.ms https://*.clarity.ms https://www.google-analytics.com https://*.google-analytics.com https://*.analytics.google.com; "
         .'frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com https://www.instagram.com https://www.tiktok.com; '
