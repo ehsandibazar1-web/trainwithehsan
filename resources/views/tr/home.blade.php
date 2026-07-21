@@ -141,7 +141,9 @@
     .abou-company{color:#393e40;font-weight:700;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:1.8rem;text-align:center}}
     .sub-title{color:#393e40;font-weight:500;font-size:14px}
-    .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
+    {{-- justify فقط روی ستونِ محدودِ دسکتاپ — روی موبایلِ تمام‌عرض حفره‌های کشیده بین کلمات می‌سازد --}}
+    .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;margin:12px 0 8px}
+    @@media (min-width:1024px){.about-text{text-align:justify}}
     .about-cta{margin-top:16px}
     @@media (max-width:640px){.about-cta{margin-top:16px}}
     /* عکس — دسکتاپ: مثل سایت مرجع، تصویرِ تمام‌قد با نسبتِ طبیعی (width:auto) که به بالا/چپ/
