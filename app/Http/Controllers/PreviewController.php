@@ -29,10 +29,11 @@ class PreviewController extends Controller
 
         $translation = $article->translation ?? $article->translations()->first();
 
-        // همان عکس نویسنده‌ی BlogController::renderShow — پیش‌نمایش باید عین صفحه‌ی واقعی رندر شود
+        // همان عکس و متن‌های باکسِ نویسنده‌ی BlogController::renderShow — پیش‌نمایش باید عین صفحه‌ی واقعی رندر شود
         $authorPhoto = SiteSetting::get("about.{$article->locale}.hero_image")
             ?? SiteSetting::get('about.en.hero_image');
+        $authorBox = BlogController::authorBoxSettings($article->locale);
 
-        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto'));
+        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto', 'authorBox'));
     }
 }
