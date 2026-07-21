@@ -280,6 +280,13 @@
     /* .owl-news .item {background:#fff} */
     .news-card{background:#fff;display:block;flex:0 0 270px;scroll-snap-align:start}
     @@media (max-width:600px){.news-card{flex-basis:85%}}
+    /* دسکتاپ: سه کارتِ مقاله تمام‌عرض و وسط‌چین (مثل بخشِ Courses بالاتر و سایت مرجع) — نه
+       ۲۷۰pxِ چپ‌چین با فضای خالیِ سمت راست؛ فلش‌های کاروسل هم که دیگر لازم نیستند مخفی می‌شوند */
+    @@media (min-width:768px){
+        .news-grid{overflow-x:visible;justify-content:center}
+        .news-card{flex:0 0 calc((100% - 40px) / 3)}
+        .articles-carousel .car-arrow{display:none}
+    }
     /* .img-news {height:170px} */
     .img-news{
         height:170px;overflow:hidden;
