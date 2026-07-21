@@ -1,0 +1,55 @@
+# CI — روی هر push به main و هر PR: چکِ استایل (Pint) + کلِ سوییتِ تست.
+# همان بارِ حداقلیِ پیشنهادشده در CLAUDE.md (بخشِ Future Development، موردِ ۲) — بدونِ buildِ
+# فرانت‌اند (تمپلیت‌های عمومی به خروجیِ Vite وابسته نیستند؛ تنها @vite در welcome.blade.php
+# استفاده‌نشده است) و بدونِ دیتابیسِ سرویس (تست‌ها روی SQLiteی درون‌حافظه‌ای اجرا می‌شوند).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Pint + PHPUnit (PHP 8.3)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          # gd برای MediaProcessor (WebP/تامبنیل)، zip برای استخراجِ DOCXِ RAG، sqlite برای تست‌ها
+          extensions: gd, zip, sqlite3, pdo_sqlite, dom, xml, mbstring, fileinfo
+          coverage: none
+
+      - name: Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Tests
+        run: php artisan test
