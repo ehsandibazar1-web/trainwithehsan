@@ -120,6 +120,53 @@ class BlogControllerTest extends TestCase
         $this->get('/tr/blog/'.$tr->slug)->assertOk()->assertSee($en->path());
     }
 
+    public function test_blog_index_paginates_after_twelve_articles(): void
+    {
+        // شماره‌ی دو رقمی تا «01» زیررشته‌ی «13» نشود و assertDontSee قابل‌اعتماد بماند
+        foreach (range(1, 13) as $i) {
+            $this->makeArticle([
+                'title' => 'Paginated Article '.str_pad((string) $i, 2, '0', STR_PAD_LEFT),
+                // ترتیبِ قطعی: جدیدترها اول — مقاله‌ی ۱۳ قدیمی‌ترین است و باید به صفحه‌ی ۲ بیفتد
+                'published_at' => now()->subDays($i),
+            ]);
+        }
+
+        // چک روی خودِ paginator، نه کلِ HTML — سایدبارِ «Most Popular» مقالات را مستقل از
+        // صفحه‌بندی نشان می‌دهد و assertDontSee روی کلِ صفحه را بی‌اعتبار می‌کند
+        $titles = fn ($p) => $p->getCollection()->pluck('title');
+
+        $this->get('/blog')->assertOk()
+            ->assertSee('class="blog-pagination"', false)
+            ->assertViewHas('articles', fn ($p) => $titles($p)->contains('Paginated Article 01')
+                && ! $titles($p)->contains('Paginated Article 13'));
+
+        // صفحه‌ی ۲: مقاله‌ی باقی‌مانده + canonical مخصوصِ خودش (نه اشاره به صفحه‌ی ۱)
+        $this->get('/blog?page=2')->assertOk()
+            ->assertSee('rel="canonical" href="'.url('/blog').'?page=2', false)
+            ->assertViewHas('articles', fn ($p) => $titles($p)->contains('Paginated Article 13')
+                && ! $titles($p)->contains('Paginated Article 01'));
+    }
+
+    public function test_blog_index_shows_no_pagination_when_everything_fits_one_page(): void
+    {
+        $this->makeArticle();
+
+        // نامِ کلاس همیشه در بلاکِ <style> هست — نبودِ خودِ ناوبری را باید سنجید
+        $this->get('/blog')->assertOk()->assertDontSee('class="blog-pagination"', false);
+    }
+
+    public function test_missing_pages_render_the_branded_404_in_the_right_language(): void
+    {
+        // صفحه‌ی 404ِ برندشده (errors/404.blade.php) — زبان از پیشوندِ URL تشخیص داده می‌شود
+        $this->get('/blog/definitely-not-a-real-slug')
+            ->assertNotFound()
+            ->assertSee('Page not found');
+
+        $this->get('/tr/blog/definitely-not-a-real-slug')
+            ->assertNotFound()
+            ->assertSee('Sayfa bulunamadı');
+    }
+
     public function test_show_lists_related_articles_from_the_same_category(): void
     {
         $article = $this->makeArticle(['category' => 'Self Defense']);

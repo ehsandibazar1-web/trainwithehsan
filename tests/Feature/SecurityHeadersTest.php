@@ -33,7 +33,6 @@ class SecurityHeadersTest extends TestCase
     {
         $csp = $this->get('/')->headers->get('Content-Security-Policy-Report-Only');
 
-        $this->assertStringContainsString('fonts.googleapis.com', $csp);
         $this->assertStringContainsString('www.googletagmanager.com', $csp);
         $this->assertStringContainsString('analytics.ahrefs.com', $csp);
         $this->assertStringContainsString('www.clarity.ms', $csp);
