@@ -199,10 +199,10 @@
     /* ===== دوره‌ها — پس‌زمینهٔ عکسِ رینگ تیره‌شده، عیناً مطابق ehsandibazar.com؛ گرادیانِ تیره
        روی عکس برای حفظِ کنتراستِ متن سفید (.title-counter/.sun-counter) اضافه شده ===== */
     .counter{
-        {{-- بدونِ پوششِ تیره — عیناً مثل سایت مرجع (.counter{background:url(bg-learn.png) 0 0/cover no-repeat #363636})؛
-           عکس خودش تیره است (روشناییِ ~۴۹/۲۵۵) و متنِ سفیدِ تیتر رویش خواناست، پس دیگر پوششِ سنگینِ
-           ۷۲–۸۲٪ که عکس را محو می‌کرد لازم نیست. #363636 همان fallbackِ سایت مرجع است --}}
-        background:url('{{ asset('images/homepage/bg-courses.jpg') }}?v={{ @filemtime(public_path('images/homepage/bg-courses.jpg')) ?: '2' }}') 0 0/cover no-repeat #363636;
+        {{-- عیناً مثل سایت مرجع: .counter{background:url(bg-learn.png) 0 0/cover no-repeat #363636}.
+           فایلِ PNG نیمه‌شفاف است (آلفا ~۹۴/۱۲۷) و مرورگر آن را روی #363636 ترکیب می‌کند و ظاهرِ روشنِ خاکستری می‌دهد؛
+           تبدیلِ آن به JPG آلفا را حذف و تصویر را تیره می‌کرد (تجربهٔ قبلی) — پس همان PNG را مستقیم سرو می‌کنیم. --}}
+        background:url('{{ asset('images/homepage/bg-courses.png') }}?v={{ @filemtime(public_path('images/homepage/bg-courses.png')) ?: '2' }}') 0 0/cover no-repeat #363636;
         min-height:508px;color:#fff;
     }
     @@media (min-width:992px){.counter{padding-top:50px;padding-bottom:0}}
