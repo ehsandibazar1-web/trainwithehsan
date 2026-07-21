@@ -42,13 +42,19 @@ jobs:
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
 
-      - name: Install dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
-
+      # قبل از composer install — چون اسکریپتِ post-autoload-dump همان‌جا artisan را اجرا می‌کند
+      # (package:discover) و bootِ AdminPanelProvider به یک فایلِ SQLiteی موجود نیاز دارد
+      # (چکِ Schema::hasTable روی فایلِ ناموجود QueryException می‌دهد — شکستِ اجرای دوم CI)
       - name: Prepare environment
         run: |
           cp .env.example .env
-          php artisan key:generate
+          touch database/database.sqlite
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Generate app key
+        run: php artisan key:generate
 
       - name: Code style (Pint)
         run: ./vendor/bin/pint --test
