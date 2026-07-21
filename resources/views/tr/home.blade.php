@@ -152,9 +152,10 @@
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;margin:12px 0 8px}
     @@media (min-width:1024px){.about-text{text-align:justify}}
     .about-cta{margin-top:16px}
-    {{-- موبایل: دکمه‌ی CTA تمام‌عرضِ ستون و عکسِ زیرش بدونِ فاصله — سرِ فایتر بچسبد زیرِ دکمه --}}
+    {{-- دکمه‌ی CTA تمام‌عرضِ ستون در همه‌ی سایزها — مثل سایت مرجع (دکمه‌ی بلند با فلش در انتها) --}}
+    .about-cta .show-more{display:block;width:100%}
+    {{-- موبایل: عکسِ زیرِ دکمه بدونِ فاصله — سرِ فایتر بچسبد زیرِ دکمه --}}
     @@media (max-width:767px){
-        .about-cta .show-more{display:block;width:100%}
         .about-section .about-bleed-img{margin-top:0}
     }
     /* عکس — دسکتاپ: مثل سایت مرجع، تصویرِ تمام‌قد با نسبتِ طبیعی (width:auto) که به بالا/چپ/
