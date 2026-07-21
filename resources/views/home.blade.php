@@ -143,9 +143,10 @@
     .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:420px}
     @@media (max-width:767px){.about-section{padding-top:32px;padding-bottom:0}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:560px}
-    {{-- تا 1023px چیدمانِ پشته‌ای — margin-leftِ ۵۶۰px روی تبلت ستونِ متن را به ~۱۸۰px له می‌کرد
-         (تیتر یک-کلمه-در-خط)؛ چیدمانِ عکسِ absolute فقط از 1024px به بالا جا دارد --}}
-    @@media (max-width:1023px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
+    @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
+    {{-- تبلت (۷۶۸ تا ۱۰۲۳): همان دو ستونِ سایت مرجع، اما با نسبتِ درصدی — margin-leftِ ثابتِ
+         ۵۶۰px در این عرض ستونِ متن را به ~۱۸۰px له می‌کرد (تیتر یک-کلمه-در-خط) --}}
+    @@media (min-width:768px) and (max-width:1023px){.about-text-col{margin-left:54%;max-width:none}}
     .abou-company{color:#393e40;font-weight:700;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:1.8rem;text-align:center}}
     .sub-title{color:#393e40;font-weight:500;font-size:14px}
@@ -167,6 +168,13 @@
             position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;width:auto;
             max-width:calc(max((100vw - 1140px) / 2, 0px) + 500px);
             object-fit:cover;object-position:left top;
+        }
+    }
+    {{-- تبلت: همان تکنیکِ دسکتاپ، سقفِ عرضِ عکس ۵۰٪ تا همیشه کنارِ ستونِ متن بماند --}}
+    @@media (min-width:768px) and (max-width:1023px){
+        .about-bleed-img{
+            position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;width:auto;
+            max-width:50%;object-fit:cover;object-position:left top;
         }
     }
     .img-about-box{
