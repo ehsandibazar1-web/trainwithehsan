@@ -197,7 +197,7 @@
     /* ===== دوره‌ها — پس‌زمینهٔ عکسِ رینگ تیره‌شده، عیناً مطابق ehsandibazar.com؛ گرادیانِ تیره
        روی عکس برای حفظِ کنتراستِ متن سفید (.title-counter/.sun-counter) اضافه شده ===== */
     .counter{
-        background:linear-gradient(rgba(15,15,15,.72),rgba(15,15,15,.82)),url('{{ asset('images/homepage/bg-courses.jpg') }}') 0 0/cover no-repeat;
+        background:linear-gradient(rgba(15,15,15,.72),rgba(15,15,15,.82)),url('{{ asset('images/homepage/bg-courses.jpg') }}?v={{ @filemtime(public_path('images/homepage/bg-courses.jpg')) ?: '2' }}') 0 0/cover no-repeat;
         min-height:508px;color:#fff;
     }
     @@media (min-width:992px){.counter{padding-top:50px;padding-bottom:0}}
