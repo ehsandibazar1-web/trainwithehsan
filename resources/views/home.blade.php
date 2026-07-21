@@ -170,11 +170,12 @@
             object-fit:cover;object-position:left top;
         }
     }
-    {{-- تبلت: همان تکنیکِ دسکتاپ، سقفِ عرضِ عکس ۵۰٪ تا همیشه کنارِ ستونِ متن بماند --}}
+    {{-- تبلت: عکس با نسبتِ طبیعیِ خودش کامل داخلِ نیمه‌ی چپ — نه height:100% + cover که
+         وقتی سقفِ عرض می‌گیرد از لبه‌ی راستِ عکس (دست/پای فایتر) می‌بُرد --}}
     @@media (min-width:768px) and (max-width:1023px){
         .about-bleed-img{
-            position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;width:auto;
-            max-width:50%;object-fit:cover;object-position:left top;
+            position:absolute;left:0;bottom:0;top:auto;margin-top:0;
+            width:auto;height:auto;max-width:48%;max-height:100%;
         }
     }
     .img-about-box{
