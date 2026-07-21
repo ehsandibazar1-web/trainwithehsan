@@ -341,7 +341,8 @@
        ردیف اول همیشه نمایش داده می‌شود (fallback در صورت غیرفعال بودن)، ردیف دوم کاملاً
        اختیاری و پیش‌فرض مخفی است تا رفتار قبلی برای مدیرهایی که فقط ردیف اول را تنظیم
        کرده‌اند بدون تغییر بماند ===== */
-    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding-top:3rem}
+    {{-- padding عمودیِ قرینه — قبلاً فقط padding-top بود و کادرِ بلندِ اینستاگرام (با align-items:center) به لبه‌ی پایینِ بخش می‌چسبید و بالای آن ~۵۰px خالی می‌ماند --}}
+    .insta-showcase{background:#ebebeb url('{{ asset('images/homepage/bg-instagram-row1.jpg') }}') 0 0/cover no-repeat;border-top:1px solid #c2c2c2;padding:3rem 0}
     .insta-showcase--row2{background:#fff url('{{ asset('images/homepage/bg-instagram-row2.jpg') }}') 0 0/cover no-repeat;border-top:0}
     @@media (max-width:767px){.insta-showcase{padding-bottom:2rem}}
     .insta-showcase-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center}
