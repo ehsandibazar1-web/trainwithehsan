@@ -161,7 +161,7 @@
 
                 <div class="article-meta">
                     <span>👤 {{ $article->author_name }}</span>
-                    <span>📅 {{ optional($article->published_at)->format('F Y') }}</span>
+                    <span>📅 {{ $article->published_at?->locale('tr')->translatedFormat('F Y') }}</span>
                     @if($article->reading_time)
                     <span>⏱ {{ $article->reading_time }} dakika okuma</span>
                     @endif
@@ -266,7 +266,7 @@
                         <div class="thumb" @if($item->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($item->image_path, 480) }}')" @endif></div>
                         <div>
                             <p class="sidebar-last-title"><a href="{{ url('/tr/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></p>
-                            <span>{{ optional($item->published_at)->format('F Y') }}</span>
+                            <span>{{ $item->published_at?->locale('tr')->translatedFormat('F Y') }}</span>
                         </div>
                     </div>
                     @endforeach
