@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Filament\Pages\SystemMaintenance;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -106,6 +107,42 @@ class SystemMaintenanceTest extends TestCase
                 @rename($backup, $link);
             }
         }
+    }
+
+    public function test_publish_static_assets_copies_design_files_to_the_web_root(): void
+    {
+        // شبیه‌سازیِ هاستِ واقعی: web root جدا از public/ خودِ اپ — دیسکِ public داخلِ آن
+        $webroot = sys_get_temp_dir().'/twe-webroot-'.uniqid();
+        mkdir($webroot, 0755, true);
+        config(['filesystems.disks.public.root' => $webroot.'/storage']);
+
+        try {
+            Livewire::actingAs($this->owner())
+                ->test(SystemMaintenance::class)
+                ->call('publishStaticAssets')
+                ->assertNotified();
+
+            // فونت‌های self-hosted باید رسیده باشند — دقیقا سناریویی که این دکمه برایش ساخته شد
+            $this->assertFileExists($webroot.'/fonts/manrope-latin.woff2');
+            $this->assertFileExists($webroot.'/fonts/manrope-latin-ext.woff2');
+            $this->assertFileExists($webroot.'/robots.txt');
+        } finally {
+            File::deleteDirectory($webroot);
+        }
+    }
+
+    public function test_publish_static_assets_is_a_no_op_when_the_web_root_is_the_app_public_folder(): void
+    {
+        // نصبِ استاندارد (web root = خودِ public/) — نباید چیزی کپی شود، فقط اطلاع‌رسانی
+        config(['filesystems.disks.public.root' => public_path('storage')]);
+
+        Livewire::actingAs($this->owner())
+            ->test(SystemMaintenance::class)
+            ->call('publishStaticAssets')
+            ->assertNotified();
+
+        // چیزی مثل public/public/fonts نباید ساخته شده باشد
+        $this->assertDirectoryDoesNotExist(public_path('public'));
     }
 
     public function test_link_storage_action_is_harmless_when_already_healthy(): void

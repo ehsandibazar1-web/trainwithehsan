@@ -13,7 +13,15 @@
             <x-filament::button color="gray" wire:click="clearCache" icon="heroicon-o-arrow-path">
                 Clear cache
             </x-filament::button>
+
+            <x-filament::button color="gray" wire:click="publishStaticAssets" icon="heroicon-o-paper-airplane">
+                Publish design files
+            </x-filament::button>
         </div>
+
+        <p class="mt-3 text-sm" style="color:#6b7280">
+            "Publish design files" copies fonts, styles and design images to the public website folder — click it after every "Update from Remote", so new design files actually reach visitors.
+        </p>
     </x-filament::section>
 
     <x-filament::section>

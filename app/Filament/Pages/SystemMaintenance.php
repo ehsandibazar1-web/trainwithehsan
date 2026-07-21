@@ -10,6 +10,7 @@ use Filament\Support\Icons\Heroicon;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -222,6 +223,66 @@ class SystemMaintenance extends Page
         $backups = app(DatabaseBackupService::class)->list();
 
         return ['count' => count($backups), 'latest' => $backups[0] ?? null];
+    }
+
+    // ===== انتشارِ فایل‌های استاتیکِ طراحی (فونت/تصویر/css/js) به web root =====
+
+    // دقیقاً همان فهرستِ .cpanel.yml — یک منبعِ واحد برای «چه چیزهایی باید به public_html برسند»
+    public const PUBLIC_ASSET_DIRS = ['css', 'fonts', 'images', 'js'];
+
+    public const PUBLIC_ASSET_FILES = ['robots.txt', 'BingSiteAuth.xml'];
+
+    // مرحله‌ی DeployِcPanel (اجرای .cpanel.yml که این فایل‌ها را به public_html کپی می‌کند) روی
+    // این هاست قابل‌اعتماد اجرا نمی‌شود («system cannot deploy») — پس همان کار از داخلِ خودِ اپ
+    // انجام می‌شود، همان الگوی runMigrations/linkStorage برای هاستِ بدونِ SSH. web root از
+    // تنظیمِ دیسکِ public در می‌آید (root = {web root}/storage — قراردادِ مستندِ config/filesystems.php)
+    public function publishStaticAssets(): void
+    {
+        try {
+            $webroot = dirname((string) config('filesystems.disks.public.root'));
+            $source = public_path();
+
+            if (! is_dir($webroot)) {
+                throw new \RuntimeException("The web root folder was not found: {$webroot}");
+            }
+
+            if (realpath($webroot) === realpath($source)) {
+                // نصبی که web rootش همان public/ خودِ اپ است (لوکال/سرورِ استاندارد) — چیزی برای کپی نیست
+                Notification::make()->success()
+                    ->title('Nothing to publish')
+                    ->body('On this server the design files are already served directly — no copy needed.')
+                    ->send();
+
+                return;
+            }
+
+            $published = [];
+
+            foreach (self::PUBLIC_ASSET_DIRS as $dir) {
+                if (is_dir($source.DIRECTORY_SEPARATOR.$dir)) {
+                    File::copyDirectory($source.DIRECTORY_SEPARATOR.$dir, $webroot.DIRECTORY_SEPARATOR.$dir);
+                    $published[] = $dir.'/';
+                }
+            }
+
+            foreach (self::PUBLIC_ASSET_FILES as $file) {
+                if (is_file($source.DIRECTORY_SEPARATOR.$file)) {
+                    File::copy($source.DIRECTORY_SEPARATOR.$file, $webroot.DIRECTORY_SEPARATOR.$file);
+                    $published[] = $file;
+                }
+            }
+
+            $this->lastOutput = 'Published to '.$webroot.': '.implode(', ', $published);
+
+            Notification::make()->success()
+                ->title('Design files published')
+                ->body('Fonts, styles, scripts and design images were copied to the public website folder.')
+                ->send();
+        } catch (Throwable $e) {
+            $this->lastOutput = $e->getMessage();
+
+            Notification::make()->danger()->title('Publishing design files failed')->body($e->getMessage())->send();
+        }
     }
 
     public function clearCache(): void
