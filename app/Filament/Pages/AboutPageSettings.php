@@ -36,6 +36,8 @@ class AboutPageSettings extends Page implements HasForms
         'certs_heading', 'gallery_heading', 'timeline_heading',
         'cta_title', 'cta_description', 'cta_button_text', 'cta_button_url',
         'seo_title', 'seo_description',
+        // باکسِ نویسنده‌ی پایانِ هر مقاله (blog-post) — عکسش همان hero_image بالاست
+        'author_box_title', 'author_box_subtitle', 'author_box_text', 'author_box_button_text',
     ];
 
     // کلیدهای فایل (عکس) — مقدارشان مسیر فایل روی دیسک public است
@@ -88,6 +90,9 @@ class AboutPageSettings extends Page implements HasForms
                 Section::make('English — CTA Section')
                     ->schema(self::ctaFields('en'))
                     ->collapsed(),
+                Section::make('English — Author box (end of every article)')
+                    ->schema(self::authorBoxFields('en'))
+                    ->collapsed(),
                 Section::make('English — SEO')
                     ->schema(self::seoFields('en'))
                     ->collapsed(),
@@ -109,6 +114,9 @@ class AboutPageSettings extends Page implements HasForms
                     ->collapsed(),
                 Section::make('Türkçe — CTA Bölümü')
                     ->schema(self::ctaFields('tr'))
+                    ->collapsed(),
+                Section::make('Türkçe — Yazar kutusu (her makalenin sonunda)')
+                    ->schema(self::authorBoxFields('tr'))
                     ->collapsed(),
                 Section::make('Türkçe — SEO')
                     ->schema(self::seoFields('tr'))
@@ -268,6 +276,25 @@ class AboutPageSettings extends Page implements HasForms
                 ->uploadDirectory('about/cta')
                 ->nullable()
                 ->helperText('Leave empty to keep the default dark gradient background.'),
+        ];
+    }
+
+    private static function authorBoxFields(string $l): array
+    {
+        return [
+            TextInput::make("$l.author_box_title")
+                ->label('Title')
+                ->helperText('Shown at the end of every blog article. Leave empty to keep the current default ("Hi, I\'m Ehsan Dibazar").'),
+            TextInput::make("$l.author_box_subtitle")
+                ->label('Subtitle')
+                ->helperText('The small gold line under the title, e.g. your profession and credentials.'),
+            Textarea::make("$l.author_box_text")
+                ->label('Introduction text')
+                ->rows(6)
+                ->helperText('Leave an empty line between paragraphs to split the text into separate paragraphs. Leave the field empty to keep the current default text.'),
+            TextInput::make("$l.author_box_button_text")
+                ->label('Button text')
+                ->helperText('The button always links to the About page.'),
         ];
     }
 

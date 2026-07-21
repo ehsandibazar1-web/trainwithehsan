@@ -238,9 +238,28 @@ class BlogController extends Controller
         $authorPhoto = SiteSetting::get("about.$locale.hero_image")
             ?? SiteSetting::get('about.en.hero_image');
 
+        // متن‌های باکس نویسنده — از CMS (About Page Settings)؛ null یعنی «پیش‌فرضِ داخل قالب»
+        $authorBox = self::authorBoxSettings($locale);
+
         // Video SEO — VideoObject برای ویدیوهای درون‌متنیِ مقاله (همان لینک‌هایی که در بدنه پخش‌کننده می‌شوند)
         $videoSchemas = app(VideoSchemaService::class)->forArticle($article);
 
-        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto', 'videoSchemas'));
+        return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto', 'authorBox', 'videoSchemas'));
+    }
+
+    // متن‌های باکسِ نویسنده‌ی پایانِ مقاله از CMS (یک کوئری) — مقدارِ خالی همان «تنظیم‌نشده» است
+    // تا قالب به کپیِ پیش‌فرضِ فعلی برگردد (همان قراردادِ fallback-در-Blade بقیه‌ی صفحات).
+    // static چون PreviewController هم برای رندرِ عینِ صفحه‌ی واقعی به همین داده نیاز دارد.
+    public static function authorBoxSettings(string $locale): array
+    {
+        $raw = SiteSetting::where('key', 'like', "about.$locale.author_box_%")->pluck('value', 'key');
+        $v = fn (string $key) => (($raw["about.$locale.author_box_$key"] ?? '') !== '') ? $raw["about.$locale.author_box_$key"] : null;
+
+        return [
+            'title' => $v('title'),
+            'subtitle' => $v('subtitle'),
+            'text' => $v('text'),
+            'button_text' => $v('button_text'),
+        ];
     }
 }

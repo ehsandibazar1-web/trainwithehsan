@@ -206,10 +206,17 @@
                              @if($authorPhoto) style="background-image:url('{{ \App\Models\Media::optimizedUrl($authorPhoto, 480) }}')" @endif
                              role="img" aria-label="Ehsan Dibazar">{{ $authorPhoto ? '' : 'ED' }}</div>
                         <div>
-                            <div style="font-size:16px;font-weight:800;color:#fff">Hi, I'm Ehsan Dibazar</div>
-                            <div style="font-size:12px;color:var(--gold);margin-top:3px">Martial Arts &amp; Self-Defense Instructor · MSc in Sport Science</div>
+                            {{-- متن‌ها از CMS (About Page Settings ← Author box)؛ خالی = همین کپیِ پیش‌فرض --}}
+                            <div style="font-size:16px;font-weight:800;color:#fff">{{ $authorBox['title'] ?? "Hi, I'm Ehsan Dibazar" }}</div>
+                            <div style="font-size:12px;color:var(--gold);margin-top:3px">{{ $authorBox['subtitle'] ?? 'Martial Arts & Self-Defense Instructor · MSc in Sport Science' }}</div>
                         </div>
                     </div>
+                    @if($authorBox['text'] ?? null)
+                        {{-- خطِ خالی بینِ پاراگراف‌ها = پاراگرافِ جدا (همان راهنمای فیلدِ ادمین) --}}
+                        @foreach(preg_split('/\R{2,}/u', trim($authorBox['text'])) as $paragraph)
+                            <p>{{ $paragraph }}</p>
+                        @endforeach
+                    @else
                     <p>
                         For years, martial arts have been a central part of my life. But more than
                         medals, certificates, or competitions, what has always mattered most to me is
@@ -220,7 +227,8 @@
                         they build confidence, improve decision-making, develop composure under
                         pressure, and help people perform better in difficult situations.
                     </p>
-                    <a href="{{ url('/about') }}" class="hoosh-btn">Learn more about Ehsan Dibazar</a>
+                    @endif
+                    <a href="{{ url('/about') }}" class="hoosh-btn">{{ $authorBox['button_text'] ?? 'Learn more about Ehsan Dibazar' }}</a>
                 </div>
 
                 @if($related->isNotEmpty())

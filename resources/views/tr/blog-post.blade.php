@@ -206,10 +206,17 @@
                              @if($authorPhoto) style="background-image:url('{{ \App\Models\Media::optimizedUrl($authorPhoto, 480) }}')" @endif
                              role="img" aria-label="Ehsan Dibazar">{{ $authorPhoto ? '' : 'ED' }}</div>
                         <div>
-                            <div style="font-size:16px;font-weight:800;color:#fff">Merhaba, ben Ehsan Dibazar</div>
-                            <div style="font-size:12px;color:var(--gold);margin-top:3px">Dövüş Sanatları ve Kendini Savunma Eğitmeni · Spor Bilimleri Yüksek Lisansı</div>
+                            {{-- متن‌ها از CMS (About Page Settings ← Yazar kutusu)؛ خالی = همین کپیِ پیش‌فرض --}}
+                            <div style="font-size:16px;font-weight:800;color:#fff">{{ $authorBox['title'] ?? 'Merhaba, ben Ehsan Dibazar' }}</div>
+                            <div style="font-size:12px;color:var(--gold);margin-top:3px">{{ $authorBox['subtitle'] ?? 'Dövüş Sanatları ve Kendini Savunma Eğitmeni · Spor Bilimleri Yüksek Lisansı' }}</div>
                         </div>
                     </div>
+                    @if($authorBox['text'] ?? null)
+                        {{-- خطِ خالی بینِ پاراگراف‌ها = پاراگرافِ جدا (همان راهنمای فیلدِ ادمین) --}}
+                        @foreach(preg_split('/\R{2,}/u', trim($authorBox['text'])) as $paragraph)
+                            <p>{{ $paragraph }}</p>
+                        @endforeach
+                    @else
                     <p>
                         Yıllardır hayatımın önemli bir parçası dövüş sanatları oldu. Ancak benim için
                         madalyalardan, sertifikalardan ve müsabakalardan daha değerli olan şey,
@@ -221,7 +228,8 @@
                         altında sakin kalmayı öğretir ve insanların zor durumlarda daha doğru hareket
                         etmelerine yardımcı olur.
                     </p>
-                    <a href="{{ url('/tr/about') }}" class="hoosh-btn">Ehsan Dibazar hakkında daha fazla bilgi</a>
+                    @endif
+                    <a href="{{ url('/tr/about') }}" class="hoosh-btn">{{ $authorBox['button_text'] ?? 'Ehsan Dibazar hakkında daha fazla bilgi' }}</a>
                 </div>
 
                 @if($related->isNotEmpty())
