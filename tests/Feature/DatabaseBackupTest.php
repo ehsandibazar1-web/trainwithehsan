@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\User;
 use App\Services\Backup\DatabaseBackupService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Livewire\Livewire;
 use PDO;
@@ -94,6 +95,20 @@ class DatabaseBackupTest extends TestCase
 
         $this->assertCount(2, $list);
         $this->assertGreaterThanOrEqual($list[1]['name'], $list[0]['name']);
+    }
+
+    public function test_sql_value_escaping_for_the_mysql_dump_path(): void
+    {
+        // مسیرِ MySQL در این سوییت (SQLite) قابلِ اجرا نیست؛ حداقل قاعده‌ی مقدارسازیِ امنش تست می‌شود
+        $method = new \ReflectionMethod(DatabaseBackupService::class, 'sqlValue');
+        $pdo = DB::getPdo();
+        $svc = $this->service();
+
+        $this->assertSame('NULL', $method->invoke($svc, $pdo, null));
+        $this->assertSame("'plain'", $method->invoke($svc, $pdo, 'plain'));
+        $this->assertSame("'42'", $method->invoke($svc, $pdo, 42));
+        // کوتیشنِ داخلِ مقدار باید escape شود — نه اینکه SQL را بشکند
+        $this->assertSame("'it''s'", $method->invoke($svc, $pdo, "it's"));
     }
 
     public function test_the_scheduled_command_creates_a_backup(): void
