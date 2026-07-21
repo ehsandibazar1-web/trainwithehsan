@@ -152,10 +152,11 @@
     .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;margin:12px 0 8px}
     @@media (min-width:1024px){.about-text{text-align:justify}}
     .about-cta{margin-top:16px}
-    {{-- دکمه‌ی CTA تمام‌عرضِ ستون در همه‌ی سایزها — مثل سایت مرجع (دکمه‌ی بلند با فلش در انتها) --}}
-    .about-cta .show-more{display:block;width:100%}
-    {{-- موبایل: عکسِ زیرِ دکمه بدونِ فاصله — سرِ فایتر بچسبد زیرِ دکمه --}}
+    {{-- دکمه‌های CTA به‌اندازه‌ی متنِ خودشان‌اند (پیش‌فرضِ inline-block در .show-more): بخشِ نتایجِ
+         اعضا در همه‌ی سایزها، و بخشِ اپلیکیشن روی دسکتاپ/تبلت. فقط دکمه‌ی اپلیکیشن روی موبایل
+         تمام‌عرضِ ستون می‌شود (چون عکسِ زیرش هم تمام‌عرض است) --}}
     @@media (max-width:767px){
+        .about-section .about-cta .show-more{display:block;width:100%}
         .about-section .about-bleed-img{margin-top:0}
     }
     /* عکس — دسکتاپ: مثل سایت مرجع، تصویرِ تمام‌قد با نسبتِ طبیعی (width:auto) که به بالا/چپ/
