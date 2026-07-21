@@ -60,7 +60,13 @@
         width:100%;
         background:linear-gradient(115deg,#2e2c28 0%,#1c1b18 55%,#0d0d0b 120%);
     }
-    @@media (max-width:640px){.hero-slide{min-height:180px}}
+    @@media (max-width:640px){
+        .hero-slide{min-height:180px}
+        /* اسلایدی که بنرِ واقعی دارد باید دقیقاً با نسبتِ خودِ عکس رندر شود — min-height
+           قاب را بلندتر از نسبتِ عکس می‌کرد و cover مجبور می‌شد از دو طرفِ عکس ببُرد
+           (متنِ چاپ‌شده داخلِ بنر، مثل EHSAN، از لبه‌ها می‌افتاد) */
+        .hero-slide.has-bg:not(.has-text){min-height:0}
+    }
     .hero-slide.active{display:flex}
     /* بافت پس‌زمینه شبیه پوستر تیره — فقط وقتی عکس واقعی نیست */
     .hero-slide::before{
@@ -143,7 +149,9 @@
     .abou-company{color:#393e40;font-weight:700;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:1.8rem;text-align:center}}
     .sub-title{color:#393e40;font-weight:500;font-size:14px}
-    .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;text-align:justify;margin:12px 0 8px}
+    {{-- justify فقط روی ستونِ محدودِ دسکتاپ — روی موبایلِ تمام‌عرض حفره‌های کشیده بین کلمات می‌سازد --}}
+    .about-text{color:#3b3b3b;line-height:2.2;font-size:13px;margin:12px 0 8px}
+    @@media (min-width:1024px){.about-text{text-align:justify}}
     .about-cta{margin-top:16px}
     @@media (max-width:640px){.about-cta{margin-top:16px}}
     /* عکس — دسکتاپ: مثل سایت مرجع، تصویرِ تمام‌قد با نسبتِ طبیعی (width:auto) که به بالا/چپ/
@@ -405,7 +413,7 @@
     {{-- ============ اسلایدر هیرو ============ --}}
     {{-- فقط اسلاید اول h1 دارد (تنها H1 قابل‌مشاهده صفحه) — بقیه h2 هستند تا چند H1 در DOM نداشته باشیم --}}
     <div class="hero-slider">
-        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif" @if($v('hero1_image')) style="background:url('{{ $img($v('hero1_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide active @if($v('hero1_image')) has-bg @endif @if(trim($v('hero1_title', 'x')) !== '' || trim($v('hero1_sub', 'x')) !== '') has-text @endif" @if($v('hero1_image')) style="background:url('{{ $img($v('hero1_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1 class="hero-title">{{ $v('hero1_title', 'Self-Defense & Martial Arts Training') }}</h1>
@@ -413,7 +421,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide @if($v('hero2_image')) has-bg @endif" @if($v('hero2_image')) style="background:url('{{ $img($v('hero2_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide @if($v('hero2_image')) has-bg @endif @if(trim($v('hero2_title', 'x')) !== '' || trim($v('hero2_sub', 'x')) !== '') has-text @endif" @if($v('hero2_image')) style="background:url('{{ $img($v('hero2_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h2 class="hero-title">{{ $v('hero2_title', 'Brazilian Jiu-Jitsu: the art of leverage') }}</h2>
@@ -421,7 +429,7 @@
                 </div>
             </div>
         </div>
-        <div class="hero-slide @if($v('hero3_image')) has-bg @endif" @if($v('hero3_image')) style="background:url('{{ $img($v('hero3_image')) }}') center/cover no-repeat" @endif>
+        <div class="hero-slide @if($v('hero3_image')) has-bg @endif @if(trim($v('hero3_title', 'x')) !== '' || trim($v('hero3_sub', 'x')) !== '') has-text @endif" @if($v('hero3_image')) style="background:url('{{ $img($v('hero3_image')) }}') center/cover no-repeat" @endif>
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h2 class="hero-title">{{ $v('hero3_title', 'Martial Intelligence') }}</h2>
