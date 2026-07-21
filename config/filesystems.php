@@ -39,10 +39,12 @@ return [
         ],
 
         // فایل‌های آپلودی مستقیم در public_html/storage ذخیره می‌شوند
-        // (به‌جای symlink که روی این هاست غیرفعال است)
+        // (به‌جای symlink که روی این هاست غیرفعال است). defaultِ همان مسیرِ پروداکشن است تا
+        // بدونِ هیچ تغییری در .envِ سرور رفتارِ قبلی حفظ شود؛ محیط‌های دیگر (تست/CI — که به
+        // /home/u2772578 دسترسیِ نوشتن ندارند) با PUBLIC_STORAGE_ROOT مسیرِ خودشان را می‌دهند
         'public' => [
             'driver' => 'local',
-            'root' => '/home/u2772578/public_html/storage',
+            'root' => env('PUBLIC_STORAGE_ROOT', '/home/u2772578/public_html/storage'),
             'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
             'visibility' => 'public',
             'throw' => false,

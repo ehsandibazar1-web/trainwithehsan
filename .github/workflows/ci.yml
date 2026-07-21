@@ -1,0 +1,68 @@
+# CI — روی هر push به main و هر PR: چکِ استایل (Pint) + کلِ سوییتِ تست.
+# همان بارِ حداقلیِ پیشنهادشده در CLAUDE.md (بخشِ Future Development، موردِ ۲) — بدونِ buildِ
+# فرانت‌اند (تمپلیت‌های عمومی به خروجیِ Vite وابسته نیستند؛ تنها @vite در welcome.blade.php
+# استفاده‌نشده است) و بدونِ دیتابیسِ سرویس (تست‌ها روی SQLiteی درون‌حافظه‌ای اجرا می‌شوند).
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Pint + PHPUnit (PHP 8.4)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          # composer.lock فعلی symfony v8.1.x را قفل کرده که php >= 8.4.1 می‌خواهد —
+          # اجرای اول با 8.3 دقیقاً روی همین شکست (composer install, exit 2)
+          php-version: '8.4'
+          # gd برای MediaProcessor (WebP/تامبنیل)، zip برای استخراجِ DOCXِ RAG، sqlite برای تست‌ها
+          extensions: gd, zip, sqlite3, pdo_sqlite, dom, xml, mbstring, fileinfo
+          coverage: none
+
+      - name: Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      # قبل از composer install — چون اسکریپتِ post-autoload-dump همان‌جا artisan را اجرا می‌کند
+      # (package:discover) و bootِ AdminPanelProvider به یک فایلِ SQLiteی موجود نیاز دارد
+      # (چکِ Schema::hasTable روی فایلِ ناموجود QueryException می‌دهد — شکستِ اجرای دوم CI)
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          touch database/database.sqlite
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Generate app key
+        run: php artisan key:generate
+
+      # SystemMaintenanceTest سلامتِ لینکِ استوریج را از مسیرِ symlink می‌سنجد — مثل هر محیطِ
+      # واقعی، لینکِ public/storage باید موجود باشد
+      - name: Link storage
+        run: php artisan storage:link
+
+      - name: Code style (Pint)
+        run: ./vendor/bin/pint --test
+
+      - name: Tests
+        run: php artisan test

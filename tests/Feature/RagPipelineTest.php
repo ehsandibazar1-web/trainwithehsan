@@ -90,7 +90,9 @@ XML;
 
     public function test_extracts_text_from_pdf(): void
     {
-        $text = (new TextExtractionService)->extractFromPdf(base_path('vendor/smalot/pdfparser/samples/Document1_pdfcreator.pdf'));
+        // fixtureی داخلِ خودِ ریپو — پوشه‌ی samples در نصبِ --prefer-dist (مثل CI) اصلاً وجود ندارد
+        // (export-ignore)، پس اتکا به فایلِ نمونه‌ی vendor فقط روی نصب‌های from-source پاس می‌شد
+        $text = (new TextExtractionService)->extractFromPdf(base_path('tests/Fixtures/Rag/sample.pdf'));
 
         $this->assertStringContainsString('Lorem ipsum', $text);
     }
