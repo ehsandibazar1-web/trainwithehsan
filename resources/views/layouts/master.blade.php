@@ -374,7 +374,7 @@
 <div class="panel-overlay" id="panelOverlay"></div>
 <nav class="panel-menu" id="panelMenu">
     <div class="panel-menu-head">
-        <img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Defensive Tactics" class="panel-menu-logo">
+        <a href="{{ url('/') }}" aria-label="Ehsan Dibazar — Home"><img src="{{ asset('storage/homepage/logo.header.png') }}" alt="Ehsan Dibazar - Defensive Tactics" class="panel-menu-logo"></a>
         <button class="panel-close" id="panelClose" aria-label="Close menu">×</button>
     </div>
     <ul>

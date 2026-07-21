@@ -195,7 +195,7 @@ body{background:var(--dark)!important}
             <div class="masonry reveal-group" id="masonry">
                 @foreach($certList as $cert)
                 @php($capText = implode(' — ', array_filter([$cert['title'] ?? null, $cert['subtitle'] ?? null, $cert['description'] ?? null])))
-                <figure class="cred reveal" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) style="background:url('{{ $optImg($cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
+                <figure class="cred reveal" data-cap="{{ $capText }}" tabindex="0" role="button" @if(!empty($cert['image'])) data-full="{{ $optImg($cert['image']) }}" style="background:url('{{ $optImg($cert['image']) }}') center/cover no-repeat" @endif><figcaption class="cap">{{ $capText }}</figcaption></figure>
                 @endforeach
             </div>
         </div>
@@ -209,7 +209,7 @@ body{background:var(--dark)!important}
             <div class="masonry reveal-group">
                 @foreach($gallery as $img)
                 @continue(empty($img['image']))
-                <figure class="cred reveal" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" style="background:url('{{ $optImg($img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
+                <figure class="cred reveal" data-cap="{{ $img['alt'] ?? '' }}" tabindex="0" role="button" data-full="{{ $optImg($img['image']) }}" style="background:url('{{ $optImg($img['image']) }}') center/cover no-repeat"><figcaption class="cap">{{ $img['alt'] ?? '' }}</figcaption></figure>
                 @endforeach
             </div>
         </div>
@@ -259,6 +259,7 @@ body{background:var(--dark)!important}
 <div class="modal" id="modal" role="dialog" aria-modal="true" aria-label="Enlarged credential view" style="position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:1000;padding:20px">
     <button class="modal-close" id="modalClose" aria-label="Close" style="position:absolute;top:20px;left:20px;color:#fff;font-size:30px;background:none;border:none;cursor:pointer">&times;</button>
     <div>
+        <img id="modalImg" alt="" style="max-width:100%;max-height:80vh;border-radius:10px;display:none;margin:0 auto">
         <div class="cap2" id="modalCap" style="color:var(--gold);text-align:center;margin-top:14px;font-size:15px;font-weight:700"></div>
     </div>
 </div>
@@ -288,6 +289,9 @@ body{background:var(--dark)!important}
     document.querySelectorAll('.cred').forEach(function (c) {
         c.addEventListener('click', function () {
             lastFocused = document.activeElement;
+            var modalImg = document.getElementById('modalImg');
+            if (c.dataset.full) { modalImg.src = c.dataset.full; modalImg.alt = c.dataset.cap || ''; modalImg.style.display = 'block'; }
+            else { modalImg.removeAttribute('src'); modalImg.style.display = 'none'; }
             modalCap.textContent = c.dataset.cap || '';
             modal.classList.add('open');
             modal.style.display = 'flex';
