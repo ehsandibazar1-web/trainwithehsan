@@ -230,7 +230,7 @@ class SystemMaintenance extends Page
     // دقیقاً همان فهرستِ .cpanel.yml — یک منبعِ واحد برای «چه چیزهایی باید به public_html برسند»
     public const PUBLIC_ASSET_DIRS = ['css', 'fonts', 'images', 'js'];
 
-    public const PUBLIC_ASSET_FILES = ['robots.txt', 'BingSiteAuth.xml'];
+    public const PUBLIC_ASSET_FILES = ['robots.txt', 'BingSiteAuth.xml', 'favicon.ico', 'favicon-16x16.png', 'favicon-32x32.png', 'favicon-512.png', 'apple-touch-icon.png'];
 
     // مرحله‌ی DeployِcPanel (اجرای .cpanel.yml که این فایل‌ها را به public_html کپی می‌کند) روی
     // این هاست قابل‌اعتماد اجرا نمی‌شود («system cannot deploy») — پس همان کار از داخلِ خودِ اپ

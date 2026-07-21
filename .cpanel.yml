@@ -8,3 +8,8 @@ deployment:
     - /bin/cp -R public/js $DEPLOYPATH
     - /bin/cp public/robots.txt $DEPLOYPATH
     - /bin/cp public/BingSiteAuth.xml $DEPLOYPATH
+    - /bin/cp public/favicon.ico $DEPLOYPATH
+    - /bin/cp public/favicon-16x16.png $DEPLOYPATH
+    - /bin/cp public/favicon-32x32.png $DEPLOYPATH
+    - /bin/cp public/favicon-512.png $DEPLOYPATH
+    - /bin/cp public/apple-touch-icon.png $DEPLOYPATH

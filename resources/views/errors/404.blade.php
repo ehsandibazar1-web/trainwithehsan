@@ -30,7 +30,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
     <title>{{ $t['title'] }}</title>
-    <link rel="icon" type="image/png" href="{{ asset('storage/homepage/logo.header.png') }}">
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v={{ @filemtime(public_path('favicon.ico')) ?: '1' }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}?v={{ @filemtime(public_path('favicon-32x32.png')) ?: '1' }}">
     <link rel="preload" as="font" type="font/woff2" href="{{ asset('fonts/manrope-latin.woff2') }}" crossorigin>
     <style>
         /* همان دو @font-faceِ self-hostedِ layoutهای اصلی (وزنِ متغیر ۴۰۰ تا ۸۰۰) */
