@@ -146,7 +146,7 @@
             @if($translation || $page->updated_at)
             <div class="page-meta">
                 @if($page->updated_at)
-                <span>Son güncelleme: {{ $page->updated_at->format('j F Y') }}</span>
+                <span>Son güncelleme: {{ $page->updated_at->locale('tr')->translatedFormat('j F Y') }}</span>
                 @endif
                 @if($translation)
                 <span class="lang-switch">
@@ -204,7 +204,10 @@
 
             @if($faqs->isNotEmpty())
             <section class="faq-section reveal" aria-label="Sıkça Sorulan Sorular">
+                {{-- روی خودِ صفحه‌ی SSS (که H1ش همین متن است) تیترِ بخش تکراری می‌شد --}}
+                @if(mb_strtolower(trim($page->title), 'UTF-8') !== 'sıkça sorulan sorular')
                 <h2>Sıkça Sorulan Sorular</h2>
+                @endif
                 @foreach($faqs as $faq)
                 <details class="faq-item">
                     <summary>{{ $faq['question'] }}</summary>

@@ -205,7 +205,10 @@
 
             @if($faqs->isNotEmpty())
             <section class="faq-section reveal" aria-label="Frequently Asked Questions">
+                {{-- روی خودِ صفحه‌ی FAQ (که H1ش همین متن است) تیترِ بخش تکراری می‌شد --}}
+                @if(mb_strtolower(trim($page->title)) !== 'frequently asked questions')
                 <h2>Frequently Asked Questions</h2>
+                @endif
                 @foreach($faqs as $faq)
                 <details class="faq-item">
                     <summary>{{ $faq['question'] }}</summary>

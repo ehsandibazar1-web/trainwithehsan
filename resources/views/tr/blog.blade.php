@@ -79,7 +79,7 @@
     .post-item__desc__title a:hover{color:var(--gold-dark,#c09d4c)}
     .post-item__desc__list{font-size:11px;color:#666;margin-bottom:8px}
     .post-item__desc__list span:not(:last-child)::after{content:"·";margin:0 5px}
-    .post-item__desc__detail{font-size:13.5px;color:#666;text-align:justify}
+    .post-item__desc__detail{font-size:13.5px;color:#666}
     .blog-note{grid-column:1/-1;color:#888;font-size:13px;text-align:center;padding:20px 0 4px}
     .blog-pagination{display:flex;justify-content:center;gap:8px;margin-top:28px;flex-wrap:wrap}
     .pg-btn{
@@ -166,7 +166,7 @@
                                     <a href="{{ url('/tr/blog/' . $article->slug) }}">{{ $article->title }}</a>
                                 </h4>
                                 <div class="post-item__desc__list">
-                                    <span>{{ $article->author_name }}</span><span>{{ optional($article->published_at)->format('F Y') }}</span>
+                                    <span>{{ $article->author_name }}</span><span>{{ $article->published_at?->locale('tr')->translatedFormat('F Y') }}</span>
                                 </div>
                                 <p class="post-item__desc__detail">{{ $article->excerpt }}</p>
                             </div>

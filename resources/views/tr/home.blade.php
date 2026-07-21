@@ -53,6 +53,10 @@
     .hero-slide{
         display:none;align-items:center;position:relative;
         aspect-ratio:1349/529;min-height:220px;
+        /* widthِ صریح ضروری است: با widthِ auto، ترکیبِ aspect-ratio + min-height باعث می‌شود
+           مرورگر عرض را از روی min-height «برگرداند» (۲۲۰×۱۳۴۹÷۵۲۹ ≈ ۵۶۱px) — روی موبایل اسلاید
+           از صفحه بیرون می‌زد و تیتر/زیرتیتر از لبه‌ی راست بریده می‌شد */
+        width:100%;
         background:linear-gradient(115deg,#2e2c28 0%,#1c1b18 55%,#0d0d0b 120%);
     }
     @@media (max-width:640px){.hero-slide{min-height:180px}}
@@ -70,8 +74,10 @@
     @@media (max-width:767px){
         .hero-slide-text .hero-title{font-size:22px}
         .hero-slide-text .sub{font-size:15px}
-        /* فضای بالا برای نقطه‌های اسلایدر (بالا/راست) رزرو می‌شود تا روی تیتر نیفتد */
-        .hero-slide-text{margin-top:24px}
+        /* فضای بالا برای نقطه‌های اسلایدر (بالا/راست) رزرو می‌شود تا روی تیتر نیفتد؛
+           فضای پایین برای ردیفِ ویدیو که با marginِ منفی روی اسلایدر overlap دارد — بدونِ آن
+           خطِ آخرِ زیرتیتر زیرِ کارت‌های ویدیو پنهان می‌شد */
+        .hero-slide-text{margin-top:24px;padding-bottom:56px}
     }
     /* .slider .owl-dots — نقطه‌ها؛ فعال #d9bb75 */
     /* نقطه‌های اسلایدر — از پایین/چپ (که با ردیف ویدیوهای زیرش تداخل داشت) به بالا/راست
@@ -129,7 +135,9 @@
     .about-section{padding:60px 0 0;position:relative;background:#fff;overflow:hidden;min-height:420px}
     @@media (max-width:767px){.about-section{padding-top:32px;padding-bottom:0}}
     .about-text-col{max-width:475px;position:relative;z-index:1;margin-left:560px}
-    @@media (max-width:767px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
+    {{-- تا 1023px چیدمانِ پشته‌ای — margin-leftِ ۵۶۰px روی تبلت ستونِ متن را به ~۱۸۰px له می‌کرد
+         (تیتر یک-کلمه-در-خط)؛ چیدمانِ عکسِ absolute فقط از 1024px به بالا جا دارد --}}
+    @@media (max-width:1023px){.about-text-col{margin-left:0;max-width:100%;margin-top:0}}
     .abou-company{color:#393e40;font-weight:700;font-size:2.2rem;margin-bottom:10px;line-height:1.3}
     @@media (max-width:767px){.abou-company{font-size:1.8rem;text-align:center}}
     .sub-title{color:#393e40;font-weight:500;font-size:14px}
@@ -144,7 +152,7 @@
     .about-bleed-img{
         width:469px;max-width:100%;height:auto;margin-top:20px;display:block;
     }
-    @@media (min-width:768px){
+    @@media (min-width:1024px){
         .about-bleed-img{
             position:absolute;left:0;top:0;bottom:0;margin-top:0;height:100%;width:auto;
             max-width:calc(max((100vw - 1140px) / 2, 0px) + 500px);
@@ -256,7 +264,8 @@
     /* .title-news {color:#3e4949; font-weight:600; min-height:40px} */
     .title-news{color:#3e4949;padding:0 10px;font-weight:600;margin-top:15px;min-height:40px;line-height:1.5;font-size:14px}
     /* .news-short-text {color:#525050; 12px; justify; max-height:100px} */
-    .news-short-text{color:#525050;padding:5px 10px;text-align:justify;font-size:12px;min-height:100px;max-height:100px;overflow:hidden;line-height:1.5}
+    {{-- بدونِ justify — روی کارتِ باریک، فاصله‌های کشیده بین کلمات می‌سازد --}}
+    .news-short-text{color:#525050;padding:5px 10px;font-size:12px;min-height:100px;max-height:100px;overflow:hidden;line-height:1.5}
     /* .more-news {80×33; gold} hover: bg #000 / gold  — راست‌چین در LTR */
     .news-more-row{text-align:right}
     .more-news{

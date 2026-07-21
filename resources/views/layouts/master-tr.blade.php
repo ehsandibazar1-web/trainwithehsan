@@ -361,7 +361,8 @@
 {{-- منو: از پنل مدیریت (Menu Settings) — در صورت خالی بودن، منوی پیش‌فرض --}}
 @php($menuItems = \App\Models\SiteSetting::getJson('menu.tr.items'))
 @php($menuItems = !empty($menuItems) ? $menuItems : [['label' => 'Ana Sayfa', 'url' => '/tr', 'highlight' => false], ['label' => 'Hakkımda', 'url' => '/tr/about', 'highlight' => false], ['label' => 'Martial Intelligence', 'url' => '/tr/martial-intelligence', 'highlight' => false], ['label' => 'Kurslar', 'url' => '/tr/blog', 'highlight' => false], ['label' => 'Blog', 'url' => '/tr/blog', 'highlight' => false], ['label' => 'İletişim', 'url' => '/tr/contact', 'highlight' => true]])
-@php($isActive = fn ($u) => ($p = ltrim($u ?? '', '/')) === '' ? request()->is('/') : (request()->is($p) || request()->is($p . '/*')))
+{{-- ریشه‌ها ('/' و '/tr') فقط تطبیقِ دقیق — وگرنه «Ana Sayfa» روی هر صفحه‌ی ترکی active می‌شد --}}
+@php($isActive = fn ($u) => in_array($p = ltrim($u ?? '', '/'), ['', 'tr'], true) ? request()->is($p === '' ? '/' : 'tr') : (request()->is($p) || request()->is($p . '/*')))
 
 <div class="panel-overlay" id="panelOverlay"></div>
 <nav class="panel-menu" id="panelMenu">
