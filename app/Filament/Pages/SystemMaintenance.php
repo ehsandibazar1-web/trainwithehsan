@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Services\Backup\DatabaseBackupService;
 use BackedEnum;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Throwable;
 
 // جایگزین امنِ دو route عمومیِ system-cache-flush / system-migrate در routes/web.php —
@@ -175,6 +177,51 @@ class SystemMaintenance extends Page
     public function getImageWebpSupportedProperty(): bool
     {
         return function_exists('imagewebp') && (bool) (gd_info()['WebP Support'] ?? false);
+    }
+
+    // ===== بکاپِ دیتابیس — همان سرویسی که db:backupِ زمان‌بندی‌شده استفاده می‌کند =====
+
+    public function backupDatabase(): void
+    {
+        try {
+            $result = app(DatabaseBackupService::class)->backup();
+
+            $this->lastOutput = sprintf('Backup created: %s (%s KB)', $result['name'], number_format($result['size'] / 1024, 1));
+
+            Notification::make()->success()
+                ->title('Backup created')
+                ->body('A fresh copy of the database was saved. Use "Download latest backup" to also keep a copy on your own computer.')
+                ->send();
+        } catch (Throwable $e) {
+            $this->lastOutput = $e->getMessage();
+
+            Notification::make()->danger()->title('Backup failed')->body($e->getMessage())->send();
+        }
+    }
+
+    // دانلودِ آخرین بکاپ روی کامپیوترِ خودِ مدیر — روی این هاستِ بدونِ SSH، این عملی‌ترین
+    // نسخه‌ی «خارج از سرور» است (بکاپ‌های خودکار روی همان دیسکِ سرورند)
+    public function downloadLatestBackup(): ?BinaryFileResponse
+    {
+        $latest = app(DatabaseBackupService::class)->latest();
+
+        if (! $latest) {
+            Notification::make()->warning()->title('No backup exists yet')->body('Click "Backup now" first.')->send();
+
+            return null;
+        }
+
+        return response()->download($latest['path'], $latest['name']);
+    }
+
+    /**
+     * @return array{count: int, latest: array{path: string, name: string, size: int, created_at: int}|null}
+     */
+    public function getDatabaseBackupStatusProperty(): array
+    {
+        $backups = app(DatabaseBackupService::class)->list();
+
+        return ['count' => count($backups), 'latest' => $backups[0] ?? null];
     }
 
     public function clearCache(): void

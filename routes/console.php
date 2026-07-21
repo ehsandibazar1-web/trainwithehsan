@@ -16,3 +16,7 @@ Schedule::command('content-plans:notify-deadlines')->hourly();
 
 // ممیزی هفتگیِ خودکار AI Agent — نگاه کنید به App\Services\AiAgent\AgentAuditService
 Schedule::command('agent:audit')->weekly();
+
+// بکاپِ روزانه‌ی دیتابیسِ SQLite — نگاه کنید به App\Services\Backup\DatabaseBackupService؛
+// ساعتِ ۳ صبح تا با ترافیک/انتشارِ زمان‌بندی‌شده هم‌زمان نشود
+Schedule::command('db:backup')->dailyAt('03:00');

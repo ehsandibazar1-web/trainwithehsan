@@ -17,6 +17,41 @@
     </x-filament::section>
 
     <x-filament::section>
+        <x-slot name="heading">Database backup</x-slot>
+        <x-slot name="description">
+            The database holds everything on this site — articles, pages, all settings. A snapshot is taken automatically every night and the last {{ \App\Services\Backup\DatabaseBackupService::KEEP }} copies are kept on the server. It's a good habit to also click "Download latest backup" now and then, so a copy lives safely on your own computer.
+        </x-slot>
+
+        @php($backupStatus = $this->databaseBackupStatus)
+        @if ($backupStatus['latest'])
+            <div class="flex items-center gap-2 text-sm" style="color:#15803d">
+                <x-filament::icon icon="heroicon-o-check-circle" class="h-5 w-5" />
+                <span>
+                    Last backup: <strong>{{ \Illuminate\Support\Carbon::createFromTimestamp($backupStatus['latest']['created_at'])->diffForHumans() }}</strong>
+                    ({{ number_format($backupStatus['latest']['size'] / 1024, 1) }} KB) — {{ $backupStatus['count'] }} {{ \Illuminate\Support\Str::plural('copy', $backupStatus['count']) }} kept on the server.
+                </span>
+            </div>
+        @else
+            <div class="flex items-start gap-2 text-sm" style="color:#b91c1c">
+                <x-filament::icon icon="heroicon-o-exclamation-triangle" class="h-5 w-5 shrink-0" />
+                <span><strong>No backup exists yet.</strong> Click "Backup now" to create the first one. Automatic nightly backups need the site's scheduler to be active — the same one that publishes scheduled articles.</span>
+            </div>
+        @endif
+
+        <div class="mt-4 flex flex-wrap gap-3">
+            <x-filament::button wire:click="backupDatabase" icon="heroicon-o-archive-box-arrow-down">
+                Backup now
+            </x-filament::button>
+
+            @if ($backupStatus['latest'])
+                <x-filament::button color="gray" wire:click="downloadLatestBackup" icon="heroicon-o-arrow-down-tray">
+                    Download latest backup
+                </x-filament::button>
+            @endif
+        </div>
+    </x-filament::section>
+
+    <x-filament::section>
         <x-slot name="heading">Media storage link</x-slot>
         <x-slot name="description">
             This checks that uploaded images and files are actually reachable on the web. It fetches a small test file through its public URL, so it reflects what visitors really see — however your host serves files.
