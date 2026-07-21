@@ -16,7 +16,7 @@ concurrency:
 
 jobs:
   tests:
-    name: Pint + PHPUnit (PHP 8.3)
+    name: Pint + PHPUnit (PHP 8.4)
     runs-on: ubuntu-latest
 
     steps:
@@ -25,7 +25,9 @@ jobs:
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.3'
+          # composer.lock فعلی symfony v8.1.x را قفل کرده که php >= 8.4.1 می‌خواهد —
+          # اجرای اول با 8.3 دقیقاً روی همین شکست (composer install, exit 2)
+          php-version: '8.4'
           # gd برای MediaProcessor (WebP/تامبنیل)، zip برای استخراجِ DOCXِ RAG، sqlite برای تست‌ها
           extensions: gd, zip, sqlite3, pdo_sqlite, dom, xml, mbstring, fileinfo
           coverage: none
