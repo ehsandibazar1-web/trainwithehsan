@@ -56,6 +56,11 @@ jobs:
       - name: Generate app key
         run: php artisan key:generate
 
+      # SystemMaintenanceTest سلامتِ لینکِ استوریج را از مسیرِ symlink می‌سنجد — مثل هر محیطِ
+      # واقعی، لینکِ public/storage باید موجود باشد
+      - name: Link storage
+        run: php artisan storage:link
+
       - name: Code style (Pint)
         run: ./vendor/bin/pint --test
 
