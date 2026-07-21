@@ -16,8 +16,12 @@
     @endif
     <meta name="robots" content="@yield('robots', 'index,follow')">
     <link rel="canonical" href="@yield('canonical', url()->current())">
-    <link rel="icon" type="image/png" href="{{ asset('storage/homepage/logo.header.png') }}">
-    <link rel="apple-touch-icon" href="{{ asset('storage/homepage/logo.header.png') }}">
+    {{-- فاویکونِ برند (نشانِ سپر) به‌صورت فایلِ استاتیکِ public — نه storageِ آپلودی —
+         تا مرورگر به‌جای آیکونِ پیش‌فرضِ کره‌زمین همیشه لوگو را نشان دهد. عیناً مثل سایت مرجع. --}}
+    <link rel="icon" href="{{ asset('favicon.ico') }}?v={{ @filemtime(public_path('favicon.ico')) ?: '1' }}" sizes="any">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}?v={{ @filemtime(public_path('favicon-32x32.png')) ?: '1' }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}?v={{ @filemtime(public_path('favicon-16x16.png')) ?: '1' }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('apple-touch-icon.png') }}?v={{ @filemtime(public_path('apple-touch-icon.png')) ?: '1' }}">
 
     {{-- پیش‌فرض: مسیر فعلی با پیشوند tr/ حذف‌شده (برای صفحات ثابتی مثل about/blog که مسیر EN و TR
          فقط با پیشوند فرق دارند). صفحات مقاله (که اسلاگ EN/TR‌شان لزوماً یکی نیست) این بخش را
