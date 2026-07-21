@@ -76,11 +76,12 @@ body{background:var(--dark)!important}
 .about-v5{overflow-x:hidden;overflow-y:hidden;max-width:100%;width:100%;background:var(--dark);color:#eee}
 .about-v5 *{box-sizing:border-box}
 .about-v5 section{padding:70px 20px;position:relative}
+.about-v5 .hero + section{padding-top:30px}
 .about-v5 .container{max-width:920px;margin:0 auto}
 .about-v5 h1,.about-v5 h2{margin:0;color:#fff}
 
 /* ===== هیرو ===== */
-.about-v5 .hero{min-height:50vh;padding:40px 20px 100px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;position:relative}
+.about-v5 .hero{min-height:50vh;padding:40px 20px 40px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;text-align:center;position:relative}
 @media(min-width:992px){.about-v5 .hero{padding-top:120px}}
 .about-v5 .glow{position:absolute;width:min(360px,90vw);height:min(360px,90vw);border-radius:50%;background:radial-gradient(circle,rgba(217,187,117,.35),transparent 70%);filter:blur(10px);top:8%;left:50%;transform:translateX(-50%);animation:pulse 6s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.6;transform:translateX(-50%) scale(1)}50%{opacity:1;transform:translateX(-50%) scale(1.15)}}
