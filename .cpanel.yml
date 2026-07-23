@@ -13,3 +13,9 @@ deployment:
     - /bin/cp public/favicon-32x32.png $DEPLOYPATH
     - /bin/cp public/favicon-512.png $DEPLOYPATH
     - /bin/cp public/apple-touch-icon.png $DEPLOYPATH
+    # بهینه‌سازی production لاراول — کش config/route/view/event تا در هر درخواست از صفر
+    # bootstrap نشود (ریشه‌ی اصلیِ TTFBِ بالا). از دایرکتوریِ همین ریپو اجرا می‌شود، جایی که
+    # اپ واقعاً از آن اجرا می‌شود (public_html/index.php از ../repositories/trainwithehsan بوت
+    # می‌کند). اگر نسخه‌ی CLIِ php روی هاست ۸.۴ نباشد این task شکست می‌خورد ولی سایت همچنان کار
+    # می‌کند (فقط بدون کش، مثل قبل) — پس بی‌خطر است. آخرین task است تا کپیِ assetها مستقل بماند.
+    - php artisan optimize
