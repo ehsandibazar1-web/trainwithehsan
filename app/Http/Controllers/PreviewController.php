@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Media;
 use App\Models\SiteSetting;
 
 class PreviewController extends Controller
@@ -33,6 +34,8 @@ class PreviewController extends Controller
         $authorPhoto = SiteSetting::get("about.{$article->locale}.hero_image")
             ?? SiteSetting::get('about.en.hero_image');
         $authorBox = BlogController::authorBoxSettings($article->locale);
+
+        Media::preloadForRecords($related->concat($latest)->push($article));
 
         return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto', 'authorBox'));
     }

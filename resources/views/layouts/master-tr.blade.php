@@ -87,7 +87,7 @@
 
     {{-- تنظیمات فوتر از CMS (یک کوئری) — پیش از <style> چون تصویر پس‌زمینه داخل CSS استفاده می‌شود.
          مقدار فقط-فاصله عمداً «پر» حساب می‌شود (همان قرارداد مخفی‌کردن متنِ پیش‌فرض) --}}
-    @php($footerRaw = \App\Models\SiteSetting::where('key', 'like', 'footer.tr.%')->pluck('value', 'key'))
+    @php($footerRaw = \App\Models\SiteSetting::byPrefix('footer.tr'))
     @php($fv = fn($k, $d = '') => (($footerRaw["footer.tr.$k"] ?? null) !== null && ($footerRaw["footer.tr.$k"] ?? '') !== '') ? $footerRaw["footer.tr.$k"] : $d)
     @php($footerColumns = json_decode($footerRaw['footer.tr.columns'] ?? '[]', true) ?: [])
     @php($footerSocials = json_decode($footerRaw['footer.tr.socials'] ?? '[]', true) ?: [])

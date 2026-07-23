@@ -174,6 +174,10 @@ class Media extends Model
     // فاز ۴ که فیلدهای CMS (homepage/about/footer) هم DAM-managed شوند، دایرکتوری‌هایشان اینجا اضافه می‌شود.
     private const SYSTEM_ATTACHED_DIRECTORIES = ['articles/', 'pages/', 'ai-generated/'];
 
+    // حافظه‌ی درون‌درخواستیِ forRecord() با کلید disk_path — تا وقتی روی یک لیست (صفحه اصلی،
+    // آرشیو مقالات، سایدبار مرتبط/جدیدترین) لوپ می‌زنیم، به‌ازای هر Article/Page یک کوئری جدا نزنیم
+    private static array $recordCache = [];
+
     // آیا این فایل در یکی از دایرکتوری‌هایی است که سیستم تصویرِ قابل-ارجاع می‌سازد؟ محاسبه‌ی محض
     // روی disk_path — هیچ کوئری‌ای نمی‌زند (برخلافِ isInUse)، پس در حلقه‌ی رندرِ گرید امن است.
     public function isInSystemAttachedDirectory(): bool
@@ -196,6 +200,30 @@ class Media extends Model
         return $this->isInSystemAttachedDirectory() && ! $this->isInUse();
     }
 
+    // Media مربوط به مجموعه‌ای از رکوردها را در یک کوئری batch بارگذاری می‌کند — پیش از رندر هر
+    // لیستی صدا زده می‌شود تا forRecord() به‌ازای هر آیتم دوباره کوئری نزند. خودِ forRecord() بدون
+    // این پیش‌بارگذاری هم درست کار می‌کند (فقط دیگر memoize نمی‌شود)
+    public static function preloadForRecords(iterable $records): void
+    {
+        $paths = collect($records)->pluck('image_path')->filter()->unique()->values();
+
+        if ($paths->isEmpty()) {
+            return;
+        }
+
+        self::whereIn('disk_path', $paths)->get()->each(
+            fn (self $media) => self::$recordCache[$media->disk_path] = $media
+        );
+    }
+
+    // پاک‌کردن حافظه‌ی درون‌درخواستیِ forRecord(). در production لازم نیست (هر درخواست state تازه
+    // دارد)، ولی در تست‌ها که همه در یک پروسه اجرا می‌شوند این استاتیک بین تست‌ها نشت می‌کند —
+    // پس در setUp پایه‌ی تست‌ها صدا زده می‌شود تا هر تست از صفر شروع کند
+    public static function flushRecordCache(): void
+    {
+        self::$recordCache = [];
+    }
+
     // رکورد Media متناظر با تصویر شاخص یک Article/Page — با تطبیق disk_path (نه کلید خارجی، طبق
     // «Image Optimization Rules» در CLAUDE.md)؛ هم AiAssistantPanel هم ProcessAiChatMessage همین
     // را صدا می‌زنند تا این جست‌وجوی سه‌خطی دو بار پیاده‌سازی نشود
@@ -205,7 +233,11 @@ class Media extends Model
             return null;
         }
 
-        return self::where('disk_path', $record->image_path)->first();
+        if (array_key_exists($record->image_path, self::$recordCache)) {
+            return self::$recordCache[$record->image_path];
+        }
+
+        return self::$recordCache[$record->image_path] = self::where('disk_path', $record->image_path)->first();
     }
 
     // URLِ بهینه‌ی یک تصویرِ SiteSetting-محور (هیرو/درباره/دوره‌ها/تامبنیل‌ها در صفحه‌ی اصلی): WebPِ

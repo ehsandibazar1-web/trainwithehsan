@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Models\Media;
 use App\Models\SiteSetting;
 use App\Services\Seo\VideoSchemaService;
 use Illuminate\Support\Carbon;
@@ -26,6 +27,8 @@ class BlogController extends Controller
         // ذخیره‌ی تنظیماتِ صفحه‌ی اصلی را به‌عنوان «تاریخِ انتشار روی سایت» می‌دهیم (Google الزامی می‌داند)
         $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members, $this->homeVideoUploadDate('en'));
 
+        Media::preloadForRecords($latestArticles);
+
         return view('home', compact('latestArticles', 's', 'members', 'videoSchemas'));
     }
 
@@ -42,6 +45,8 @@ class BlogController extends Controller
 
         $videoSchemas = app(VideoSchemaService::class)->forHomepage($s, $members, $this->homeVideoUploadDate('tr'));
 
+        Media::preloadForRecords($latestArticles);
+
         return view('tr.home', compact('latestArticles', 's', 'members', 'videoSchemas'));
     }
 
@@ -50,8 +55,7 @@ class BlogController extends Controller
     {
         $prefix = "home.$locale.";
 
-        $raw = SiteSetting::where('key', 'like', $prefix.'%')
-            ->pluck('value', 'key');
+        $raw = SiteSetting::byPrefix("home.$locale");
 
         $s = [];
         foreach ($raw as $key => $value) {
@@ -96,8 +100,7 @@ class BlogController extends Controller
     {
         $prefix = "about.$locale.";
 
-        $raw = SiteSetting::where('key', 'like', $prefix.'%')
-            ->pluck('value', 'key');
+        $raw = SiteSetting::byPrefix("about.$locale");
 
         $about = [];
         foreach ($raw as $key => $value) {
@@ -199,6 +202,8 @@ class BlogController extends Controller
             ->groupBy('category')
             ->pluck('total', 'category');
 
+        Media::preloadForRecords($articles->concat($popular));
+
         return view($view, compact('articles', 'popular', 'categories'));
     }
 
@@ -244,6 +249,8 @@ class BlogController extends Controller
         // Video SEO — VideoObject برای ویدیوهای درون‌متنیِ مقاله (همان لینک‌هایی که در بدنه پخش‌کننده می‌شوند)
         $videoSchemas = app(VideoSchemaService::class)->forArticle($article);
 
+        Media::preloadForRecords($related->concat($latest)->push($article));
+
         return view($view, compact('article', 'related', 'latest', 'translation', 'authorPhoto', 'authorBox', 'videoSchemas'));
     }
 
@@ -252,7 +259,7 @@ class BlogController extends Controller
     // static چون PreviewController هم برای رندرِ عینِ صفحه‌ی واقعی به همین داده نیاز دارد.
     public static function authorBoxSettings(string $locale): array
     {
-        $raw = SiteSetting::where('key', 'like', "about.$locale.author_box_%")->pluck('value', 'key');
+        $raw = SiteSetting::byPrefix("about.$locale");
         $v = fn (string $key) => (($raw["about.$locale.author_box_$key"] ?? '') !== '') ? $raw["about.$locale.author_box_$key"] : null;
 
         return [

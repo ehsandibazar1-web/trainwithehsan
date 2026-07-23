@@ -159,13 +159,13 @@
             @endif
 
             <div class="page-body reveal">
-                {!! app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($page->body)) !!}
+                {!! \App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($page->body))) !!}
             </div>
 
             @if($page->slug === 'contact')
             {{-- $fv از layouts.master-tr نیست چون بخش‌های فرزند پیش از رندر <head> والد اجرا می‌شوند —
                  همون فیلدهای موجودِ Footer Settings (SiteSetting) اینجا مستقیم خونده می‌شن --}}
-            @php($contactSettings = \App\Models\SiteSetting::whereIn('key', ['footer.tr.contact_email', 'footer.tr.contact_phone', 'footer.tr.contact_address'])->pluck('value', 'key'))
+            @php($contactSettings = \App\Models\SiteSetting::byPrefix('footer.tr'))
             @php($contactEmail = $contactSettings['footer.tr.contact_email'] ?? null)
             @php($contactPhone = $contactSettings['footer.tr.contact_phone'] ?? null)
             @php($contactAddress = $contactSettings['footer.tr.contact_address'] ?? null)

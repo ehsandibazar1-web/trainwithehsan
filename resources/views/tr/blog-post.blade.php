@@ -177,8 +177,9 @@
 
                 <div class="article-body" id="article-content">
                     {{-- محتوا در ورودیِ AI Import هم پاک‌سازی می‌شود؛ این‌جا فقط یک لایه‌ی دفاعیِ
-                         اضافه است (برای محتوای قدیمی یا ویرایش دستی) --}}
-                    {!! app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body)) !!}
+                         اضافه است (برای محتوای قدیمی یا ویرایش دستی). lazyLoadImages بیرونی است تا
+                         بعد از sanitize/embed روی خروجی نهایی اجرا شود (loading/decoding به <img>ها) --}}
+                    {!! \App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body))) !!}
                 </div>
 
                 @if($faqs->isNotEmpty())

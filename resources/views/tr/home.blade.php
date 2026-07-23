@@ -504,7 +504,7 @@
             </div>
         </div>
         @if($v('app_image'))
-            <img src="{{ $img($v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img reveal">
+            <img src="{{ $img($v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img reveal" loading="lazy" decoding="async">
         @else
             <div class="img-about-box reveal"><span>Uygulama</span></div>
         @endif
@@ -645,7 +645,7 @@
             <div class="wrap">
                 <div class="insta-showcase-grid reveal-group">
                     <div class="insta-showcase-text reveal">
-                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
+                        <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo" loading="lazy" decoding="async">
                         <h2>{{ $row['title'] }}</h2>
                         <p>{{ $row['subtitle'] }}</p>
                         <a href="{{ $row['button_url'] }}" class="insta-showcase-btn" rel="noopener" target="_blank">
@@ -670,10 +670,10 @@
                         @else
                             <div class="insta-embed-wrap">
                                 @if($row['fallback_image'])
-                                    <img src="{{ $row['fallback_image'] }}"@if($row['fallback_srcset']) srcset="{{ $row['fallback_srcset'] }}" sizes="(max-width: 640px) 100vw, 270px"@endif alt="Instagram" class="insta-embed-fallback-img">
+                                    <img src="{{ $row['fallback_image'] }}"@if($row['fallback_srcset']) srcset="{{ $row['fallback_srcset'] }}" sizes="(max-width: 640px) 100vw, 270px"@endif alt="Instagram" class="insta-embed-fallback-img" loading="lazy" decoding="async">
                                 @endif
                                 <div class="insta-embed-fallback-overlay">
-                                    <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo">
+                                    <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo" loading="lazy" decoding="async">
                                     <a href="{{ $v('insta_url', 'https://instagram.com') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Instagram'da izle</a>
                                 </div>
                             </div>
