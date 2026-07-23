@@ -5,6 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- توکنِ تازه‌ی CSRF (یک‌بار، تنبل) — لازم برای وقتی HTMLِ صفحه از لبه‌ی Cloudflare کش شده و
+         توکنِ متا مشترک/کهنه است؛ فرم‌های AJAX پیش از ارسال صدایش می‌زنند. بی‌ضرر وقتی کش خاموش است. --}}
+    <script>
+        window.csrfReady = (function () {
+            var p = null;
+            return function () {
+                if (p) { return p; }
+                p = fetch('{{ url('/csrf-token') }}', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d && d.token) {
+                            var m = document.querySelector('meta[name="csrf-token"]');
+                            if (m) { m.setAttribute('content', d.token); }
+                        }
+                        return d && d.token;
+                    })
+                    .catch(function () { p = null; return null; });
+                return p;
+            };
+        })();
+    </script>
+
     {{-- اسلاتِ preloadِ منابعِ حیاتی (مثلِ عکسِ LCPِ هیرو) — هر صفحه مهم‌ترین منبعش را زودتر اعلام می‌کند --}}
     @yield('head_preload')
 
@@ -561,7 +583,9 @@
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 if (btn) btn.disabled = true;
-                fetch(form.action, {
+                // اول توکنِ تازه (برای وقتی صفحه از لبه‌ی Cloudflare کش شده)، بعد ارسال
+                (window.csrfReady ? window.csrfReady() : Promise.resolve()).then(function () {
+                return fetch(form.action, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf ? csrf.content : '',
@@ -569,7 +593,7 @@
                         'Accept': 'application/json'
                     },
                     body: new FormData(form)
-                }).then(function (res) {
+                }); }).then(function (res) {
                     if (res.status === 429) { show(form.dataset.msgToomany, false); return null; }
                     return res.json().then(function (data) { return { ok: !!(data && data.ok), message: data && data.message }; });
                 }).then(function (r) {

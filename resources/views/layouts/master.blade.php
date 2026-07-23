@@ -5,6 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    {{-- توکنِ تازه‌ی CSRF را (یک‌بار در هر بارگذاری، تنبل و کش‌شده در یک Promise) از سرور می‌گیرد و
+         متا را به‌روز می‌کند. لازم برای وقتی HTMLِ صفحه از لبه‌ی Cloudflare کش شده و توکنِ داخلِ متا
+         مشترک/کهنه است؛ فرم‌های AJAX (خبرنامه/تماس) پیش از ارسال این را صدا می‌زنند. بی‌ضرر وقتی کش
+         خاموش است (همان توکنِ سشن را برمی‌گرداند). --}}
+    <script>
+        window.csrfReady = (function () {
+            var p = null;
+            return function () {
+                if (p) { return p; }
+                p = fetch('{{ url('/csrf-token') }}', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                    .then(function (r) { return r.json(); })
+                    .then(function (d) {
+                        if (d && d.token) {
+                            var m = document.querySelector('meta[name="csrf-token"]');
+                            if (m) { m.setAttribute('content', d.token); }
+                        }
+                        return d && d.token;
+                    })
+                    .catch(function () { p = null; return null; });
+                return p;
+            };
+        })();
+    </script>
+
     {{-- اسلاتِ preloadِ منابعِ حیاتی (مثلِ عکسِ LCPِ هیرو) — هر صفحه می‌تواند این‌جا مهم‌ترین
          منبعش را زودتر به مرورگر اعلام کند تا LCP سریع‌تر شود --}}
     @yield('head_preload')
@@ -568,7 +592,9 @@
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 if (btn) btn.disabled = true;
-                fetch(form.action, {
+                // اول توکنِ تازه (برای وقتی صفحه از لبه‌ی Cloudflare کش شده)، بعد ارسال
+                (window.csrfReady ? window.csrfReady() : Promise.resolve()).then(function () {
+                return fetch(form.action, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf ? csrf.content : '',
@@ -576,7 +602,7 @@
                         'Accept': 'application/json'
                     },
                     body: new FormData(form)
-                }).then(function (res) {
+                }); }).then(function (res) {
                     if (res.status === 429) { show(form.dataset.msgToomany, false); return null; }
                     return res.json().then(function (data) { return { ok: !!(data && data.ok), message: data && data.message }; });
                 }).then(function (r) {

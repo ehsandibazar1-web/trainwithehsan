@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\BlogController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CsrfTokenController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\PreviewController;
@@ -25,6 +26,10 @@ Route::get('/tr/blog/{slug}', [BlogController::class, 'showTr']);
 Route::get('/preview/article/{article}', [PreviewController::class, 'show'])
     ->name('articles.preview')
     ->middleware('signed');
+
+// توکنِ تازه‌ی CSRF برای فرم‌های AJAX وقتی HTMLِ صفحه از لبه‌ی Cloudflare کش شده — عمداً کش‌ناپذیر
+// (خودِ کنترلر Cache-Control: no-store می‌گذارد و در Cache Rule هم مستثنا می‌شود).
+Route::get('/csrf-token', CsrfTokenController::class);
 
 Route::get('/sitemap.xml', [SeoController::class, 'sitemap']);
 Route::get('/feed', [SeoController::class, 'feed']);

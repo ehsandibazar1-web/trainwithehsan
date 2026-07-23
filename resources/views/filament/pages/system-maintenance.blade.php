@@ -29,6 +29,41 @@
     </x-filament::section>
 
     <x-filament::section>
+        <x-slot name="heading">Edge caching (Cloudflare)</x-slot>
+        <x-slot name="description">
+            Lets Cloudflare serve public pages (home, blog, articles, about) straight from its edge, so they load much faster for visitors. Only anonymous visitors get the cached copy — anyone logged in, and the contact/newsletter forms, keep working normally. Turn this on only after the Cloudflare "Cache Rule" is set up, then purge Cloudflare's cache once.
+        </x-slot>
+
+        @if ($this->edgeCacheEnabled)
+            <div class="flex items-center gap-2 text-sm" style="color:#15803d">
+                <x-filament::icon icon="heroicon-o-check-circle" class="h-5 w-5" />
+                <span>On — public pages allow Cloudflare edge caching.</span>
+            </div>
+        @else
+            <div class="flex items-center gap-2 text-sm" style="color:#6b7280">
+                <x-filament::icon icon="heroicon-o-pause-circle" class="h-5 w-5" />
+                <span>Off — the site serves fully dynamic HTML (the default, safest state).</span>
+            </div>
+        @endif
+
+        <div class="mt-4 flex flex-wrap gap-3">
+            @if ($this->edgeCacheEnabled)
+                <x-filament::button color="danger" wire:click="disableEdgeCache" icon="heroicon-o-x-circle">
+                    Turn edge caching off
+                </x-filament::button>
+            @else
+                <x-filament::button color="success" wire:click="enableEdgeCache" icon="heroicon-o-bolt">
+                    Turn edge caching on
+                </x-filament::button>
+            @endif
+        </div>
+
+        <p class="mt-3 text-sm" style="color:#6b7280">
+            If a form ever misbehaves after turning this on, click "Turn edge caching off" and purge Cloudflare's cache — the site returns to its normal dynamic behavior immediately.
+        </p>
+    </x-filament::section>
+
+    <x-filament::section>
         <x-slot name="heading">Database backup</x-slot>
         <x-slot name="description">
             The database holds everything on this site — articles, pages, all settings. A snapshot is taken automatically every night and the last {{ \App\Services\Backup\DatabaseBackupService::KEEP }} copies are kept on the server. It's a good habit to also click "Download latest backup" now and then, so a copy lives safely on your own computer.

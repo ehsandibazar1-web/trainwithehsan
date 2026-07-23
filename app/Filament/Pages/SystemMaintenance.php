@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Models\SiteSetting;
 use App\Services\Backup\DatabaseBackupService;
 use BackedEnum;
 use Filament\Notifications\Notification;
@@ -326,6 +327,43 @@ class SystemMaintenance extends Page
 
             Notification::make()->danger()->title('Rebuild failed')->body($e->getMessage())->send();
         }
+    }
+
+    // ===== کشِ لبه‌ی Cloudflare (کشِ کاملِ HTML) — کلیدِ روشن/خاموشِ سمتِ سرور =====
+
+    // آیا کشِ لبه روشن است؟ (پیش‌فرض: خاموش)
+    public function getEdgeCacheEnabledProperty(): bool
+    {
+        return SiteSetting::get('edge_cache.enabled') === '1';
+    }
+
+    // روشن‌کردن: از این پس صفحاتِ عمومیِ ناشناس هدرِ کشِ اشتراکی می‌گیرند و کوکیِ سشنشان حذف می‌شود،
+    // تا Cloudflare بتواند HTML را روی لبه کش کند. برای اثرِ کامل باید Cache Rule در پنلِ Cloudflare
+    // هم فعال باشد. فرم‌ها به‌خاطرِ اندپوینتِ /csrf-token دست‌نخورده کار می‌کنند.
+    public function enableEdgeCache(): void
+    {
+        SiteSetting::set('edge_cache.enabled', '1', 'performance');
+
+        if (SiteSetting::get('edge_cache.ttl') === null) {
+            SiteSetting::set('edge_cache.ttl', '600', 'performance');
+        }
+
+        Notification::make()->success()
+            ->title('Edge caching enabled')
+            ->body('Public pages now allow Cloudflare edge caching. Make sure the Cloudflare Cache Rule is also active, then purge Cloudflare cache once so the new headers take effect.')
+            ->send();
+    }
+
+    // خاموش‌کردنِ سریع (کلیدِ اضطراری): origin دیگر پاسخِ کش‌پذیر نمی‌فرستد. نسخه‌های کش‌شده‌ی قبلی تا
+    // پایانِ TTL روی لبه می‌مانند — برای اثرِ فوری، Cloudflare را هم Purge کنید.
+    public function disableEdgeCache(): void
+    {
+        SiteSetting::set('edge_cache.enabled', '0', 'performance');
+
+        Notification::make()->success()
+            ->title('Edge caching disabled')
+            ->body('The site now serves fully dynamic HTML again. Already-cached copies stay on Cloudflare until their TTL ends — purge Cloudflare cache for an immediate effect.')
+            ->send();
     }
 
     // معادلِ یک‌کلیکیِ `php artisan storage:link` از داخلِ پنل — چون این هاست SSH ندارد و همان

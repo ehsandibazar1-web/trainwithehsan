@@ -241,7 +241,9 @@
             form.addEventListener('submit', function (e) {
                 e.preventDefault();
                 if (btn) btn.disabled = true;
-                fetch(form.action, {
+                // اول توکنِ تازه (برای وقتی صفحه از لبه‌ی Cloudflare کش شده)، بعد ارسال
+                (window.csrfReady ? window.csrfReady() : Promise.resolve()).then(function () {
+                return fetch(form.action, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf ? csrf.content : '',
@@ -249,7 +251,7 @@
                         'Accept': 'application/json'
                     },
                     body: new FormData(form)
-                }).then(function (res) {
+                }); }).then(function (res) {
                     if (res.status === 429) { show(form.dataset.msgToomany, false); return null; }
                     return res.json().then(function (data) { return { ok: !!(data && data.ok), message: data && data.message }; });
                 }).then(function (r) {
