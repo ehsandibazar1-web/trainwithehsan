@@ -302,6 +302,32 @@ class SystemMaintenance extends Page
         }
     }
 
+    // معادلِ یک‌کلیکیِ `php artisan optimize` از داخلِ پنل — کشِ config/route/view/event را
+    // می‌سازد تا اپ در هر درخواست از صفر bootstrap نشود (ریشه‌ی TTFBِ بالا). چون این هاست SSH
+    // ندارد و دیپلویِ cPanel هم گاهی به‌خاطر «uncommitted changes» قفل می‌شود، این دکمه راهِ
+    // مطمئنِ اجرای optimize است — با همان PHP 8.4 که خودِ سایت روی آن اجرا می‌شود، پس مشکلِ
+    // نسخه‌ی CLI هم ندارد. بعد از ویرایشِ .env (مثلاً APP_DEBUG) هم باید همین زده شود تا config
+    // دوباره با مقدار جدید کش شود.
+    public function optimizeCache(): void
+    {
+        try {
+            // زیردستورها جداگانه صدا زده می‌شوند، نه umbrellaِ `optimize` — چون آن دستور موقعِ
+            // Artisan::call از داخلِ یک درخواستِ وب سب‌کامندهایش را درست resolve نمی‌کند. همان
+            // چهار کشِ `php artisan optimize`، به همان الگوی clearCache بالا.
+            Artisan::call('config:cache');
+            Artisan::call('event:cache');
+            Artisan::call('route:cache');
+            Artisan::call('view:cache');
+            $this->lastOutput = 'Speed caches rebuilt (config, events, routes, views).';
+
+            Notification::make()->success()->title('Speed cache rebuilt')->send();
+        } catch (Throwable $e) {
+            $this->lastOutput = $e->getMessage();
+
+            Notification::make()->danger()->title('Rebuild failed')->body($e->getMessage())->send();
+        }
+    }
+
     // معادلِ یک‌کلیکیِ `php artisan storage:link` از داخلِ پنل — چون این هاست SSH ندارد و همان
     // چکِ سلامتِ بالا ممکن است لینکِ گم‌شده/اشتباه را گزارش کند. یک لینکِ سالم دست‌نخورده می‌ماند؛
     // فقط یک symlinkِ خراب/اشتباه پیش از ساختِ دوباره پاک می‌شود تا storage:link با خطای

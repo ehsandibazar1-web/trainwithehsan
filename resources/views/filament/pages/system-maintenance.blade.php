@@ -14,6 +14,10 @@
                 Clear cache
             </x-filament::button>
 
+            <x-filament::button color="success" wire:click="optimizeCache" icon="heroicon-o-bolt">
+                Rebuild speed cache
+            </x-filament::button>
+
             <x-filament::button color="gray" wire:click="publishStaticAssets" icon="heroicon-o-paper-airplane">
                 Publish design files
             </x-filament::button>
