@@ -33,7 +33,7 @@
   "name": @json($page->title),
   "url": @json(url('/tr/' . $page->slug)),
   "dateModified": @json(optional($page->updated_at)->toIso8601String()),
-  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title), "license": @json(url('/tr/terms-and-conditions')), "acquireLicensePage": @json(url('/tr/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
+  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/tr/terms-and-conditions')), "acquireLicensePage": @json(url('/tr/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
   "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"}
 }
 </script>
