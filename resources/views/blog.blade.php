@@ -13,11 +13,11 @@
 {
   "@@context": "https://schema.org",
   "@@type": "CollectionPage",
-  "@@id": "https://trainwithehsan.com/blog#webpage",
+  "@@id": @json(url('/blog').'#webpage'),
   "name": "Blog",
-  "url": "https://trainwithehsan.com/blog",
+  "url": @json(url('/blog')),
   "description": "Practical articles on self-defense, Brazilian Jiu-Jitsu, and martial arts training by Ehsan Dibazar — for complete beginners, women and men.",
-  "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"},
+  "isPartOf": @include('partials.organization-schema'),
   "mainEntity": {
     "@@type": "ItemList",
     "itemListElement": [

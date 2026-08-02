@@ -8,29 +8,36 @@
 @php($v = fn($k, $d = '') => (($about[$k] ?? null) !== null && ($about[$k] ?? '') !== '') ? $about[$k] : $d)
 {{-- URLِ بهینه‌ی تصویر: WebPِ مشتقِ کتابخانه‌ی رسانه اگر موجود باشد، وگرنه فایلِ اصلی (Section 21) --}}
 @php($optImg = fn($path) => \App\Models\Media::optimizedUrl($path))
+{{-- سالِ تجربه از ۲۰۱۳ محاسبه می‌شود — همان عددی که در نسخه‌ی انگلیسی هم استفاده می‌شود --}}
+@php($yearsExperience = now()->year - 2013)
+{{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد --}}
+@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıllık eğitim deneyimi ve Bangkok'tan uluslararası bir Muay Thai sertifikasına sahip, İstanbul merkezli dövüş sanatları ve kendini savunma eğitmeni.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
-@section('meta_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi.'))
+@section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
 @section('canonical', url('/tr/about'))
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
-@section('og_description', $v('seo_description', 'Ehsan Dibazar — 12 yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok\'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi.'))
+@section('og_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 @section('og_image_width', (string) $v('seo_og_image_width', ''))
 @section('og_image_height', (string) $v('seo_og_image_height', ''))
 @section('og_image_type', $v('seo_og_image_mime', ''))
 
+{{-- sameAs از Footer Settings → Social media links؛ همان قراردادِ CLAUDE.md، عیناً مثل نسخه‌ی
+     انگلیسی — عمداً فقط فرمِ تک‌خطیِ دایرکتیوِ php، نه فرمِ بلوکی --}}
+@php($__personSameAs = \App\Models\SiteSetting::socialLinks())
 @section('json-ld')
 <script type="application/ld+json">
 {
   "@@context": "https://schema.org",
   "@@type": "Person",
-  "@@id": "https://trainwithehsan.com/tr/about#person",
+  "@@id": @json(url('/').'/#person'),
   "name": "Ehsan Dibazar",
-  "url": "https://trainwithehsan.com/tr/about",
+  "url": @json(url('/tr/about')),
   "jobTitle": "Martial Arts & Self-Defense Instructor",
-  "description": "Ehsan Dibazar, dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisans derecesine sahip, 12 yıllık eğitim deneyimiyle.",
+  "description": @json($personDescription),
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
-  "knowsAbout": ["Muay Thai", "Kendini Savunma", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri"],
+  "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri", "Martial Intelligence"],
   @if($v('hero_image') && $v('hero_image_width') && $v('hero_image_height'))
   "image": {
     "@@type": "ImageObject",
@@ -39,18 +46,14 @@
     "width": {{ (int) $v('hero_image_width') }},
     "height": {{ (int) $v('hero_image_height') }},
     "caption": @json($v('hero_name', 'Ehsan Dibazar')),
-    "creator": {"@@id": "https://trainwithehsan.com/tr/about#person"},
+    "creator": {"@@id": @json(url('/').'/#person')},
     "license": @json(url('/tr/terms-and-conditions')),
     "acquireLicensePage": @json(url('/tr/contact')),
     "copyrightNotice": "\u00a9 Ehsan Dibazar",
     "creditText": "Ehsan Dibazar"
   },
   @endif
-  "sameAs": [
-    "https://www.instagram.com/ehsandibazarcoaching/",
-    "https://telegram.me/ehsandibazar",
-    "https://youtube.com/channel/UCDT9EOHriR9sHvq0PBdmlog"
-  ]
+  "sameAs": @json($__personSameAs)
 }
 </script>
 <script type="application/ld+json">

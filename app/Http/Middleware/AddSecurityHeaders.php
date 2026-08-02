@@ -39,6 +39,12 @@ class AddSecurityHeaders
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Content-Security-Policy-Report-Only', self::CSP_REPORT_ONLY);
 
+        // پنل ادمین پشتِ ورود است، پس محتوایی برای ایندکس‌شدن ندارد — یک لایه‌ی دفاعِ عمقیِ
+        // مکمل (در کنارِ robots.txt) برای زمانی که یک کراولر مسیر را از جای دیگری کشف کند
+        if ($request->is('admin') || $request->is('admin/*')) {
+            $response->headers->set('X-Robots-Tag', 'noindex, nofollow');
+        }
+
         return $response;
     }
 }

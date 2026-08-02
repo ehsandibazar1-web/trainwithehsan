@@ -25,6 +25,7 @@
 <link rel="alternate" hreflang="x-default" href="{{ url($translation ? $translation->path() : $article->path()) }}">
 @endsection
 
+@php($__isEhsanAuthor = trim((string) $article->author_name) === 'Ehsan Dibazar')
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -33,9 +34,11 @@
   "headline": @json($article->title),
   "url": @json(url('/tr/blog/' . $article->slug)),
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
+  "dateModified": @json(optional($article->updated_at)->toIso8601String()),
+  "mainEntityOfPage": {"@@type": "WebPage", "@@id": @json(url('/tr/blog/' . $article->slug))},
   @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/tr/terms-and-conditions')), "acquireLicensePage": @json(url('/tr/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
-  "author": {"@@type": "Person", "name": @json($article->author_name)},
-  "publisher": {"@@id": "https://trainwithehsan.com/#organization"}
+  "author": {"@@type": "Person", @if($__isEhsanAuthor)"@@id": @json(url('/').'/#person'), @endif"name": @json($article->author_name)},
+  "publisher": @include('partials.organization-schema')
 }
 </script>
 @if($faqs->isNotEmpty())

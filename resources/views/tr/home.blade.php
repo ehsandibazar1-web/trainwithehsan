@@ -1,10 +1,16 @@
 @extends('layouts.master-tr')
 
+{{-- سالِ تجربه از ۲۰۱۳ محاسبه می‌شود — همان عددی که در نسخه‌ی انگلیسی هم استفاده می‌شود --}}
+@php($yearsExperience = now()->year - 2013)
+{{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد، پس یک
+     رشته‌ی حرفیِ داخلِ آن که خودش کاما دارد از وسط قطع می‌شود --}}
+@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıllık eğitim deneyimi ve Bangkok'tan uluslararası bir Muay Thai sertifikasına sahip, İstanbul merkezli dövüş sanatları ve kendini savunma eğitmeni.")
+
 @section('title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
-@section('meta_description', 'Ehsan Dibazar ile İstanbul\'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, 15+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.')
+@section('meta_description', "Ehsan Dibazar ile İstanbul'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, {$yearsExperience}+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.")
 @section('canonical', url('/tr'))
 @section('og_title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
-@section('og_description', 'Ehsan Dibazar ile İstanbul\'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, 15+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.')
+@section('og_description', "Ehsan Dibazar ile İstanbul'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, {$yearsExperience}+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.")
 
 {{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — preload + fetchpriority=high برای دانلودِ فوری --}}
 @if(!empty($s['hero1_image']))
@@ -19,22 +25,15 @@
 {
   "@@context": "https://schema.org",
   "@@graph": [
-    {
-      "@@type": "Organization",
-      "@@id": "https://trainwithehsan.com/#organization",
-      "name": "Train with Ehsan",
-      "url": "https://trainwithehsan.com/tr",
-      "founder": { "@@id": "https://trainwithehsan.com/#person" },
-      "areaServed": "Istanbul, Türkiye"
-    },
+    @include('partials.organization-schema'),
     {
       "@@type": "Person",
-      "@@id": "https://trainwithehsan.com/#person",
+      "@@id": @json(url('/').'/#person'),
       "name": "Ehsan Dibazar",
-      "jobTitle": "Self-Defense & Brazilian Jiu-Jitsu Instructor",
-      "description": "Martial arts instructor with an MSc in Sport Science and 15+ years of teaching experience, based in Istanbul.",
-      "knowsAbout": ["Self-defense", "Brazilian Jiu-Jitsu", "Martial Intelligence"],
-      "url": "https://trainwithehsan.com/tr/about"
+      "jobTitle": "Martial Arts & Self-Defense Instructor",
+      "description": @json($personDescription),
+      "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri", "Martial Intelligence"],
+      "url": @json(url('/tr/about'))
     }
   ]
 }

@@ -9,7 +9,7 @@
                         <p style="margin:0 0 4px"><strong>From:</strong> {{ $name }} ({{ $senderEmail }})</p>
                         <p style="margin:0 0 22px"><strong>Language:</strong> {{ strtoupper($locale) }}</p>
                         <p style="margin:0 0 22px;white-space:pre-line;border-top:1px solid #eee;padding-top:16px">{{ $messageBody }}</p>
-                        <p style="margin:0;font-size:12px;color:#777">Sent from the Contact page on trainwithehsan.com. Reply directly to this email to respond to {{ $name }}.</p>
+                        <p style="margin:0;font-size:12px;color:#777">Sent from the Contact page on {{ parse_url(config('app.url'), PHP_URL_HOST) }}. Reply directly to this email to respond to {{ $name }}.</p>
                     </td></tr>
                 </table>
             </td>

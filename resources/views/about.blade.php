@@ -8,29 +8,39 @@
 @php($v = fn($k, $d = '') => (($about[$k] ?? null) !== null && ($about[$k] ?? '') !== '') ? $about[$k] : $d)
 {{-- URLِ بهینه‌ی تصویر: WebPِ مشتقِ کتابخانه‌ی رسانه اگر موجود باشد، وگرنه فایلِ اصلی (Section 21) --}}
 @php($optImg = fn($path) => \App\Models\Media::optimizedUrl($path))
+{{-- سالِ تجربه از ۲۰۱۳ محاسبه می‌شود — همان عددی که در صفحه‌ی اصلی هم استفاده می‌شود، تا
+     تناقضِ «۱۵+ سال» در برابر «۱۲ سال» هرگز دوباره رخ ندهد --}}
+@php($yearsExperience = now()->year - 2013)
+{{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد، پس یک
+     رشته‌ی حرفیِ داخلِ آن که خودش کاما دارد از وسط قطع می‌شود --}}
+@php($personDescription = "Martial arts and self-defense instructor with an MSc in Sport Science, {$yearsExperience}+ years of teaching experience since 2013, and an international Muay Thai certificate from Bangkok, based in Istanbul.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
-@section('meta_description', $v('seo_description', 'Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with 12+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology.'))
+@section('meta_description', $v('seo_description', "Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with {$yearsExperience}+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
 @section('canonical', url('/about'))
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
-@section('og_description', $v('seo_description', 'Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with 12+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology.'))
+@section('og_description', $v('seo_description', "Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with {$yearsExperience}+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 @section('og_image_width', (string) $v('seo_og_image_width', ''))
 @section('og_image_height', (string) $v('seo_og_image_height', ''))
 @section('og_image_type', $v('seo_og_image_mime', ''))
 
+{{-- sameAs از Footer Settings → Social media links (منبعِ واحد و ادمین-ویرایش‌پذیر)؛ تا وقتی
+     خالی است همان سه‌لینکِ فعلی fallback است — همان قراردادِ CLAUDE.md. عمداً فقط فرمِ تک‌خطیِ
+     دایرکتیوِ php (نه فرمِ بلوکی) — نگاه کنید به partials/organization-schema.blade.php --}}
+@php($__personSameAs = \App\Models\SiteSetting::socialLinks())
 @section('json-ld')
 <script type="application/ld+json">
 {
   "@@context": "https://schema.org",
   "@@type": "Person",
-  "@@id": "https://trainwithehsan.com/about#person",
+  "@@id": @json(url('/').'/#person'),
   "name": "Ehsan Dibazar",
-  "url": "https://trainwithehsan.com/about",
+  "url": @json(url('/about')),
   "jobTitle": "Martial Arts & Self-Defense Instructor",
-  "description": "Ehsan Dibazar, martial arts and self-defense instructor with an MSc in Sport Science and 12 years of teaching experience.",
+  "description": @json($personDescription),
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
-  "knowsAbout": ["Muay Thai", "Self-Defense", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science"],
+  "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
   @if($v('hero_image') && $v('hero_image_width') && $v('hero_image_height'))
   "image": {
     "@@type": "ImageObject",
@@ -39,18 +49,14 @@
     "width": {{ (int) $v('hero_image_width') }},
     "height": {{ (int) $v('hero_image_height') }},
     "caption": @json($v('hero_name', 'Ehsan Dibazar')),
-    "creator": {"@@id": "https://trainwithehsan.com/about#person"},
+    "creator": {"@@id": @json(url('/').'/#person')},
     "license": @json(url('/terms-and-conditions')),
     "acquireLicensePage": @json(url('/contact')),
     "copyrightNotice": "\u00a9 Ehsan Dibazar",
     "creditText": "Ehsan Dibazar"
   },
   @endif
-  "sameAs": [
-    "https://www.instagram.com/ehsandibazarcoaching/",
-    "https://telegram.me/ehsandibazar",
-    "https://youtube.com/channel/UCDT9EOHriR9sHvq0PBdmlog"
-  ]
+  "sameAs": @json($__personSameAs)
 }
 </script>
 <script type="application/ld+json">

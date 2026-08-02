@@ -42,4 +42,23 @@ class SiteSetting extends Model
     {
         self::updateOrCreate(['key' => $key], ['value' => $value, 'group' => $group]);
     }
+
+    // لیستِ URLهای شبکه‌ی اجتماعی — منبعِ واحد برای sameAsِ Organization/Person JSON-LD.
+    // از Footer Settings → Social media links می‌خواند؛ تا وقتی خالی است همان سه‌لینکِ فعلی
+    // (پیش از این‌که Organization/Person JSON-LD به این منبعِ ادمین-ویرایش‌پذیر وصل شود) را
+    // به‌عنوانِ fallback برمی‌گرداند — همان قراردادِ «fallback در Blade تا وقتی ادمین ویرایش کند».
+    public static function socialLinks(): array
+    {
+        $links = collect(self::getJson('footer.en.socials'))->pluck('url')->filter()->values();
+
+        if ($links->isEmpty()) {
+            $links = collect([
+                'https://www.instagram.com/ehsandibazarcoaching/',
+                'https://telegram.me/ehsandibazar',
+                'https://youtube.com/channel/UCDT9EOHriR9sHvq0PBdmlog',
+            ]);
+        }
+
+        return $links->all();
+    }
 }

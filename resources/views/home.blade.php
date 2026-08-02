@@ -1,10 +1,19 @@
 @extends('layouts.master')
 
+{{-- سالِ تجربه از ۲۰۱۳ محاسبه می‌شود (نه هاردکد) — همان عددی که در سراسرِ سایت (Home/About،
+     EN/TR، متنِ قابل‌مشاهده و JSON-LD) باید یکسان باشد؛ دیگر هر سال دستی به‌روزرسانی نمی‌خواهد --}}
+@php($yearsExperience = now()->year - 2013)
+{{-- توجه: این متن باید در یک متغیر جدا محاسبه شود، نه مستقیم داخلِ فراخوانیِ دایرکتیوِ json —
+     آن دایرکتیو آرگومانِ خودش را با انفجار روی هر کاما جدا می‌کند (برای گزینه‌های اختیاریِ
+     encoding)، پس یک رشته‌ی حرفی که خودش کاما دارد (اینجا: «Bangkok, based in Istanbul») از وسط
+     قطع می‌شود — یک باگِ واقعی که در توسعه‌ی همین تغییر کشف شد --}}
+@php($personDescription = "Martial arts and self-defense instructor with an MSc in Sport Science, {$yearsExperience}+ years of teaching experience since 2013, and an international Muay Thai certificate from Bangkok, based in Istanbul.")
+
 @section('title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
-@section('meta_description', 'Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, 15+ years of experience. Courses for complete beginners, women and men, in person or through the training app.')
+@section('meta_description', "Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, {$yearsExperience}+ years of experience. Courses for complete beginners, women and men, in person or through the training app.")
 @section('canonical', url('/'))
 @section('og_title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
-@section('og_description', 'Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, 15+ years of experience. Courses for complete beginners, women and men, in person or through the training app.')
+@section('og_description', "Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, {$yearsExperience}+ years of experience. Courses for complete beginners, women and men, in person or through the training app.")
 
 {{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — با preload + fetchpriority=high مرورگر فوراً دانلودش
      می‌کند (به‌جای کشفِ دیرهنگام از داخلِ CSS). فقط وقتی واقعاً عکسی تنظیم شده باشد --}}
@@ -20,22 +29,15 @@
 {
   "@@context": "https://schema.org",
   "@@graph": [
-    {
-      "@@type": "Organization",
-      "@@id": "https://trainwithehsan.com/#organization",
-      "name": "Train with Ehsan",
-      "url": "https://trainwithehsan.com",
-      "founder": { "@@id": "https://trainwithehsan.com/#person" },
-      "areaServed": "Istanbul, Türkiye"
-    },
+    @include('partials.organization-schema'),
     {
       "@@type": "Person",
-      "@@id": "https://trainwithehsan.com/#person",
+      "@@id": @json(url('/').'/#person'),
       "name": "Ehsan Dibazar",
-      "jobTitle": "Self-Defense & Brazilian Jiu-Jitsu Instructor",
-      "description": "Martial arts instructor with an MSc in Sport Science and 15+ years of teaching experience, based in Istanbul.",
-      "knowsAbout": ["Self-defense", "Brazilian Jiu-Jitsu", "Martial Intelligence"],
-      "url": "https://trainwithehsan.com/about"
+      "jobTitle": "Martial Arts & Self-Defense Instructor",
+      "description": @json($personDescription),
+      "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
+      "url": @json(url('/about'))
     }
   ]
 }

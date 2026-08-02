@@ -25,6 +25,9 @@
 <link rel="alternate" hreflang="x-default" href="{{ url($article->path()) }}">
 @endsection
 
+{{-- \u0641\u0642\u0637 \u0648\u0642\u062a\u06cc \u0646\u0648\u06cc\u0633\u0646\u062f\u0647 \u0648\u0627\u0642\u0639\u0627\u064b \u0627\u062d\u0633\u0627\u0646 \u0627\u0633\u062a \u0628\u0647 \u0647\u0648\u06cc\u062a\u0650 \u0648\u0627\u062d\u062f\u0650 Person \u0648\u0635\u0644 \u0645\u06cc\u200c\u0634\u0648\u062f \u2014 \u06cc\u06a9 \u0645\u0642\u0627\u0644\u0647 \u0628\u0627
+     author_name \u0633\u0641\u0627\u0631\u0634\u06cc (\u0645\u062b\u0644\u0627\u064b \u0646\u0648\u06cc\u0633\u0646\u062f\u0647\u200c\u06cc \u0645\u0647\u0645\u0627\u0646) \u0646\u0628\u0627\u06cc\u062f \u0628\u0647\u200c\u0627\u0634\u062a\u0628\u0627\u0647 \u0628\u0647 \u0647\u0645\u0627\u0646 @id \u0627\u062f\u0639\u0627 \u06a9\u0646\u062f --}}
+@php($__isEhsanAuthor = trim((string) $article->author_name) === 'Ehsan Dibazar')
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -33,9 +36,11 @@
   "headline": @json($article->title),
   "url": @json(url('/blog/' . $article->slug)),
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
+  "dateModified": @json(optional($article->updated_at)->toIso8601String()),
+  "mainEntityOfPage": {"@@type": "WebPage", "@@id": @json(url('/blog/' . $article->slug))},
   @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
-  "author": {"@@type": "Person", "name": @json($article->author_name)},
-  "publisher": {"@@id": "https://trainwithehsan.com/#organization"}
+  "author": {"@@type": "Person", @if($__isEhsanAuthor)"@@id": @json(url('/').'/#person'), @endif"name": @json($article->author_name)},
+  "publisher": @include('partials.organization-schema')
 }
 </script>
 @if($faqs->isNotEmpty())

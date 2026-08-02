@@ -35,7 +35,7 @@
   "url": @json(url('/' . $page->slug)),
   "dateModified": @json(optional($page->updated_at)->toIso8601String()),
   @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
-  "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"}
+  "isPartOf": @include('partials.organization-schema')
 }
 </script>
 @if($faqs->isNotEmpty())

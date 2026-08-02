@@ -12,11 +12,11 @@
 {
   "@@context": "https://schema.org",
   "@@type": "CollectionPage",
-  "@@id": "https://trainwithehsan.com/tr/blog#webpage",
+  "@@id": @json(url('/tr/blog').'#webpage'),
   "name": "Blog",
-  "url": "https://trainwithehsan.com/tr/blog",
+  "url": @json(url('/tr/blog')),
   "description": "Ehsan Dibazar'dan kendini savunma, Brezilya Jiu-Jitsu ve dövüş sanatları eğitimi üzerine pratik makaleler.",
-  "isPartOf": {"@@id": "https://trainwithehsan.com/#organization"},
+  "isPartOf": @include('partials.organization-schema'),
   "mainEntity": {
     "@@type": "ItemList",
     "itemListElement": [
