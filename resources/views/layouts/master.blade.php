@@ -102,6 +102,18 @@
     @endif
     <meta name="theme-color" content="#d9bb75">
 
+    {{-- preconnect برای Ahrefs (همیشه، بدون شرطِ رضایت، لود می‌شود — همان الگوی preconnect که
+         این پروژه قبلاً برای Google Fonts داشت، حالا برای سه‌مبدأِ واقعی که هنوز warm-up ندارند).
+         Instagram فقط dns-prefetch (سبک‌تر) چون فقط با اسکرول به بخشِ نمایشِ اینستاگرام لود می‌شود.
+         GTM/Clarity عمداً فقط وقتی واقعاً پیکربندی شده باشند اضافه می‌شوند — نه بدونِ شرط — تا
+         تضمینِ «هیچ ارجاعی به این دامنه‌ها وقتی هر دو env خالی‌اند» (AnalyticsTrackingTest) دست‌نخورده بماند --}}
+    <link rel="preconnect" href="https://analytics.ahrefs.com">
+    <link rel="dns-prefetch" href="https://www.instagram.com">
+    @if(config('services.google_tag_manager.id') || config('services.microsoft_clarity.id'))
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://www.clarity.ms">
+    @endif
+
     <script src="https://analytics.ahrefs.com/analytics.js" data-key="eou7/AHP2woEpfdpW9t1cQ" async></script>
 
     {{-- Manrope: فقط وزن‌های واقعاً استفاده‌شده در سیستم تایپوگرافی (۴۰۰/۵۰۰/۶۰۰/۷۰۰/۸۰۰) —

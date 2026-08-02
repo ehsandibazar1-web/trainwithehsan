@@ -98,6 +98,13 @@
     @endif
     <meta name="theme-color" content="#d9bb75">
 
+    <link rel="preconnect" href="https://analytics.ahrefs.com">
+    <link rel="dns-prefetch" href="https://www.instagram.com">
+    @if(config('services.google_tag_manager.id') || config('services.microsoft_clarity.id'))
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://www.clarity.ms">
+    @endif
+
     <script src="https://analytics.ahrefs.com/analytics.js" data-key="eou7/AHP2woEpfdpW9t1cQ" async></script>
 
     {{-- Manrope حالا self-hosted (public/fonts، فونتِ متغیرِ وزن ۴۰۰ تا ۸۰۰) — بدونِ درخواست به

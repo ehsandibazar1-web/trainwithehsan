@@ -7,6 +7,10 @@
 @section('canonical', $articles->currentPage() > 1 ? $articles->url($articles->currentPage()) : url('/blog'))
 @section('og_title', 'Blog — Self-Defense & Martial Arts Articles | Ehsan Dibazar')
 @section('og_description', 'Practical articles on self-defense, Brazilian Jiu-Jitsu, and martial arts training by Ehsan Dibazar — for complete beginners, women and men.')
+{{-- og:image یک عکسِ واقعیِ محتوا (اولین مقاله‌ی همین صفحه) به‌جای همیشه بازگشتن به لوگوی عمومیِ
+     برند — همان فایلِ اصلی، نه WebP (استثنایِ همیشگیِ og:image برای پارسرهای پیش‌نمایشِ اجتماعی) --}}
+@php($__firstArticle = $articles->first())
+@section('og_image', $__firstArticle?->image_path ? asset('storage/' . $__firstArticle->image_path) : '')
 
 @section('json-ld')
 <script type="application/ld+json">

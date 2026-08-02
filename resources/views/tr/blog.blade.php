@@ -6,6 +6,8 @@
 @section('canonical', $articles->currentPage() > 1 ? $articles->url($articles->currentPage()) : url('/tr/blog'))
 @section('og_title', 'Blog — Kendini Savunma ve Dövüş Sanatları Makaleleri | Ehsan Dibazar')
 @section('og_description', 'Ehsan Dibazar\'dan kendini savunma, Brezilya Jiu-Jitsu ve dövüş sanatları eğitimi üzerine pratik makaleler.')
+@php($__firstArticle = $articles->first())
+@section('og_image', $__firstArticle?->image_path ? asset('storage/' . $__firstArticle->image_path) : '')
 
 @section('json-ld')
 <script type="application/ld+json">
