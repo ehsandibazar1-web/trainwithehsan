@@ -33,6 +33,16 @@
   }
 }
 </script>
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@@type": "ListItem", "position": 1, "name": "Home", "item": @json(url('/'))},
+    {"@@type": "ListItem", "position": 2, "name": "Blog", "item": @json(url('/blog'))}
+  ]
+}
+</script>
 @endsection
 
 @section('page-css')

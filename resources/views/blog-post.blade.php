@@ -28,6 +28,9 @@
 {{-- \u0641\u0642\u0637 \u0648\u0642\u062a\u06cc \u0646\u0648\u06cc\u0633\u0646\u062f\u0647 \u0648\u0627\u0642\u0639\u0627\u064b \u0627\u062d\u0633\u0627\u0646 \u0627\u0633\u062a \u0628\u0647 \u0647\u0648\u06cc\u062a\u0650 \u0648\u0627\u062d\u062f\u0650 Person \u0648\u0635\u0644 \u0645\u06cc\u200c\u0634\u0648\u062f \u2014 \u06cc\u06a9 \u0645\u0642\u0627\u0644\u0647 \u0628\u0627
      author_name \u0633\u0641\u0627\u0631\u0634\u06cc (\u0645\u062b\u0644\u0627\u064b \u0646\u0648\u06cc\u0633\u0646\u062f\u0647\u200c\u06cc \u0645\u0647\u0645\u0627\u0646) \u0646\u0628\u0627\u06cc\u062f \u0628\u0647\u200c\u0627\u0634\u062a\u0628\u0627\u0647 \u0628\u0647 \u0647\u0645\u0627\u0646 @id \u0627\u062f\u0639\u0627 \u06a9\u0646\u062f --}}
 @php($__isEhsanAuthor = trim((string) $article->author_name) === 'Ehsan Dibazar')
+{{-- \u0627\u0628\u0639\u0627\u062f\u0650 \u0639\u06a9\u0633\u0650 \u0634\u0627\u062e\u0635 \u2014 \u0627\u0632 \u0647\u0645\u0627\u0646 \u0631\u062f\u06cc\u0641\u0650 Media \u06a9\u0647 optimized_image_url \u0647\u0645 \u0627\u0632 \u0622\u0646 \u0645\u06cc\u200c\u0622\u06cc\u062f\u060c \u0628\u0631\u0627\u06cc
+     ImageObject.width/height (\u0646\u0647 \u0641\u0642\u0637 about.blade.php \u06a9\u0647 \u0627\u06cc\u0646 \u0631\u0627 \u0627\u0632 \u0642\u0628\u0644 \u062f\u0627\u0634\u062a) --}}
+@php($__heroMedia = \App\Models\Media::forRecord($article))
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -38,9 +41,20 @@
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
   "dateModified": @json(optional($article->updated_at)->toIso8601String()),
   "mainEntityOfPage": {"@@type": "WebPage", "@@id": @json(url('/blog/' . $article->slug))},
-  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
+  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), @if($__heroMedia?->width && $__heroMedia?->height)"width": {{ (int) $__heroMedia->width }}, "height": {{ (int) $__heroMedia->height }}, @endif "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
   "author": {"@@type": "Person", @if($__isEhsanAuthor)"@@id": @json(url('/').'/#person'), @endif"name": @json($article->author_name)},
   "publisher": @include('partials.organization-schema')
+}
+</script>
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@@type": "ListItem", "position": 1, "name": "Home", "item": @json(url('/'))},
+    {"@@type": "ListItem", "position": 2, "name": "Blog", "item": @json(url('/blog'))},
+    {"@@type": "ListItem", "position": 3, "name": @json($article->title), "item": @json(url('/blog/' . $article->slug))}
+  ]
 }
 </script>
 @if($faqs->isNotEmpty())
@@ -91,6 +105,9 @@
     .lang-switch{margin-left:auto}
     .lang-switch a{color:var(--gold-dark,#c09d4c);font-weight:600}
 
+    {{-- خلاصه‌ی قابل‌مشاهده — یک پاراگرافِ متمایز (نه فقط یک <p> عادی) تا هم بصری هم برای
+         استخراجِ پاسخِ AI به‌عنوانِ «خلاصه‌ی این صفحه» برجسته باشد --}}
+    .article-lede{font-size:17px;font-weight:600;line-height:1.7;color:#333;margin:0 0 1.3rem;padding-left:16px;border-left:3px solid var(--gold)}
     {{-- justify فقط روی ستونِ پهنِ دسکتاپ — روی خطوطِ کوتاهِ موبایل حفره‌های بزرگ بین کلمات می‌سازد --}}
     .article-body p{font-size:16px;font-weight:400;line-height:2;color:#555;margin-bottom:1.1rem}
     @@media (min-width:768px){.article-body p{text-align:justify}}
@@ -180,11 +197,19 @@
                     @endif
                 </div>
 
+                @if($article->excerpt)
+                {{-- خلاصه‌ی قابل‌مشاهده — دقیقاً همان excerptی که تا امروز فقط در meta/RSS استفاده
+                     می‌شد، الان به‌عنوان یک بلوکِ نقل‌قول‌پذیرِ اول‌صفحه هم نمایش داده می‌شود (نه
+                     فقط داده‌ی نامرئی) — دقیقاً همان چیزی که این پروژه از excerpt خواسته بود --}}
+                <p class="article-lede">{{ $article->excerpt }}</p>
+                @endif
+
                 <div class="article-body" id="article-content">
                     {{-- محتوا در ورودیِ AI Import هم پاک‌سازی می‌شود؛ این‌جا فقط یک لایه‌ی دفاعیِ
-                         اضافه است (برای محتوای قدیمی یا ویرایش دستی). lazyLoadImages بیرونی است تا
-                         بعد از sanitize/embed روی خروجی نهایی اجرا شود (loading/decoding به <img>ها) --}}
-                    {!! \App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body))) !!}
+                         اضافه است (برای محتوای قدیمی یا ویرایش دستی). lazyLoadImages/withHeadingIds
+                         بیرونی‌اند تا بعد از sanitize/embed روی خروجی نهایی اجرا شوند
+                         (loading/decoding به <img>ها، id به تیترها برای دیپ‌لینک/citation) --}}
+                    {!! \App\Support\Html::withHeadingIds(\App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body)))) !!}
                 </div>
 
                 @if($faqs->isNotEmpty())

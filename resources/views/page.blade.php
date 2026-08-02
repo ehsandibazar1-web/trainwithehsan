@@ -26,6 +26,7 @@
 <link rel="alternate" hreflang="x-default" href="{{ url($page->path()) }}">
 @endsection
 
+@php($__heroMedia = \App\Models\Media::forRecord($page))
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -34,8 +35,18 @@
   "name": @json($page->title),
   "url": @json(url('/' . $page->slug)),
   "dateModified": @json(optional($page->updated_at)->toIso8601String()),
-  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
+  @if($page->image_path)"image": {"@@type": "ImageObject", "url": @json($page->optimized_image_url ?? asset('storage/' . $page->image_path)), "caption": @json($page->image_alt ?: $page->title), @if($__heroMedia?->width && $__heroMedia?->height)"width": {{ (int) $__heroMedia->width }}, "height": {{ (int) $__heroMedia->height }}, @endif "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/terms-and-conditions')), "acquireLicensePage": @json(url('/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
   "isPartOf": @include('partials.organization-schema')
+}
+</script>
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@@type": "ListItem", "position": 1, "name": "Home", "item": @json(url('/'))},
+    {"@@type": "ListItem", "position": 2, "name": @json($page->title), "item": @json(url('/' . $page->slug))}
+  ]
 }
 </script>
 @if($faqs->isNotEmpty())
@@ -160,7 +171,7 @@
             @endif
 
             <div class="page-body reveal">
-                {!! \App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($page->body))) !!}
+                {!! \App\Support\Html::withHeadingIds(\App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($page->body)))) !!}
             </div>
 
             @if($page->slug === 'contact')

@@ -26,6 +26,23 @@
 {{-- sameAs از Footer Settings → Social media links؛ همان قراردادِ CLAUDE.md، عیناً مثل نسخه‌ی
      انگلیسی — عمداً فقط فرمِ تک‌خطیِ دایرکتیوِ php، نه فرمِ بلوکی --}}
 @php($__personSameAs = \App\Models\SiteSetting::socialLinks())
+{{-- $certList زودتر محاسبه می‌شود — هم برای hasCredential هم برای رندرِ واقعیِ گالری، یک محاسبه --}}
+@php($certList = !empty($certificates) ? $certificates : [
+    ['title' => 'Brezilya Jiu-Jitsu kendini savunma sertifikası, ABD'],
+    ['title' => 'Muay Thai teknik sertifikası, Tayland Milli Eğitim Bakanlığı'],
+    ['title' => 'Koruma diploması, Türk Askeri Akademisi'],
+    ['title' => 'Temel Koruma Diploması'],
+    ['title' => "Türkiye'de koruma sertifikasını aldıktan sonra"],
+    ['title' => 'Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland'],
+    ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya"],
+    ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya"],
+    ['title' => 'Muay Thai teknik sınav belgesi, Bangkok Muay Thai Üniversitesi'],
+    ['title' => 'Muay Thai eğitim sertifikası, İstanbul'],
+    ['title' => "Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması"],
+    ['title' => 'Muay Boran online seminerine katılım, ABD'],
+])
+@php($__credentialNames = collect($certList)->pluck('title')->filter()->values())
+@php($__credentialSchema = $__credentialNames->map(fn ($name) => ['@type' => 'EducationalOccupationalCredential', 'name' => $name]))
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -54,6 +71,9 @@
   },
   @endif
   "sameAs": @json($__personSameAs)
+  @if($__credentialNames->isNotEmpty())
+  ,"hasCredential": @json($__credentialSchema)
+  @endif
 }
 </script>
 <script type="application/ld+json">
@@ -167,7 +187,7 @@ body{background:var(--dark)!important}
         </div>
         @endif
         @php($statsList = !empty($stats) ? $stats : [
-            ['value' => '12+', 'label' => 'Yıllık eğitim deneyimi'],
+            ['value' => "{$yearsExperience}+", 'label' => 'Yıllık eğitim deneyimi'],
             ['value' => 'Binlerce', 'label' => 'yüz yüze ve online öğrenci'],
             ['value' => 'Çeşitli', 'label' => 'uluslararası sertifikalar'],
         ])
@@ -182,20 +202,7 @@ body{background:var(--dark)!important}
     <section class="gallery" aria-label="{{ $v('certs_heading', 'Sertifikalar ve Başarılar') }}">
         <div class="container">
             <h2>{{ $v('certs_heading', 'Sertifikalar ve Başarılar') }}</h2>
-            @php($certList = !empty($certificates) ? $certificates : [
-                ['title' => 'Brezilya Jiu-Jitsu kendini savunma sertifikası, ABD'],
-                ['title' => 'Muay Thai teknik sertifikası, Tayland Milli Eğitim Bakanlığı'],
-                ['title' => 'Koruma diploması, Türk Askeri Akademisi'],
-                ['title' => 'Temel Koruma Diploması'],
-                ['title' => "Türkiye'de koruma sertifikasını aldıktan sonra"],
-                ['title' => 'Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland'],
-                ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya"],
-                ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya"],
-                ['title' => 'Muay Thai teknik sınav belgesi, Bangkok Muay Thai Üniversitesi'],
-                ['title' => 'Muay Thai eğitim sertifikası, İstanbul'],
-                ['title' => "Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması"],
-                ['title' => 'Muay Boran online seminerine katılım, ABD'],
-            ])
+            {{-- $certList همین بالای فایل (پیش از json-ld) محاسبه شده --}}
             <div class="masonry reveal-group" id="masonry">
                 @foreach($certList as $cert)
                 @php($capText = implode(' — ', array_filter([$cert['title'] ?? null, $cert['subtitle'] ?? null, $cert['description'] ?? null])))

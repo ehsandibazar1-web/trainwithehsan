@@ -59,11 +59,21 @@ class LinkGraphService
 
         $edges = collect();
 
-        foreach ($items as $item) {
-            $sourceKey = $this->nodeKey($item['model'], $item['id']);
+        // allLinkSources() — همان‌طور که docblockِ بالای این کلاس ادعا می‌کرد ولی تا این تصحیح واقعاً
+        // فراخوانی نمی‌شد — منویِ هدر و ستون‌های فوتر را هم به‌عنوانِ منبعِ لینک برمی‌گرداند، نه فقط
+        // بدنه‌ی مقاله/صفحه. این یک باگِ واقعیِ ناسازگاریِ داشبورد بود: صفحه‌ای که فقط از منو/فوتر
+        // لینک می‌گرفت این‌جا inbound=0 نشان می‌داد در حالی‌که SEO Center (که allLinkSources را
+        // درست فراخوانی می‌کند) به‌درستی آن را orphan نمی‌شمرد.
+        foreach ($this->seoAudit->allLinkSources($items) as $source) {
+            $meta = $source['meta'];
+            // فقط Article/Page یک گره‌ی واقعی در گراف دارند؛ منو/فوتر منبعِ لینک هستند اما خودشان
+            // محتوایی نیستند که outbound داشته باشد
+            $sourceKey = in_array($meta['type'], ['Article', 'Page'], true)
+                ? $this->nodeKey($meta['type'], $meta['id'])
+                : null;
             $seenTargets = []; // چند لینک به همون مقصد را یک‌بار بشمار (خروجی/ورودی یکتا)
 
-            foreach ($this->scanner->links($item['body']) as $link) {
+            foreach ($this->scanner->links($source['html']) as $link) {
                 if ($this->resolver->isSkippable($link['href']) || $this->resolver->isExternal($link['href'])) {
                     continue;
                 }
@@ -84,11 +94,13 @@ class LinkGraphService
                 }
                 $seenTargets[$targetKey] = true;
 
-                $nodes[$sourceKey]['outbound']++;
+                if ($sourceKey !== null) {
+                    $nodes[$sourceKey]['outbound']++;
+                }
                 $nodes[$targetKey]['inbound']++;
-                $nodes[$targetKey]['inbound_from'][] = $sourceKey;
+                $nodes[$targetKey]['inbound_from'][] = $sourceKey ?? strtolower($meta['type']);
 
-                $edges->push(['from' => $sourceKey, 'to' => $targetKey, 'anchor' => $link['text']]);
+                $edges->push(['from' => $sourceKey ?? strtolower($meta['type']), 'to' => $targetKey, 'anchor' => $link['text']]);
             }
         }
 

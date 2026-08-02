@@ -23,5 +23,15 @@
 <meta name="twitter:player" content="{{ $__sv['url'] }}">
 <meta name="twitter:player:width" content="1280">
 <meta name="twitter:player:height" content="720">
+@else
+{{-- ویدیوی اولیه خودمیزبان است — twitter:player اینجا معنا ندارد (X یک URLِ iframe لازم دارد،
+     نه mp4ِ خام)، اما این صفحه نباید بدونِ *هیچ* کارتِ توییتری بماند؛ چون og:video بالاتر رندر
+     شده، شرطِ «آیا social_video خالی بود؟» در master.blade.php دیگر true نمی‌شود و آن fallbackِ
+     پیش‌فرضِ summary_large_image هرگز اجرا نمی‌شود — همان باگِ واقعی که در ممیزی کشف شد. پس همان
+     fallbackِ پیش‌فرض را این‌جا عیناً تکرار می‌کنیم --}}
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{{ trim($__env->yieldContent('og_title')) ?: 'Ehsan Dibazar — Self-Defense & Martial Intelligence' }}">
+<meta name="twitter:description" content="{{ trim($__env->yieldContent('og_description')) ?: 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.' }}">
+<meta name="twitter:image" content="{{ trim($__env->yieldContent('og_image')) ?: asset('storage/homepage/logo.header.png') }}">
 @endif
 @endif

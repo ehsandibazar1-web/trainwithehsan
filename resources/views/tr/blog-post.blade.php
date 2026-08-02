@@ -26,6 +26,7 @@
 @endsection
 
 @php($__isEhsanAuthor = trim((string) $article->author_name) === 'Ehsan Dibazar')
+@php($__heroMedia = \App\Models\Media::forRecord($article))
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -36,9 +37,20 @@
   "datePublished": @json(optional($article->published_at)->toIso8601String()),
   "dateModified": @json(optional($article->updated_at)->toIso8601String()),
   "mainEntityOfPage": {"@@type": "WebPage", "@@id": @json(url('/tr/blog/' . $article->slug))},
-  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/tr/terms-and-conditions')), "acquireLicensePage": @json(url('/tr/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
+  @if($article->image_path)"image": {"@@type": "ImageObject", "url": @json($article->optimized_image_url ?? asset('storage/' . $article->image_path)), "caption": @json($article->image_alt ?: $article->title), @if($__heroMedia?->width && $__heroMedia?->height)"width": {{ (int) $__heroMedia->width }}, "height": {{ (int) $__heroMedia->height }}, @endif "creator": {"@@type": "Person", "name": "Ehsan Dibazar"}, "license": @json(url('/tr/terms-and-conditions')), "acquireLicensePage": @json(url('/tr/contact')), "copyrightNotice": "\u00a9 Ehsan Dibazar", "creditText": "Ehsan Dibazar"},@endif
   "author": {"@@type": "Person", @if($__isEhsanAuthor)"@@id": @json(url('/').'/#person'), @endif"name": @json($article->author_name)},
   "publisher": @include('partials.organization-schema')
+}
+</script>
+<script type="application/ld+json">
+{
+  "@@context": "https://schema.org",
+  "@@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@@type": "ListItem", "position": 1, "name": "Ana Sayfa", "item": @json(url('/tr'))},
+    {"@@type": "ListItem", "position": 2, "name": "Blog", "item": @json(url('/tr/blog'))},
+    {"@@type": "ListItem", "position": 3, "name": @json($article->title), "item": @json(url('/tr/blog/' . $article->slug))}
+  ]
 }
 </script>
 @if($faqs->isNotEmpty())
@@ -89,6 +101,7 @@
     .lang-switch{margin-left:auto}
     .lang-switch a{color:var(--gold-dark,#c09d4c);font-weight:600}
 
+    .article-lede{font-size:17px;font-weight:600;line-height:1.7;color:#333;margin:0 0 1.3rem;padding-left:16px;border-left:3px solid var(--gold)}
     {{-- justify فقط روی ستونِ پهنِ دسکتاپ — روی خطوطِ کوتاهِ موبایل حفره‌های بزرگ بین کلمات می‌سازد --}}
     .article-body p{font-size:16px;font-weight:400;line-height:2;color:#555;margin-bottom:1.1rem}
     @@media (min-width:768px){.article-body p{text-align:justify}}
@@ -178,11 +191,15 @@
                     @endif
                 </div>
 
+                @if($article->excerpt)
+                <p class="article-lede">{{ $article->excerpt }}</p>
+                @endif
+
                 <div class="article-body" id="article-content">
                     {{-- محتوا در ورودیِ AI Import هم پاک‌سازی می‌شود؛ این‌جا فقط یک لایه‌ی دفاعیِ
-                         اضافه است (برای محتوای قدیمی یا ویرایش دستی). lazyLoadImages بیرونی است تا
-                         بعد از sanitize/embed روی خروجی نهایی اجرا شود (loading/decoding به <img>ها) --}}
-                    {!! \App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body))) !!}
+                         اضافه است (برای محتوای قدیمی یا ویرایش دستی). lazyLoadImages/withHeadingIds
+                         بیرونی‌اند تا بعد از sanitize/embed روی خروجی نهایی اجرا شوند --}}
+                    {!! \App\Support\Html::withHeadingIds(\App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body)))) !!}
                 </div>
 
                 @if($faqs->isNotEmpty())

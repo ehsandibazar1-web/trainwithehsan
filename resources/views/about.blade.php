@@ -29,6 +29,27 @@
      خالی است همان سه‌لینکِ فعلی fallback است — همان قراردادِ CLAUDE.md. عمداً فقط فرمِ تک‌خطیِ
      دایرکتیوِ php (نه فرمِ بلوکی) — نگاه کنید به partials/organization-schema.blade.php --}}
 @php($__personSameAs = \App\Models\SiteSetting::socialLinks())
+{{-- فهرستِ مدارک/افتخارات زودتر (پیش از json-ld) محاسبه می‌شود تا هم اینجا برای
+     hasCredential و هم پایین‌تر در بخشِ گالری برای رندرِ واقعی استفاده شود — یک محاسبه، نه دوتا --}}
+@php($certList = !empty($certificates) ? $certificates : [
+    ['title' => 'Brazilian Jiu-Jitsu self-defense certificate, USA'],
+    ['title' => 'Muay Thai technical certificate, Thailand Ministry of Education'],
+    ['title' => 'Bodyguard diploma, Turkish Military Academy'],
+    ['title' => 'Basic Bodyguard Diploma'],
+    ['title' => 'After receiving bodyguard certification in Turkey'],
+    ['title' => 'With instructor after passing the Muay Thai technical exam, Thailand'],
+    ['title' => 'With an opponent at the Brazilian Jiu-Jitsu World Championship, Russia'],
+    ['title' => 'Competing at the Brazilian Jiu-Jitsu World Championship, Russia'],
+    ['title' => 'Muay Thai technical exam transcript, Bangkok Muay Thai University'],
+    ['title' => 'Muay Thai training certificate, Istanbul'],
+    ['title' => 'Workshop at the Faculty of Physical Education, University of Tehran'],
+    ['title' => 'Attending the Muay Boran online seminar, USA'],
+])
+{{-- فقط عنوان‌های واقعیِ گواهی/مدرک (نه کپشن‌های صرفاً توصیفیِ عکس) — یک نگاشتِ صادقانه از
+     دقیقاً همان دادۀ واردشده در پنل، بدونِ ساختنِ فیلدهای ساختگی (تاریخ/صادرکننده) که وجود ندارند.
+     در یک متغیرِ جدا محاسبه می‌شود (نه مستقیم داخلِ @json) — همان دلیلِ personDescription --}}
+@php($__credentialNames = collect($certList)->pluck('title')->filter()->values())
+@php($__credentialSchema = $__credentialNames->map(fn ($name) => ['@type' => 'EducationalOccupationalCredential', 'name' => $name]))
 @section('json-ld')
 <script type="application/ld+json">
 {
@@ -57,6 +78,9 @@
   },
   @endif
   "sameAs": @json($__personSameAs)
+  @if($__credentialNames->isNotEmpty())
+  ,"hasCredential": @json($__credentialSchema)
+  @endif
 }
 </script>
 <script type="application/ld+json">
@@ -170,7 +194,7 @@ body{background:var(--dark)!important}
         </div>
         @endif
         @php($statsList = !empty($stats) ? $stats : [
-            ['value' => '12+', 'label' => 'Years teaching experience'],
+            ['value' => "{$yearsExperience}+", 'label' => 'Years teaching experience'],
             ['value' => 'Thousands', 'label' => 'of in-person & online students'],
             ['value' => 'Several', 'label' => 'international certifications'],
         ])
@@ -185,20 +209,8 @@ body{background:var(--dark)!important}
     <section class="gallery" aria-label="{{ $v('certs_heading', 'Credentials & Achievements') }}">
         <div class="container">
             <h2>{{ $v('certs_heading', 'Credentials & Achievements') }}</h2>
-            @php($certList = !empty($certificates) ? $certificates : [
-                ['title' => 'Brazilian Jiu-Jitsu self-defense certificate, USA'],
-                ['title' => 'Muay Thai technical certificate, Thailand Ministry of Education'],
-                ['title' => 'Bodyguard diploma, Turkish Military Academy'],
-                ['title' => 'Basic Bodyguard Diploma'],
-                ['title' => 'After receiving bodyguard certification in Turkey'],
-                ['title' => 'With instructor after passing the Muay Thai technical exam, Thailand'],
-                ['title' => 'With an opponent at the Brazilian Jiu-Jitsu World Championship, Russia'],
-                ['title' => 'Competing at the Brazilian Jiu-Jitsu World Championship, Russia'],
-                ['title' => 'Muay Thai technical exam transcript, Bangkok Muay Thai University'],
-                ['title' => 'Muay Thai training certificate, Istanbul'],
-                ['title' => 'Workshop at the Faculty of Physical Education, University of Tehran'],
-                ['title' => 'Attending the Muay Boran online seminar, USA'],
-            ])
+            {{-- $certList همین بالای فایل (پیش از json-ld) محاسبه شده — برای hasCredential هم
+                 استفاده شده، نه یک محاسبه‌ی جدا --}}
             <div class="masonry reveal-group" id="masonry">
                 @foreach($certList as $cert)
                 @php($capText = implode(' — ', array_filter([$cert['title'] ?? null, $cert['subtitle'] ?? null, $cert['description'] ?? null])))
