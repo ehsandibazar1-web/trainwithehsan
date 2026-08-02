@@ -170,9 +170,9 @@
             </div>
             @endif
 
-            <div class="page-body reveal">
+            <article class="page-body reveal">
                 {!! \App\Support\Html::withHeadingIds(\App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($page->body)))) !!}
-            </div>
+            </article>
 
             @if($page->slug === 'contact')
             {{-- $fv از layouts.master نیست چون بخش‌های فرزند پیش از رندر <head> والد اجرا می‌شوند —

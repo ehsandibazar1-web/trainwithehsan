@@ -126,10 +126,15 @@ class InternalLinkingTest extends TestCase
         ]);
 
         $suggestions = $this->suggestionEngine()->suggest();
-        $sourceIds = $suggestions->pluck('source.id')->all();
+        // فقط منابعِ Article، نه هر منبعی — دیتابیسِ تست از قبل صفحاتِ seed‌شده (FAQ/Privacy/...)
+        // را هم دارد که translation_of واقعی دارند و توسطِ فیچرِ جفتِ ترجمه پیشنهاد می‌شوند؛ چون
+        // Article/Page شمارنده‌ی id جدا دارند، شناسه‌ی یک Page می‌تواند تصادفاً با شناسه‌ی یک
+        // Articleِ این تست یکی باشد — پس همیشه هم model هم id را با هم چک می‌کنیم (همان درسِ
+        // AiAgentTest در CLAUDE.md)
+        $articleSourceIds = $suggestions->where('source.model', 'Article')->pluck('source.id')->all();
 
-        $this->assertContains($relatedSource->id, $sourceIds);
-        $this->assertNotContains($unrelatedSource->id, $sourceIds);
+        $this->assertContains($relatedSource->id, $articleSourceIds);
+        $this->assertNotContains($unrelatedSource->id, $articleSourceIds);
     }
 
     public function test_suggestions_never_cross_locale(): void

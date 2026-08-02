@@ -34,6 +34,10 @@ class SuggestionEngine
     // یک هدف با کمتر از این تعداد لینک ورودی «نیازمند لینک» در نظر گرفته می‌شود (orphan یا weak)
     private const NEEDS_LINKS_THRESHOLD = 2;
 
+    // اطمینانِ پیشنهادِ جفتِ ترجمه (EN↔TR) — بالا و ثابت، چون این یک حدسِ امتیازدهی‌شده نیست:
+    // translation_of از قبل در دیتابیس تأیید می‌کند این دو رکورد واقعاً ترجمه‌ی هم‌اند
+    private const TRANSLATION_PAIR_CONFIDENCE = 90;
+
     private const STOPWORDS = [
         // انگلیسی
         'the', 'and', 'for', 'with', 'this', 'that', 'from', 'your', 'you', 'are', 'was', 'were',
@@ -66,6 +70,24 @@ class SuggestionEngine
 
         foreach ($needsLinks as $targetKey => $target) {
             $alreadyLinkedFrom = $target['inbound_from'] ?? [];
+            $perTarget = collect();
+
+            // جفتِ ترجمه‌ی شناخته‌شده (EN↔TR، از translation_of) — تنها فرصتِ لینک‌سازیِ رایگانی
+            // که فیلترِ same-locale‌یِ زیر همیشه از دست می‌داد، چون خودِ آن فیلتر عمداً کاندیداها را
+            // به زبانِ هدف محدود می‌کند و ترجمه‌ی هدف همیشه زبانِ دیگری دارد
+            $counterpart = $this->translationCounterpart($nodes, $target);
+            if ($counterpart) {
+                $counterpartKey = $this->graphService->nodeKey($counterpart['model'], $counterpart['id']);
+                if (! in_array($counterpartKey, $alreadyLinkedFrom, true)) {
+                    $perTarget->push([
+                        'source' => $counterpart,
+                        'target' => $target,
+                        'confidence' => self::TRANSLATION_PAIR_CONFIDENCE,
+                        'anchor' => Str::limit($target['title'], 60, ''),
+                        'reason' => 'Suggested because this is the known translation of the target content.',
+                    ]);
+                }
+            }
 
             $scored = $nodes
                 ->reject(fn ($node, $key) => $key === $targetKey)
@@ -74,9 +96,9 @@ class SuggestionEngine
                 ->map(fn ($candidate) => $this->score($candidate, $target, $keywordsByNode))
                 ->filter(fn ($s) => $s['confidence'] >= self::MIN_CONFIDENCE)
                 ->sortByDesc('confidence')
-                ->take(self::MAX_SUGGESTIONS_PER_TARGET);
+                ->take(max(0, self::MAX_SUGGESTIONS_PER_TARGET - $perTarget->count()));
 
-            $suggestions = $suggestions->concat($scored->values());
+            $suggestions = $suggestions->concat($perTarget)->concat($scored->values());
         }
 
         return $suggestions->values();
@@ -142,6 +164,23 @@ class SuggestionEngine
             ->each(fn ($row) => $row->delete());
 
         return count($rows);
+    }
+
+    /**
+     * گره‌ی ترجمه‌ی شناخته‌شده‌ی $target (اگر باشد) — همان مدل، پیوند از translation_of در هر دو
+     * جهت (چون یا هدف translation_of را نگه می‌دارد یا کاندیدا آن را نگه می‌دارد، بسته به کدام
+     * سمتِ جفت اول ساخته شده).
+     */
+    private function translationCounterpart(Collection $nodes, array $target): ?array
+    {
+        if ($target['translation_of'] !== null) {
+            $counterpart = $nodes->first(fn ($n) => $n['model'] === $target['model'] && $n['id'] === $target['translation_of']);
+            if ($counterpart) {
+                return $counterpart;
+            }
+        }
+
+        return $nodes->first(fn ($n) => $n['model'] === $target['model'] && $n['translation_of'] === $target['id']);
     }
 
     private function pairKey(string $sourceType, int $sourceId, string $targetType, int $targetId): string

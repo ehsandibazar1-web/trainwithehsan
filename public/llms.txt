@@ -1,0 +1,13 @@
+# Train with Ehsan
+
+> Self-defense, Muay Thai and Brazilian Jiu-Jitsu training in Istanbul, Türkiye, taught by Ehsan Dibazar (MSc in Sport Science) under the "Martial Intelligence" method — decision-making under pressure, not just technique. Courses are for complete beginners, women and men, in person in Istanbul or through the training app.
+
+## Pages
+
+- [Home](https://trainwithehsan.com/): overview of courses and the Martial Intelligence method
+- [About](https://trainwithehsan.com/about): Ehsan Dibazar's background, certificates and experience
+- [Blog](https://trainwithehsan.com/blog): articles on self-defense, Muay Thai and Brazilian Jiu-Jitsu
+- [Contact](https://trainwithehsan.com/contact): contact details and message form
+- [FAQ](https://trainwithehsan.com/faq): frequently asked questions
+
+Turkish versions of every page are available under the `/tr` prefix (e.g. `https://trainwithehsan.com/tr/blog`).

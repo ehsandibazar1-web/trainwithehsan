@@ -25,8 +25,10 @@ class LinkGraphService
     // کمتر از این تعداد لینک ورودی یعنی «لینک‌دهی ضعیف» (اما orphan هم نیست، حداقل ۱ لینک دارد)
     private const WEAK_INBOUND_THRESHOLD = 2;
 
-    // بیشتر از این تعداد لینک خروجی در یک صفحه، طبق راهنمای رایج سئو، یعنی «لینک بیش‌ازحد»
-    private const EXCESSIVE_OUTBOUND_THRESHOLD = 100;
+    // بیشتر از این تعداد لینک خروجی در یک صفحه، طبق راهنمای رایج سئو، یعنی «لینک بیش‌ازحد» — قبلاً
+    // ۱۰۰ بود که در حجمِ محتوای واقعیِ این سایت (ده‌ها مقاله، نه صدها) عملاً هرگز رخ نمی‌داد و هیچ
+    // محافظتی در برابرِ رقیق‌شدنِ ارزشِ لینک نمی‌داد — به یک عددِ واقع‌بینانه کاهش یافت
+    private const EXCESSIVE_OUTBOUND_THRESHOLD = 30;
 
     public function __construct(
         private readonly SeoAuditService $seoAudit,

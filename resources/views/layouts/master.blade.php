@@ -63,6 +63,7 @@
 
     <meta property="og:site_name" content="Train with Ehsan">
     <meta property="og:locale" content="en_US">
+    <meta property="og:locale:alternate" content="tr_TR">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
     <meta property="og:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">

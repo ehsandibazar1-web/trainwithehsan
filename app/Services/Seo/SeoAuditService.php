@@ -173,6 +173,7 @@ class SeoAuditService
                 'status' => $article->status,
                 'title' => $article->title,
                 'category' => $article->category,
+                'translation_of' => $article->translation_of,
                 // اولویت: meta_description دستی/هوش‌مصنوعی > excerpt > بدنه — دقیقاً همان اولویتی
                 // که blog-post.blade.php برای @section('meta_description', ...) واقعی استفاده می‌کند
                 'raw_description' => $article->meta_description ?: (filled($article->excerpt) ? $article->excerpt : strip_tags($article->body ?? '')),
@@ -191,6 +192,7 @@ class SeoAuditService
                 'status' => $page->status,
                 'title' => $page->title,
                 'category' => null, // Page مدل «دسته» ندارد
+                'translation_of' => $page->translation_of,
                 'raw_description' => $page->meta_description ?: strip_tags($page->body ?? ''),
                 'body' => $page->body,
                 'path' => $page->path(),
@@ -395,7 +397,10 @@ class SeoAuditService
 
         $items
             ->filter(fn ($item) => $valueOf($item) !== '')
-            ->groupBy(fn ($item) => mb_strtolower($valueOf($item)))
+            // زبان هم بخشی از کلیدِ گروه‌بندی است — وگرنه یک جفتِ EN/TR که هنوز ترجمه نشده (عمداً
+            // همان عنوان/توضیح را دارد) به‌اشتباه «تکراری» گزارش می‌شد؛ فقط تکرارِ *درونِ همان زبان*
+            // یک مشکلِ واقعیِ سئو است
+            ->groupBy(fn ($item) => mb_strtolower($valueOf($item)).'|'.$item['locale'])
             ->filter(fn (Collection $group) => $group->count() > 1)
             ->each(function (Collection $group) use (&$findings, $category, $label, $valueOf) {
                 $group->each(function ($item) use (&$findings, $category, $label, $group, $valueOf) {

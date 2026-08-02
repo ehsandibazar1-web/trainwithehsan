@@ -140,8 +140,9 @@
     .faq-item summary:hover{color:var(--gold-dark,#c09d4c)}
     .faq-answer{padding:0 18px 16px;font-size:14px;line-height:1.9;color:#555;white-space:pre-line}
 
-    .related-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px}
+    .related-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:16px;list-style:none;padding:0}
     @@media (max-width:820px){.related-grid{grid-template-columns:1fr}}
+    ul.reveal-group{list-style:none;padding:0}
     .related-card{border:1px solid #eee;display:block}
     .related-thumb{height:130px;background:linear-gradient(135deg,#d8d3c4,#d9bb75);background-size:cover;background-position:center;display:flex;align-items:center;justify-content:center}
     .related-card h4{font-size:14px;padding:10px 10px 4px;color:#3a3a3a}
@@ -150,7 +151,7 @@
     .sidebar-last-item{display:flex;gap:12px;border-bottom:1px dashed #d8d8d8;padding:12px 0}
     .sidebar-last-item .thumb{width:70px;height:60px;flex-shrink:0;border-radius:4px;background:linear-gradient(135deg,#d8d3c4,#d9bb75);background-size:cover;background-position:center}
     .sidebar-last-item .sidebar-last-title{font-size:14px;font-weight:700;color:#3a3a3a;margin-bottom:4px}
-    .sidebar-last-item span{font-size:11px;color:#999}
+    .sidebar-last-item span{font-size:11px;color:#767676}
 </style>
 @endsection
 
@@ -195,12 +196,12 @@
                 <p class="article-lede">{{ $article->excerpt }}</p>
                 @endif
 
-                <div class="article-body" id="article-content">
+                <article class="article-body" id="article-content">
                     {{-- محتوا در ورودیِ AI Import هم پاک‌سازی می‌شود؛ این‌جا فقط یک لایه‌ی دفاعیِ
                          اضافه است (برای محتوای قدیمی یا ویرایش دستی). lazyLoadImages/withHeadingIds
                          بیرونی‌اند تا بعد از sanitize/embed روی خروجی نهایی اجرا شوند --}}
                     {!! \App\Support\Html::withHeadingIds(\App\Support\Html::lazyLoadImages(app(\App\Services\Content\EmbedRenderer::class)->render(\Illuminate\Support\Str::sanitizeHtml($article->body)))) !!}
-                </div>
+                </article>
 
                 @if($faqs->isNotEmpty())
                 <section class="faq-section reveal" aria-label="Sıkça Sorulan Sorular">
@@ -256,42 +257,36 @@
                 </div>
 
                 @if($related->isNotEmpty())
-                <div class="site-blog__sidebar__item__header">
-                    <fieldset style="border:0;border-bottom:4px solid var(--gold);padding:0 0 8px">
-                        <legend style="font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;padding:0">İlgili Makaleler</legend>
-                    </fieldset>
-                </div>
-                <div class="related-grid reveal-group">
+                <h2 style="border-bottom:4px solid var(--gold);padding:0 0 8px;font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;margin:0">İlgili Makaleler</h2>
+                <ul class="related-grid reveal-group">
                     @foreach($related as $rel)
-                    <a href="{{ url('/tr/blog/' . $rel->slug) }}" class="related-card reveal">
-                        <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($rel->image_path, 800) }}')" @endif></div>
-                        <h4>{{ $rel->title }}</h4>
-                        <p>{{ Str::limit($rel->excerpt, 80) }}</p>
-                    </a>
+                    <li>
+                        <a href="{{ url('/tr/blog/' . $rel->slug) }}" class="related-card reveal">
+                            <div class="related-thumb" @if($rel->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($rel->image_path, 800) }}')" @endif></div>
+                            <h4>{{ $rel->title }}</h4>
+                            <p>{{ Str::limit($rel->excerpt, 80) }}</p>
+                        </a>
+                    </li>
                     @endforeach
-                </div>
+                </ul>
                 @endif
             </div>
 
             {{-- ============ سایدبار ============ --}}
             <aside>
                 @if($latest->isNotEmpty())
-                <div class="site-blog__sidebar__item__header">
-                    <fieldset style="border:0;border-bottom:4px solid var(--gold);padding:0 0 8px">
-                        <legend style="font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;padding:0">Son Makaleler</legend>
-                    </fieldset>
-                </div>
-                <div class="reveal-group" style="margin-top:10px">
+                <h2 style="border-bottom:4px solid var(--gold);padding:0 0 8px;font-size:17px;font-weight:600;letter-spacing:.01em;color:#000;margin:0">Son Makaleler</h2>
+                <ul class="reveal-group" style="margin-top:10px">
                     @foreach($latest as $item)
-                    <div class="sidebar-last-item reveal">
+                    <li class="sidebar-last-item reveal">
                         <div class="thumb" @if($item->image_path) style="background-image:url('{{ \App\Models\Media::optimizedUrl($item->image_path, 480) }}')" @endif></div>
                         <div>
                             <p class="sidebar-last-title"><a href="{{ url('/tr/blog/' . $item->slug) }}" style="color:#3a3a3a">{{ $item->title }}</a></p>
                             <span>{{ $item->published_at?->locale('tr')->translatedFormat('F Y') }}</span>
                         </div>
-                    </div>
+                    </li>
                     @endforeach
-                </div>
+                </ul>
                 @endif
             </aside>
         </div>

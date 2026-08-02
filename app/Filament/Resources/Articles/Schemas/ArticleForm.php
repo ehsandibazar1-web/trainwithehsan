@@ -70,8 +70,9 @@ class ArticleForm
                 Textarea::make('excerpt')
                     ->label('Excerpt')
                     ->rows(3)
+                    ->maxLength(300)
                     ->nullable()
-                    ->helperText('Short text shown on the article card in the blog list.'),
+                    ->helperText('Short text shown on the article card in the blog list, and as the standalone summary at the top of the article.'),
 
                 Section::make('SEO & social preview (optional)')
                     ->description('Leave blank to keep using the title/excerpt automatically — only fill these in if you want different wording for Google or social shares. The AI Assistant (button at the top of this page once saved) can suggest all four.')

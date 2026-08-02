@@ -175,7 +175,9 @@ body{background:var(--dark)!important}
 
 @section('content')
 <div class="about-v5">
-<main>
+{{-- master.blade.php خودش <main> بیرونی دارد — این‌جا فقط یک <div> ساده است، وگرنه <main>
+     تودرتو HTML5 نامعتبر می‌شود (دو تا <main> در یک صفحه) --}}
+<div>
 
     {{-- ============ هیرو ============ --}}
     <header class="hero">
@@ -271,7 +273,7 @@ body{background:var(--dark)!important}
         </div>
     </section>
 
-</main>
+</div>
 </div>
 
 {{-- مودال نمایش بزرگ مدرک --}}

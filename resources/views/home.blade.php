@@ -14,6 +14,10 @@
 @section('canonical', url('/'))
 @section('og_title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
 @section('og_description', "Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, {$yearsExperience}+ years of experience. Courses for complete beginners, women and men, in person or through the training app.")
+{{-- og:image یک عکسِ واقعیِ صفحه (بنرِ اولِ هیرو، همان عکسِ LCP) به‌جای همیشه بازگشتن به لوگوی
+     عمومیِ برند (fallbackِ پیش‌فرضِ master.blade.php) — وقتی هیچ بنری تنظیم نشده، خالی می‌ماند و
+     همان fallbackِ قبلی دقیقاً مثلِ قبل کار می‌کند --}}
+@section('og_image', !empty($s['hero1_image']) ? \App\Models\Media::optimizedUrl($s['hero1_image']) : '')
 
 {{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — با preload + fetchpriority=high مرورگر فوراً دانلودش
      می‌کند (به‌جای کشفِ دیرهنگام از داخلِ CSS). فقط وقتی واقعاً عکسی تنظیم شده باشد --}}

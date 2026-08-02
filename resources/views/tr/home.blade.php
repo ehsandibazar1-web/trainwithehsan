@@ -11,6 +11,7 @@
 @section('canonical', url('/tr'))
 @section('og_title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
 @section('og_description', "Ehsan Dibazar ile İstanbul'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, {$yearsExperience}+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.")
+@section('og_image', !empty($s['hero1_image']) ? \App\Models\Media::optimizedUrl($s['hero1_image']) : '')
 
 {{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — preload + fetchpriority=high برای دانلودِ فوری --}}
 @if(!empty($s['hero1_image']))
