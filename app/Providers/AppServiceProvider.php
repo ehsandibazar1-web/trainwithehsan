@@ -25,7 +25,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        // انتخاب ارائه‌دهنده‌ی هوش مصنوعی — افزودن ارائه‌دهنده‌ی جدید فقط یک شاخه‌ی دیگر اینجا می‌خواهد
+        // این بایندینگ دیگر محلِ افزودنِ ارائه‌دهنده‌ی جدید نیست — از وقتی ProviderManager اضافه شد
+        // (Section 24 در CLAUDE.md)، یک ارائه‌دهنده‌ی تازه یک کلاسِ AiProvider جدید + یک ردیف در
+        // ProviderManager::DRIVERS است، نه یک شاخه‌ی دیگر اینجا. این بایندینگ فقط مسیرِ پشتیبانِ
+        // دائمیِ .env-only است (ANTHROPIC_API_KEY، وقتی هیچ‌چیزی در دیتابیس تنظیم نشده) — طبق
+        // «Things That Must Never Be Changed» عمداً دست‌نخورده و تک‌وندوری باقی می‌ماند
         $this->app->bind(AiProvider::class, function () {
             if (blank(config('services.anthropic.key'))) {
                 return new NullProvider;
