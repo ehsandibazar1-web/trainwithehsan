@@ -38,6 +38,14 @@ class AddSecurityHeaders
         $response->headers->set('X-Frame-Options', 'DENY');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Content-Security-Policy-Report-Only', self::CSP_REPORT_ONLY);
+        // این سایت هیچ ژئولوکیشن/میکروفون/دوربینی استفاده نمی‌کند — قفل‌کردنشان هزینه‌ای ندارد
+        $response->headers->set('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+
+        // فقط روی یک درخواستِ واقعاً https معنا دارد — وگرنه (local/staging بدونِ SSL) مرورگر
+        // خودِ localhost را هم مجبور به https می‌کرد و توسعه را می‌شکست
+        if ($request->secure()) {
+            $response->headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+        }
 
         // پنل ادمین پشتِ ورود است، پس محتوایی برای ایندکس‌شدن ندارد — یک لایه‌ی دفاعِ عمقیِ
         // مکمل (در کنارِ robots.txt) برای زمانی که یک کراولر مسیر را از جای دیگری کشف کند

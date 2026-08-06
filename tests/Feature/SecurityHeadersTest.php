@@ -25,8 +25,25 @@ class SecurityHeadersTest extends TestCase
         $response->assertHeader('X-Frame-Options', 'DENY');
         $response->assertHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->assertHeader('Content-Security-Policy-Report-Only');
+        $response->assertHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
         // نباید هدر اجراییِ CSP وجود داشته باشد — این نسخه عمداً فقط گزارش‌دهنده است
         $this->assertFalse($response->headers->has('Content-Security-Policy'));
+    }
+
+    public function test_hsts_is_absent_on_a_plain_http_request(): void
+    {
+        // محیطِ تست پیش‌فرض https نیست — HSTS نباید ظاهر شود (وگرنه local/staging بدونِ SSL
+        // را می‌شکند)
+        $response = $this->get('/');
+
+        $this->assertFalse($response->headers->has('Strict-Transport-Security'));
+    }
+
+    public function test_hsts_is_present_on_a_secure_request(): void
+    {
+        $response = $this->get('https://localhost/');
+
+        $response->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
     }
 
     public function test_known_third_party_scripts_are_allowed_in_the_reported_policy(): void
