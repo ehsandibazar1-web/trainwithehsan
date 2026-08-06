@@ -174,9 +174,22 @@ class Media extends Model
     // فاز ۴ که فیلدهای CMS (homepage/about/footer) هم DAM-managed شوند، دایرکتوری‌هایشان اینجا اضافه می‌شود.
     private const SYSTEM_ATTACHED_DIRECTORIES = ['articles/', 'pages/', 'ai-generated/'];
 
-    // حافظه‌ی درون‌درخواستیِ forRecord() با کلید disk_path — تا وقتی روی یک لیست (صفحه اصلی،
-    // آرشیو مقالات، سایدبار مرتبط/جدیدترین) لوپ می‌زنیم، به‌ازای هر Article/Page یک کوئری جدا نزنیم
+    // حافظه‌ی درون‌درخواستیِ مشترکِ forRecord()/optimizedUrl()/srcsetFor()، با کلید disk_path —
+    // تا وقتی روی یک لیست (صفحه اصلی، آرشیو مقالات، سایدبار مرتبط/جدیدترین) لوپ می‌زنیم، به‌ازای
+    // هر Article/Page یک کوئری جدا نزنیم. قبلاً optimizedUrl/srcsetFor کش‌های جداگانه (یا اصلاً
+    // کش) داشتند، پس preloadForRecords() که این کش را از پیش پر می‌کند برایشان بی‌اثر بود و هرکدام
+    // در حلقه‌ی رندرِ لیست دوباره کوئری می‌زدند (هر جفت full-scan، چون media.disk_path هم ایندکس
+    // نداشت) — حالا هر سه از همین یک نگاشت می‌خوانند.
     private static array $recordCache = [];
+
+    private static function mediaByDiskPath(string $diskPath): ?self
+    {
+        if (array_key_exists($diskPath, self::$recordCache)) {
+            return self::$recordCache[$diskPath];
+        }
+
+        return self::$recordCache[$diskPath] = self::where('disk_path', $diskPath)->first();
+    }
 
     // آیا این فایل در یکی از دایرکتوری‌هایی است که سیستم تصویرِ قابل-ارجاع می‌سازد؟ محاسبه‌ی محض
     // روی disk_path — هیچ کوئری‌ای نمی‌زند (برخلافِ isInUse)، پس در حلقه‌ی رندرِ گرید امن است.
@@ -201,8 +214,9 @@ class Media extends Model
     }
 
     // Media مربوط به مجموعه‌ای از رکوردها را در یک کوئری batch بارگذاری می‌کند — پیش از رندر هر
-    // لیستی صدا زده می‌شود تا forRecord() به‌ازای هر آیتم دوباره کوئری نزند. خودِ forRecord() بدون
-    // این پیش‌بارگذاری هم درست کار می‌کند (فقط دیگر memoize نمی‌شود)
+    // لیستی صدا زده می‌شود تا forRecord()/optimizedUrl()/srcsetFor() به‌ازای هر آیتم دوباره کوئری
+    // نزنند (هر سه از همان $recordCache می‌خوانند). بدونِ این پیش‌بارگذاری هم درست کار می‌کنند
+    // (فقط دیگر memoize نمی‌شوند)
     public static function preloadForRecords(iterable $records): void
     {
         $paths = collect($records)->pluck('image_path')->filter()->unique()->values();
@@ -233,11 +247,7 @@ class Media extends Model
             return null;
         }
 
-        if (array_key_exists($record->image_path, self::$recordCache)) {
-            return self::$recordCache[$record->image_path];
-        }
-
-        return self::$recordCache[$record->image_path] = self::where('disk_path', $record->image_path)->first();
+        return self::mediaByDiskPath($record->image_path);
     }
 
     // URLِ بهینه‌ی یک تصویرِ SiteSetting-محور (هیرو/درباره/دوره‌ها/تامبنیل‌ها در صفحه‌ی اصلی): WebPِ
@@ -256,7 +266,7 @@ class Media extends Model
         $key = $diskPath.'|'.($maxWidth ?? 'full');
 
         return self::$optimizedUrlCache[$key] ??= (function () use ($diskPath, $maxWidth) {
-            $media = self::where('disk_path', $diskPath)->first();
+            $media = self::mediaByDiskPath($diskPath);
             if (! $media) {
                 return asset('storage/'.ltrim($diskPath, '/'));
             }
@@ -287,7 +297,7 @@ class Media extends Model
             return null;
         }
 
-        $entries = collect(self::where('disk_path', $diskPath)->first()?->responsive_urls ?? [])
+        $entries = collect(self::mediaByDiskPath($diskPath)?->responsive_urls ?? [])
             ->map(fn ($url, $width) => $url.' '.$width.'w');
 
         return $entries->isEmpty() ? null : $entries->implode(', ');

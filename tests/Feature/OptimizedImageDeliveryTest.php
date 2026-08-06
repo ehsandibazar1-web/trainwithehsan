@@ -9,6 +9,7 @@ use App\Models\SiteSetting;
 use App\Services\Media\MediaProcessor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
@@ -205,6 +206,33 @@ class OptimizedImageDeliveryTest extends TestCase
         $this->assertNull(Media::srcsetFor('media/library/small.jpg'));
         $this->assertNull(Media::srcsetFor('homepage/no-row.png'));
         $this->assertNull(Media::srcsetFor(null));
+    }
+
+    // قبلاً preloadForRecords() فقط forRecord() را warm می‌کرد — optimizedUrl()/srcsetFor() کش
+    // جدا (یا اصلاً کش) داشتند، پس در حلقه‌ی رندرِ یک لیست، به‌ازای هر آیتم دوباره کوئری می‌زدند
+    // حتی وقتی preload از قبل صدا زده شده بود. این تست ثابت می‌کند حالا هر سه از یک کشِ مشترک
+    // می‌خوانند — بعد از preloadForRecords، هیچ‌کدام کوئریِ جدید نمی‌زنند.
+    public function test_preload_for_records_also_warms_optimized_url_and_srcset_for(): void
+    {
+        $article = $this->makeArticle(['image_path' => 'articles/preload-warm.jpg']);
+        Media::create([
+            'original_name' => 'warm.jpg', 'disk' => 'public', 'disk_path' => 'articles/preload-warm.jpg',
+            'url' => 'x', 'type' => 'image', 'webp_path' => 'articles/preload-warm.webp',
+            'responsive_paths' => [800 => 'articles/preload-warm-800.webp'],
+        ]);
+
+        Media::preloadForRecords([$article]);
+
+        DB::enableQueryLog();
+        DB::flushQueryLog();
+
+        $this->assertStringEndsWith('preload-warm-800.webp', Media::optimizedUrl($article->image_path, 800));
+        $this->assertNotNull(Media::srcsetFor($article->image_path));
+        $this->assertNotNull(Media::forRecord($article));
+
+        $this->assertCount(0, DB::getQueryLog());
+
+        DB::disableQueryLog();
     }
 
     public function test_homepage_instagram_fallback_image_gets_a_responsive_srcset(): void
