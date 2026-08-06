@@ -68,7 +68,7 @@ class GenerateHeroImage implements ShouldQueue
 
             $result = $providerManager->generateImage($prompt, [], $record->getMorphClass(), $record->id);
 
-            if ($generation->fresh()->status === 'cancelled') {
+            if ($generation->fresh()?->status === 'cancelled') {
                 return;
             }
 
@@ -85,9 +85,11 @@ class GenerateHeroImage implements ShouldQueue
 
             $this->autoGenerateMetadata($contentService, $applier, $record->fresh());
         } catch (Throwable $e) {
-            if ($generation->fresh()->status === 'cancelled') {
+            if ($generation->fresh()?->status === 'cancelled') {
                 return;
             }
+
+            report($e);
 
             $generation->update(['status' => 'failed', 'error' => $e->getMessage()]);
         }

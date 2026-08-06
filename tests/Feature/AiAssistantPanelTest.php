@@ -731,6 +731,31 @@ class AiAssistantPanelTest extends TestCase
         $this->assertNull($generation->result);
     }
 
+    // قبلاً fresh()->status (بدون ?->) بود — اگر رکورد بین شروعِ تماسِ API و این چک حذف
+    // (نه فقط cancel) شود، fresh() یک null برمی‌گرداند و خواندنِ ->status روی آن در Laravel
+    // یک ErrorException واقعی پرتاب می‌کند؛ چون همان چکِ ناامن داخلِ catch هم تکرار شده بود،
+    // این خطا از داخلِ catch هم بیرون می‌زد و کل job را می‌ترکاند (AiGeneration برای همیشه
+    // روی processing گیر می‌کرد). این تست ثابت می‌کند دیگر این‌طور نیست.
+    public function test_run_ai_content_generation_does_not_crash_when_the_generation_is_deleted_during_the_api_call(): void
+    {
+        $article = $this->makeArticle();
+
+        $generation = AiGeneration::create([
+            'content_type' => 'Article', 'content_id' => $article->id, 'field' => 'seo_title', 'mode' => 'generate', 'status' => 'queued',
+        ]);
+
+        config(['services.anthropic.key' => 'test-key']);
+        Http::fake(function () use ($generation) {
+            $generation->delete();
+
+            return Http::response(['content' => [['type' => 'text', 'text' => 'New Title']]], 200);
+        });
+
+        (new RunAiContentGeneration($generation->id))->handle(app(ContentAssistantService::class));
+
+        $this->assertDatabaseMissing('ai_generations', ['id' => $generation->id]);
+    }
+
     public function test_translate_article_draft_skips_a_generation_that_was_cancelled_before_it_started(): void
     {
         $article = $this->makeArticle();

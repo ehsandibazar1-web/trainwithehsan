@@ -9,6 +9,7 @@ use App\Models\Media;
 use App\Models\Page;
 use App\Models\Tag;
 use App\Services\Media\MediaProcessor;
+use App\Support\Url;
 use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Http;
@@ -1037,37 +1038,12 @@ class ArticleImportService
         return str_starts_with($value, 'http://') || str_starts_with($value, 'https://');
     }
 
-    // جلوگیری از SSRF: هاست URL باید به یک IP عمومی resolve شود، نه به آدرس‌های خصوصی/loopback/
-    // link-local/رزروشده (مثلاً 127.0.0.1 یا 169.254.169.254 که در بسیاری از سرویس‌های ابری
-    // متادیتای داخلی سرور را برمی‌گرداند). بدون این بررسی، هر دارنده‌ی توکن API می‌توانست از
-    // طریق featured_image باعث شود خودِ سرور به آدرس‌های داخلی درخواست بزند
+    // منطقِ واقعیِ چکِ SSRF حالا در App\Support\Url::isSafeForServerFetch() است (اکنون دو
+    // مصرف‌کننده دارد: این‌جا برایِ featured_image، و TextExtractionService برایِ فچِ صفحه‌ی وب
+    // در Knowledge Base) — این متد فقط یک نامِ سازگار با کدِ قبلی نگه می‌دارد
     private function isUrlSafeForServerFetch(string $url): bool
     {
-        if (! in_array(parse_url($url, PHP_URL_SCHEME), ['http', 'https'], true)) {
-            return false;
-        }
-
-        $host = parse_url($url, PHP_URL_HOST);
-        if (! $host) {
-            return false;
-        }
-
-        // اگر خودِ هاست یک IP لفظی است (مثل 127.0.0.1 یا 169.254.169.254)، باید عمومی باشد
-        if (filter_var($host, FILTER_VALIDATE_IP)) {
-            return (bool) filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE);
-        }
-
-        // هاستِ نامی: هر IPای که resolve می‌شود باید عمومی باشد. اگر اصلاً resolve نشد
-        // (مثلاً یک دامنه‌ی نمونه در محیط تست بدون DNS واقعی)، رد نمی‌شود — چون خودِ درخواستِ
-        // HTTP بعدی به‌طور طبیعی با خطای اتصال شکست می‌خورد؛ این فقط برای هاست‌هایی که واقعاً
-        // به یک آدرس خصوصی/رزروشده resolve می‌شوند سخت‌گیر است
-        foreach (gethostbynamel($host) ?: [] as $ip) {
-            if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                return false;
-            }
-        }
-
-        return true;
+        return Url::isSafeForServerFetch($url);
     }
 
     /**

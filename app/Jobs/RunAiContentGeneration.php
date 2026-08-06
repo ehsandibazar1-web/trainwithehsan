@@ -35,7 +35,9 @@ class RunAiContentGeneration implements ShouldQueue
         try {
             $outcome = $service->generate($generation->content, $generation->field, $generation->mode);
 
-            if ($generation->fresh()->status === 'cancelled') {
+            // fresh() می‌تواند null برگرداند اگر رکورد بین شروع و اینجا حذف شده باشد (نه فقط
+            // کنسل شده) — بدونِ ?-> این یک خطایِ null-deref واقعی بود، نه فقط یک حالتِ نظری
+            if ($generation->fresh()?->status === 'cancelled') {
                 return;
             }
 
@@ -58,9 +60,11 @@ class RunAiContentGeneration implements ShouldQueue
                 $generation->knowledgeEntries()->sync($outcome['knowledge_entry_ids']);
             }
         } catch (\Throwable $e) {
-            if ($generation->fresh()->status === 'cancelled') {
+            if ($generation->fresh()?->status === 'cancelled') {
                 return;
             }
+
+            report($e);
 
             $generation->update([
                 'status' => 'failed',

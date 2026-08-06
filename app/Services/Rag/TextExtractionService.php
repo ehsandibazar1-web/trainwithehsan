@@ -3,6 +3,7 @@
 namespace App\Services\Rag;
 
 use App\Models\KnowledgeEntryAttachment;
+use App\Support\Url;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser as PdfParser;
@@ -160,17 +161,30 @@ class TextExtractionService
     }
 
     // صفحه‌ی وب — همان الگوی SeoAuditService::checkUrls برای تماس HTTP، بعلاوه‌ی یک مسیر جدا برای
-    // وقتی خودِ URL یک PDF باشد (مثلا لینک مستقیم به یک بروشور)
+    // وقتی خودِ URL یک PDF باشد (مثلا لینک مستقیم به یک بروشور).
+    // محافظتِ SSRF: برخلافِ downloadImage (ArticleImportService) که از ابتدا سخت‌شده بود، این
+    // مسیر مستقیم Http::get می‌زد — بدونِ چکِ هاست، بدونِ بلاکِ ریدایرکت، بدونِ سقفِ حجم. حالا
+    // از همان App\Support\Url::isSafeForServerFetch استفاده می‌کند، ریدایرکت را دنبال نمی‌کند
+    // (وگرنه یک هاستِ عمومیِ امن می‌توانست به یک آدرسِ داخلی ریدایرکت کند)، و حجم را به ۱۰
+    // مگابایت محدود می‌کند — همان سه محافظتِ downloadImage.
     public function extractFromUrl(string $url): string
     {
+        if (! Url::isSafeForServerFetch($url)) {
+            throw new \RuntimeException("Refusing to fetch \"$url\" — the host does not resolve to a public address.");
+        }
+
         try {
-            $response = Http::timeout(20)->connectTimeout(10)->get($url);
+            $response = Http::timeout(20)->connectTimeout(10)->withOptions(['allow_redirects' => false])->get($url);
         } catch (\Throwable $e) {
             throw new \RuntimeException("Could not fetch {$url}: ".$e->getMessage(), previous: $e);
         }
 
         if (! $response->successful()) {
             throw new \RuntimeException("Could not fetch {$url}: HTTP {$response->status()}");
+        }
+
+        if (strlen($response->body()) > 10 * 1024 * 1024) {
+            throw new \RuntimeException("Could not fetch {$url}: response larger than 10 MB.");
         }
 
         $contentType = (string) $response->header('Content-Type');

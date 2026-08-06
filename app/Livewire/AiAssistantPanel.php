@@ -24,6 +24,7 @@ use Filament\Notifications\Notification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Livewire\Component;
 
 /**
@@ -299,9 +300,19 @@ class AiAssistantPanel extends Component
     // ============ Hero Image Generation (App\Jobs\GenerateHeroImage — see CLAUDE.md, AI Image Pipeline) ============
 
     // آیا اصلاً یک ارائه‌دهنده‌ی تولید تصویرِ قابل‌استفاده تنظیم شده — دکمه‌ی «Generate Hero Image»
-    // فقط وقتی این true است فعال می‌شود، وگرنه یک پیام راهنما به‌جایش نشان داده می‌شود
+    // فقط وقتی این true است فعال می‌شود، وگرنه یک پیام راهنما به‌جایش نشان داده می‌شود.
+    // این property روی هر رندرِ سایدبارِ ویرایشِ مقاله/صفحه صدا زده می‌شود — اگر جدول‌های
+    // ai_provider_settings/ai_provider_configs (که در یک migration بعد از خودِ AI Assistant
+    // اضافه شدند، نه هم‌زمان با آن) هنوز migrate نشده باشند، resolveImageProvider() یک
+    // QueryException پرتاب می‌کند و کل صفحه‌ی ویرایش ۵۰۰ می‌شود — همان کلاسِ باگی که
+    // AdminPanelProvider::databaseNotifications() را پشتِ Schema::hasTable('notifications')
+    // گارد کرد؛ همان محافظت اینجا هم لازم است.
     public function getCanGenerateImagesProperty(): bool
     {
+        if (! Schema::hasTable('ai_provider_settings')) {
+            return false;
+        }
+
         return app(ProviderManager::class)->resolveImageProvider() !== null;
     }
 

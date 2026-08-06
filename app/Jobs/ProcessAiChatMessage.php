@@ -46,6 +46,8 @@ class ProcessAiChatMessage implements ShouldQueue
         try {
             $classification = $service->classifyIntent($record, $userMessage->message);
         } catch (\Throwable $e) {
+            report($e);
+
             $this->reply("Sorry, something went wrong: {$e->getMessage()}");
 
             return;

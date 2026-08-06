@@ -131,6 +131,38 @@ XML;
         (new TextExtractionService)->extractFromUrl('https://example.com/missing');
     }
 
+    // ------------------------------------------------------- SSRF (extractFromUrl)
+    // همان محافظتِ ArticleImportService::downloadImage حالا اینجا هم هست (App\Support\Url) —
+    // قبلاً extractFromUrl مستقیم Http::get می‌زد، بدونِ هیچ چکِ هاست
+
+    public function test_extract_from_url_refuses_loopback_address(): void
+    {
+        Http::fake(); // اگر واقعاً درخواستی برود یعنی محافظت کار نکرده — این fake همه‌چیز را می‌گیرد
+
+        try {
+            (new TextExtractionService)->extractFromUrl('http://127.0.0.1/secret');
+            $this->fail('Expected a RuntimeException to be thrown.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('does not resolve to a public address', $e->getMessage());
+        }
+
+        Http::assertNothingSent();
+    }
+
+    public function test_extract_from_url_refuses_cloud_metadata_address(): void
+    {
+        Http::fake();
+
+        try {
+            (new TextExtractionService)->extractFromUrl('http://169.254.169.254/latest/meta-data/');
+            $this->fail('Expected a RuntimeException to be thrown.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('does not resolve to a public address', $e->getMessage());
+        }
+
+        Http::assertNothingSent();
+    }
+
     // --- ChunkingService -----------------------------------------------------------------------
 
     public function test_chunking_returns_single_chunk_for_short_text(): void
