@@ -16,6 +16,7 @@ use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -50,6 +51,19 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // ثابت‌کردنِ ریشه‌ی URLِ تولیدشده روی همان میزبانِ کانونیکالِ APP_URL — بدونِ این،
+        // url('/path')/url()->current() (که canonical/og:url/hreflang/sitemap/RSS در سراسرِ
+        // این پروژه از همان‌ها می‌سازند) از هاستِ *درخواستِ فعلی* پیروی می‌کنند، نه از تنظیمات؛
+        // یعنی یک بازدیدکننده/کراولر که از www یا http به سایت می‌رسید، همان canonical/og:url
+        // نادرست (با همان هاستِ غیرکانونیکال) می‌گرفت — دقیقاً همان چیزی که ممیزیِ GSC (کنسولِ
+        // جست‌وجوی گوگل) به‌عنوانِ «۴ نسخه‌ی جداگانه ایندکس شده» گزارش کرد. تأییدشده با تستِ
+        // مستقیم روی UrlGenerator قبل از این فیکس. ریدایرکتِ ۳۰۱ در public/.htaccess کاری می‌کند
+        // که بازدیدکننده‌ی واقعی اصلاً به هاستِ غیرکانونیکال نرسد؛ این خط لایه‌ی دومِ دفاع است —
+        // حتی اگر یک درخواست به هر دلیلی روی هاستِ غیرکانونیکال به Laravel برسد، هر URLای که
+        // خودِ اپ می‌سازد باز هم درست (APP_URL) می‌ماند، نه بازتابِ آن درخواست. کاملاً محیط‌محور
+        // است (نه یک دامنه‌ی هاردکد) — local/staging همچنان APP_URLِ خودشان را می‌گیرند.
+        URL::forceRootUrl(config('app.url'));
+
         // نام کوتاه به‌جای FQCN در ستون‌های چندریختی (keywords.keywordable_type و
         // internal_link_suggestions.source_type/target_type) — همان قرارداد رشته‌های کوتاه
         // ('Article'/'Page') که در سراسر SeoAuditService/MediaUsageScanner استفاده می‌شود
