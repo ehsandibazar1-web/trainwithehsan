@@ -7,13 +7,13 @@
      آن دایرکتیو آرگومانِ خودش را با انفجار روی هر کاما جدا می‌کند (برای گزینه‌های اختیاریِ
      encoding)، پس یک رشته‌ی حرفی که خودش کاما دارد (اینجا: «Bangkok, based in Istanbul») از وسط
      قطع می‌شود — یک باگِ واقعی که در توسعه‌ی همین تغییر کشف شد --}}
-@php($personDescription = "Martial arts and self-defense instructor with an MSc in Sport Science, {$yearsExperience}+ years of teaching experience since 2013, and an international Muay Thai certificate from Bangkok, based in Istanbul.")
+@php($personDescription = "Martial artist and coach with an MSc in Sport Science, {$yearsExperience}+ years in martial arts since 2013, an international Muay Thai certificate from Bangkok, and the creator of the Martial Intelligence approach to self-defense.")
 
-@section('title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
-@section('meta_description', "Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, {$yearsExperience}+ years of experience. Courses for complete beginners, women and men, in person or through the training app.")
+@section('title', 'Ehsan Dibazar — Martial Artist, Coach & Sport Scientist')
+@section('meta_description', "Ehsan Dibazar — martial artist, coach and sport scientist (MSc), with {$yearsExperience}+ years in martial arts and the creator of the Martial Intelligence approach to self-defense and performance.")
 @section('canonical', url('/'))
-@section('og_title', 'Self-Defense & BJJ Training in Istanbul — Ehsan Dibazar | Martial Intelligence')
-@section('og_description', "Learn self-defense in Istanbul with Ehsan Dibazar — MSc in Sport Science, {$yearsExperience}+ years of experience. Courses for complete beginners, women and men, in person or through the training app.")
+@section('og_title', 'Ehsan Dibazar — Martial Artist, Coach & Sport Scientist')
+@section('og_description', "Ehsan Dibazar — martial artist, coach and sport scientist (MSc), with {$yearsExperience}+ years in martial arts and the creator of the Martial Intelligence approach to self-defense and performance.")
 {{-- og:image یک عکسِ واقعیِ صفحه (بنرِ اولِ هیرو، همان عکسِ LCP) به‌جای همیشه بازگشتن به لوگوی
      عمومیِ برند (fallbackِ پیش‌فرضِ master.blade.php) — وقتی هیچ بنری تنظیم نشده، خالی می‌ماند و
      همان fallbackِ قبلی دقیقاً مثلِ قبل کار می‌کند --}}
@@ -453,7 +453,7 @@
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1 class="hero-title">{{ $v('hero1_title', 'Self-Defense & Martial Arts Training') }}</h1>
-                    <div class="sub">{{ $v('hero1_sub', 'For complete beginners — no athletic background, no age limit, for both women and men. In Istanbul or online.') }}</div>
+                    <div class="sub">{{ $v('hero1_sub', 'Self-defense built on decision-making under pressure — the Martial Intelligence approach.') }}</div>
                 </div>
             </div>
         </div>
@@ -524,7 +524,7 @@
         <div class="wrap">
             <div class="reveal">
                 <h2 class="title-counter">{{ $v('courses_title', 'Courses & Products') }}</h2>
-                <div class="sun-counter">{{ $v('courses_subtitle', 'Choose the format that fits you — in-person coaching in Istanbul, remote training through the app, or Brazilian Jiu-Jitsu classes.') }}</div>
+                <div class="sun-counter">{{ $v('courses_subtitle', 'Muay Thai, Brazilian Jiu-Jitsu, self-defense and functional training — the heart of the Martial Intelligence approach.') }}</div>
             </div>
             @php($courseDefaults = [['In-Person', 'In-Person Coaching'], ['Remote', 'Remote Training (App)'], ['BJJ', 'Brazilian Jiu-Jitsu']])
             <div class="courses-carousel" data-carousel>

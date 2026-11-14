@@ -4,13 +4,13 @@
 @php($yearsExperience = now()->year - 2013)
 {{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد، پس یک
      رشته‌ی حرفیِ داخلِ آن که خودش کاما دارد از وسط قطع می‌شود --}}
-@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıllık eğitim deneyimi ve Bangkok'tan uluslararası bir Muay Thai sertifikasına sahip, İstanbul merkezli dövüş sanatları ve kendini savunma eğitmeni.")
+@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Bangkok'tan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
 
-@section('title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
-@section('meta_description', "Ehsan Dibazar ile İstanbul'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, {$yearsExperience}+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.")
+@section('title', 'Ehsan Dibazar — Dövüş Sanatçısı, Koç ve Spor Bilimci')
+@section('meta_description', "Ehsan Dibazar — dövüş sanatçısı, koç ve spor bilimci (Yüksek Lisans); {$yearsExperience}+ yıldır dövüş sanatları ve 'Martial Intelligence' yaklaşımının yaratıcısı.")
 @section('canonical', url('/tr'))
-@section('og_title', 'İstanbul\'da Kendini Savunma ve BJJ Eğitimi — Ehsan Dibazar | Martial Intelligence')
-@section('og_description', "Ehsan Dibazar ile İstanbul'da kendini savunmayı öğrenin — Spor Bilimleri Yüksek Lisansı, {$yearsExperience}+ yıl deneyim. Başlangıç seviyesi için yüz yüze veya uygulama üzerinden kurslar.")
+@section('og_title', 'Ehsan Dibazar — Dövüş Sanatçısı, Koç ve Spor Bilimci')
+@section('og_description', "Ehsan Dibazar — dövüş sanatçısı, koç ve spor bilimci (Yüksek Lisans); {$yearsExperience}+ yıldır dövüş sanatları ve 'Martial Intelligence' yaklaşımının yaratıcısı.")
 @section('og_image', !empty($s['hero1_image']) ? \App\Models\Media::optimizedUrl($s['hero1_image']) : '')
 
 {{-- عکسِ اولین اسلایدِ هیرو عنصرِ LCP است — preload + fetchpriority=high برای دانلودِ فوری --}}
@@ -444,7 +444,7 @@
             <div class="wrap">
                 <div class="hero-slide-text">
                     <h1 class="hero-title">{{ $v('hero1_title', 'Kendini Savunma ve Dövüş Sanatları Eğitimi') }}</h1>
-                    <div class="sub">{{ $v('hero1_sub', 'Tam başlangıç seviyesi için — spor geçmişi ve yaş sınırı yok, kadın ve erkekler için. İstanbul\'da veya online.') }}</div>
+                    <div class="sub">{{ $v('hero1_sub', 'Baskı altında karar vermeye dayanan kendini savunma — Martial Intelligence yaklaşımı.') }}</div>
                 </div>
             </div>
         </div>
@@ -515,7 +515,7 @@
         <div class="wrap">
             <div class="reveal">
                 <h2 class="title-counter">{{ $v('courses_title', 'Kurslar ve Ürünler') }}</h2>
-                <div class="sun-counter">{{ $v('courses_subtitle', 'Size uygun formatı seçin — İstanbul\'da yüz yüze koçluk, uygulama üzerinden uzaktan eğitim veya Brezilya Jiu-Jitsu dersleri.') }}</div>
+                <div class="sun-counter">{{ $v('courses_subtitle', 'Muay Thai, Brezilya Jiu-Jitsu, kendini savunma ve fonksiyonel antrenman — Martial Intelligence yaklaşımının özü.') }}</div>
             </div>
             @php($courseDefaults = [['Yüz Yüze', 'Yüz Yüze Koçluk'], ['Uzaktan', 'Uzaktan Eğitim (Uygulama)'], ['BJJ', 'Brezilya Jiu-Jitsu']])
             <div class="courses-carousel" data-carousel>

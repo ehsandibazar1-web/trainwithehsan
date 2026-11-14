@@ -33,8 +33,8 @@
          منبعش را زودتر به مرورگر اعلام کند تا LCP سریع‌تر شود --}}
     @yield('head_preload')
 
-    <title>@yield('title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence Training in Istanbul')</title>
-    <meta name="description" content="@yield('meta_description', 'Self-defense and Brazilian Jiu-Jitsu training in Istanbul for complete beginners. Learn to make the right decision under pressure — the Martial Intelligence method by Ehsan Dibazar.')">
+    <title>@yield('title', 'Ehsan Dibazar — Martial Artist, Coach & Sport Scientist')</title>
+    <meta name="description" content="@yield('meta_description', 'Ehsan Dibazar — martial artist, coach and sport scientist, and creator of the Martial Intelligence approach to self-defense and performance.')">
     @php($metaKeywords = trim($__env->yieldContent('meta_keywords')))
     @if($metaKeywords)
     <meta name="keywords" content="{{ $metaKeywords }}">
@@ -66,7 +66,7 @@
     <meta property="og:locale:alternate" content="tr_TR">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
-    <meta property="og:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">
+    <meta property="og:description" content="@yield('og_description', 'Ehsan Dibazar — martial artist, coach and creator of the Martial Intelligence approach: decision-making under pressure, not just technique.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
     {{-- og:image همیشه ست می‌شود: عکسِ اختصاصیِ صفحه، وگرنه لوگوی برند به‌عنوان پیش‌فرضِ سایت‌گستر —
          تا هیچ اشتراک‌گذاری‌ای (واتساپ/فیسبوک/لینکدین/X) بدونِ پیش‌نمایشِ تصویری نماند --}}
@@ -97,7 +97,7 @@
     @else
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('og_title', 'Ehsan Dibazar — Self-Defense & Martial Intelligence')">
-    <meta name="twitter:description" content="@yield('og_description', 'Self-defense training for complete beginners in Istanbul. Decision-making under pressure, not just technique.')">
+    <meta name="twitter:description" content="@yield('og_description', 'Ehsan Dibazar — martial artist, coach and creator of the Martial Intelligence approach: decision-making under pressure, not just technique.')">
     <meta name="twitter:image" content="{{ $ogImage }}">
     @endif
     <meta name="theme-color" content="#d9bb75">

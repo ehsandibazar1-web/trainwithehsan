@@ -13,7 +13,7 @@
 @php($yearsExperience = now()->year - 2013)
 {{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد، پس یک
      رشته‌ی حرفیِ داخلِ آن که خودش کاما دارد از وسط قطع می‌شود --}}
-@php($personDescription = "Martial arts and self-defense instructor with an MSc in Sport Science, {$yearsExperience}+ years of teaching experience since 2013, and an international Muay Thai certificate from Bangkok, based in Istanbul.")
+@php($personDescription = "Martial artist and coach with an MSc in Sport Science, {$yearsExperience}+ years in martial arts since 2013, an international Muay Thai certificate from Bangkok, and the creator of the Martial Intelligence approach to self-defense.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
 @section('meta_description', $v('seo_description', "Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with {$yearsExperience}+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))

@@ -11,7 +11,7 @@
 {{-- سالِ تجربه از ۲۰۱۳ محاسبه می‌شود — همان عددی که در نسخه‌ی انگلیسی هم استفاده می‌شود --}}
 @php($yearsExperience = now()->year - 2013)
 {{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد --}}
-@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıllık eğitim deneyimi ve Bangkok'tan uluslararası bir Muay Thai sertifikasına sahip, İstanbul merkezli dövüş sanatları ve kendini savunma eğitmeni.")
+@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Bangkok'tan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
 @section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))

@@ -30,8 +30,8 @@
     {{-- اسلاتِ preloadِ منابعِ حیاتی (مثلِ عکسِ LCPِ هیرو) — هر صفحه مهم‌ترین منبعش را زودتر اعلام می‌کند --}}
     @yield('head_preload')
 
-    <title>@yield('title', 'Ehsan Dibazar — İstanbul\'da Kendini Savunma ve Martial Intelligence Eğitimi')</title>
-    <meta name="description" content="@yield('meta_description', 'İstanbul\'da tam başlangıç seviyesi için kendini savunma ve Brezilya Jiu-Jitsu eğitimi. Baskı altında doğru kararı vermeyi öğrenin — Ehsan Dibazar\'ın Martial Intelligence metodu.')">
+    <title>@yield('title', 'Ehsan Dibazar — Dövüş Sanatçısı, Koç ve Spor Bilimci')</title>
+    <meta name="description" content="@yield('meta_description', 'Ehsan Dibazar — dövüş sanatçısı, koç ve spor bilimci; &quot;Martial Intelligence&quot; yaklaşımının yaratıcısı.')">
     @php($metaKeywords = trim($__env->yieldContent('meta_keywords')))
     @if($metaKeywords)
     <meta name="keywords" content="{{ $metaKeywords }}">
@@ -63,7 +63,7 @@
     <meta property="og:locale:alternate" content="en_US">
     <meta property="og:type" content="@yield('og_type', 'website')">
     <meta property="og:title" content="@yield('og_title', 'Ehsan Dibazar — Kendini Savunma ve Martial Intelligence')">
-    <meta property="og:description" content="@yield('og_description', 'İstanbul\'da başlangıç seviyesi için kendini savunma eğitimi. Sadece teknik değil, baskı altında karar verme becerisi.')">
+    <meta property="og:description" content="@yield('og_description', 'Ehsan Dibazar — dövüş sanatçısı, koç ve &quot;Martial Intelligence&quot; yaklaşımının yaratıcısı: sadece teknik değil, baskı altında karar verme.')">
     <meta property="og:url" content="@yield('canonical', url()->current())">
     {{-- og:image همیشه ست می‌شود: عکسِ اختصاصیِ صفحه، وگرنه لوگوی برند به‌عنوان پیش‌فرضِ سایت‌گستر —
          تا هیچ اشتراک‌گذاری‌ای (واتساپ/فیسبوک/لینکدین/X) بدونِ پیش‌نمایشِ تصویری نماند --}}
@@ -93,7 +93,7 @@
     @else
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('og_title', 'Ehsan Dibazar — Kendini Savunma ve Martial Intelligence')">
-    <meta name="twitter:description" content="@yield('og_description', 'İstanbul\'da başlangıç seviyesi için kendini savunma eğitimi. Sadece teknik değil, baskı altında karar verme becerisi.')">
+    <meta name="twitter:description" content="@yield('og_description', 'Ehsan Dibazar — dövüş sanatçısı, koç ve &quot;Martial Intelligence&quot; yaklaşımının yaratıcısı: sadece teknik değil, baskı altında karar verme.')">
     <meta name="twitter:image" content="{{ $ogImage }}">
     @endif
     <meta name="theme-color" content="#d9bb75">

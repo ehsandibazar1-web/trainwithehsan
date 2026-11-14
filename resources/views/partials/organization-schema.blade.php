@@ -13,28 +13,22 @@
 @php($__personId = url('/').'/#person')
 @php($__orgLogo = asset('storage/homepage/logo.header.png'))
 @php($__orgSameAs = \App\Models\SiteSetting::socialLinks())
-{{-- LocalBusiness/SportsActivityLocation فقط وقتی که یک آدرسِ واقعی در Footer Settings تنظیم شده
-     باشد اضافه می‌شود — همان "null بر حدس ارجح است"ِ این کدبیس؛ بدونِ آدرس، ادعای یک مکانِ فیزیکی
-     دروغِ ساختاری در JSON-LD می‌شد. تلفن/ایمیل هم از همان منبع، اختیاری. --}}
+{{-- عمداً هیچ areaServed/address/SportsActivityLocation در structured data نیست — سایت یک برندِ
+     شخصی است، نه ادعای کسب‌وکار یا مکانِ فیزیکیِ ارائه‌ی خدمت. فقط Organization به‌عنوانِ ناشر؛
+     تلفن/ایمیل (در صورتِ تنظیم در Footer Settings) صرفاً راهِ تماس است، نه ادعای مکان. --}}
 @php($__contactSettings = \App\Models\SiteSetting::byPrefix('footer.en'))
-@php($__contactAddress = $__contactSettings['footer.en.contact_address'] ?? null)
 @php($__contactPhone = $__contactSettings['footer.en.contact_phone'] ?? null)
 @php($__contactEmail = $__contactSettings['footer.en.contact_email'] ?? null)
-@php($__isLocalBusiness = filled($__contactAddress))
-@php($__orgTypes = $__isLocalBusiness ? ['Organization', 'SportsActivityLocation'] : 'Organization')
+@php($__orgTypes = 'Organization')
 {
   "@@type": @json($__orgTypes),
   "@@id": @json($__orgId),
   "name": "Train with Ehsan",
   "url": @json(url('/')),
   "logo": {"@@type": "ImageObject", "url": @json($__orgLogo)},
-  "founder": {"@@id": @json($__personId)},
-  "areaServed": "Istanbul, Türkiye"
+  "founder": {"@@id": @json($__personId)}
   @if(!empty($__orgSameAs))
   ,"sameAs": @json($__orgSameAs)
-  @endif
-  @if($__isLocalBusiness)
-  ,"address": @json($__contactAddress)
   @endif
   @if(filled($__contactPhone))
   ,"telephone": @json($__contactPhone)
