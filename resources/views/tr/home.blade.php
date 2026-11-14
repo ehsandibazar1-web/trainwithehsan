@@ -495,18 +495,18 @@
     <section class="about-section">
         <div class="wrap">
             <div class="about-text-col reveal">
-                <h2 class="abou-company">{{ $v('app_title', 'Ehsan Dibazar Kendini Savunma Akademisi uygulaması') }}</h2>
-                <div class="sub-title">{{ $v('app_subtitle', 'Adım adım video eğitimi, her yerde') }}</div>
-                <div class="about-text">{{ $v('app_text', 'Eğitim uygulaması, kendini savunma sürecini adım adım öğreten yapılandırılmış video kursları içerir; böylece kendi hızınızda öğrenebilirsiniz. Amacımız, dövüş sanatları ve kendini savunmada gerçek kalitede, doğru sırayla en etkili eğitim programlarını size sunmaktır.') }}</div>
+                <h2 class="abou-company">{{ $v('app_title', 'Merhaba, ben Ehsan Dibazar') }}</h2>
+                <div class="sub-title">{{ $v('app_subtitle', 'Dövüş sanatçısı, koç ve spor bilimci') }}</div>
+                <div class="about-text">{{ $v('app_text', 'Dövüş sanatları yolculuğumu, Martial Intelligence yaklaşımını ve yıllar içinde öğrendiklerimi paylaşıyorum — yalnızca teknik değil, baskı altında karar verme üzerine kurulu kendini savunma.') }}</div>
                 <div class="about-cta">
-                    <a href="{{ url('/tr/about') }}" class="show-more">{{ $v('app_button_label', 'Uygulamayı indirin') }}</a>
+                    <a href="{{ url('/tr/about') }}" class="show-more">{{ $v('app_button_label', 'Hikayemi keşfedin') }}</a>
                 </div>
             </div>
         </div>
         @if($v('app_image'))
-            <img src="{{ $img($v('app_image')) }}" alt="{{ $v('app_title', 'App') }}" class="about-bleed-img reveal" loading="lazy" decoding="async">
+            <img src="{{ $img($v('app_image')) }}" alt="{{ $v('app_title', 'Ehsan Dibazar') }}" class="about-bleed-img reveal" loading="lazy" decoding="async">
         @else
-            <div class="img-about-box reveal"><span>Uygulama</span></div>
+            <div class="img-about-box reveal"><span>Ehsan Dibazar</span></div>
         @endif
     </section>
 
@@ -514,10 +514,10 @@
     <section class="counter">
         <div class="wrap">
             <div class="reveal">
-                <h2 class="title-counter">{{ $v('courses_title', 'Kurslar ve Ürünler') }}</h2>
+                <h2 class="title-counter">{{ $v('courses_title', 'Uzmanlık Alanlarım') }}</h2>
                 <div class="sun-counter">{{ $v('courses_subtitle', 'Muay Thai, Brezilya Jiu-Jitsu, kendini savunma ve fonksiyonel antrenman — Martial Intelligence yaklaşımının özü.') }}</div>
             </div>
-            @php($courseDefaults = [['Yüz Yüze', 'Yüz Yüze Koçluk'], ['Uzaktan', 'Uzaktan Eğitim (Uygulama)'], ['BJJ', 'Brezilya Jiu-Jitsu']])
+            @php($courseDefaults = [['Muay Thai', 'Muay Thai'], ['BJJ', 'Brezilya Jiu-Jitsu'], ['Kendini Savunma', 'Kendini Savunma']])
             <div class="courses-carousel" data-carousel>
                 <button class="car-arrow car-prev" aria-label="Previous">‹</button>
                 <div class="learn-grid carousel-track reveal-group">
