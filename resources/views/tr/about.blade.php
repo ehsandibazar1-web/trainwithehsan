@@ -13,11 +13,11 @@
 {{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد --}}
 @php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Bangkok'tan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
 
-@section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
-@section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
+@section('title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
+@section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
 @section('canonical', url('/tr/about'))
-@section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai ve Kendini Savunma Eğitmeni'))
-@section('og_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıllık eğitim deneyimine sahip Muay Thai, Brezilya Jiu-Jitsu ve kendini savunma eğitmeni, Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
+@section('og_title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
+@section('og_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 @section('og_image_width', (string) $v('seo_og_image_width', ''))
 @section('og_image_height', (string) $v('seo_og_image_height', ''))
@@ -51,7 +51,7 @@
   "@@id": @json(url('/').'/#person'),
   "name": "Ehsan Dibazar",
   "url": @json(url('/tr/about')),
-  "jobTitle": "Martial Arts & Self-Defense Instructor",
+  "jobTitle": "Martial Artist, Coach & Sport Scientist",
   "description": @json($personDescription),
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
   "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri", "Martial Intelligence"],
@@ -178,9 +178,9 @@ body{background:var(--dark)!important}
             <img id="heroPhoto" class="hero-photo" src="{{ $v('hero_image') ? $optImg($v('hero_image')) : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%232a2416'/%3E%3C/svg%3E" }}" alt="{{ $v('hero_name', 'Ehsan Dibazar') }}" fetchpriority="high" decoding="async">
         </div>
         <h1>{{ $v('hero_name', 'Ehsan Dibazar') }}</h1>
-        <div class="sub">{{ $v('hero_title', 'Dövüş sanatları ve kendini savunma eğitmeni, Spor Bilimleri Yüksek Lisansı') }}</div>
+        <div class="sub">{{ $v('hero_title', 'Dövüş sanatçısı, koç ve spor bilimci, Spor Bilimleri Yüksek Lisansı') }}</div>
         <div class="txt">
-            {{ $v('hero_bio', 'Dövüş sanatları öğretmek ve insanların kendini savunma becerisini geliştirmek benim için her zaman en anlamlı işlerden biri oldu. İnsanların daha güçlü olmasına yardımcı olmak hayatıma anlam katıyor. En büyük önceliğim, özellikle başlangıç seviyesindekiler için dövüş sanatları ve kendini savunma eğitiminin kalitesini yükseltmek — böylece daha fazla keyif ve süreklilikle devam edip hayatlarında gerçek ve faydalı sonuçlar elde edebilsinler. Doğru şekilde çalışıldığında dövüş sanatlarının insanların hayatını gerçekten iyileştirdiğine inanıyorum.') }}
+            {{ $v('hero_bio', 'Dövüş sanatları ve spor bilimi hayatımı şekillendirdi. Özellikle başlangıç seviyesindekiler için dövüş sanatları ve kendini savunma eğitiminin kalitesini yükseltmeyi önemsiyorum — böylece insanlar daha fazla keyif ve süreklilikle devam edebilsinler.') }}
         </div>
         @if($v('hero_cta_text') && $v('hero_cta_url'))
         <div class="hero-cta">
@@ -189,7 +189,7 @@ body{background:var(--dark)!important}
         @endif
         @php($statsList = !empty($stats) ? $stats : [
             ['value' => "{$yearsExperience}+", 'label' => 'Yıllık eğitim deneyimi'],
-            ['value' => 'Binlerce', 'label' => 'yüz yüze ve online öğrenci'],
+            ['value' => 'Binlerce', 'label' => '13+ yılda eğitim verdiğim öğrenci'],
             ['value' => 'Çeşitli', 'label' => 'uluslararası sertifikalar'],
         ])
         <div class="stat-row">
@@ -234,9 +234,9 @@ body{background:var(--dark)!important}
             <h2>{{ $v('timeline_heading', 'Yolculuğum') }}</h2>
             @php($timelineList = !empty($timeline) ? $timeline : [
                 ['year' => '2013', 'title' => 'Koruma ve Kendini Savunma Sertifikası', 'description' => 'Aylarca süren eğitim ve çabanın ardından, dönemin İstanbul yetkililerinden koruma ve kendini savunma sertifikası aldım — dövüş sanatları ve kendini savunma öğretme tutkumu daha da alevlendiren bir yolculuğun başlangıcı. En iyi dövüş sanatları koçları eşliğinde kendi eğitimime devam ederken, bu alana ilgi duyan diğer kişilere de eğitim vermeye başladım.'],
-                ['year' => '2016', 'title' => 'Dövüş Sanatları Salonu Açtım', 'description' => 'Kendi özel dövüş sanatları salonumu açtım ve bununla birlikte bir turizm ve doğa gezileri ofisi kurdum. Her iki alandaki kesintisiz çalışmam — özellikle birçok öğrenciye eğitim vermem — sonunda beni büyük bir başarıya taşıdı.'],
-                ['year' => '2019', 'title' => 'Muay Thai Teknik Sertifikası, Bangkok', 'description' => "Koç ve salon sahibi olarak yoğun çalışmaların ardından, Bangkok Muay Thai Üniversitesi'nden Muay Thai teknik sertifikamı aldım. Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, kendi salonumda verdiğim eğitimin kalitesini önemli ölçüde yükseltti. Aynı zamanda Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk eğitimi aldım."],
-                ['year' => '2022', 'title' => 'Brezilya Jiu-Jitsu Kendini Savunma Teknik Sertifikası, Kaliforniya', 'description' => 'Amerika Birleşik Devletleri\'ndeki en saygın kendini savunma kurumlarından birinden çok değerli bir teknik sertifika aldım ve öğrencilerimi de bu yolda yanımda getirebildim. Bu işe olan sevgim, derslerimde zamanın nasıl geçtiğini hiç fark etmememi sağladı.'],
+                ['year' => '2016', 'title' => "2016–2022 — İran'da dövüş sanatları salonu işlettim", 'description' => "İran'da kendi dövüş sanatları salonumu işlettim; bu dönem antrenörlük ve eğitmenlik deneyimimin temelini oluşturdu."],
+                ['year' => '2019', 'title' => 'Muay Thai Teknik Sertifikası, Bangkok', 'description' => "İran'da antrenör ve salon sahibi olarak çalıştığım yıllardan sonra, Bangkok Muay Thai Üniversitesi'nden Muay Thai teknik sertifikamı aldım. Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, o dönemdeki antrenörlük çalışmalarımın kalitesini önemli ölçüde yükseltti. Aynı zamanda Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk eğitimi aldım."],
+                ['year' => '2022', 'title' => 'Brezilya Jiu-Jitsu Kendini Savunma Teknik Sertifikası, Kaliforniya', 'description' => 'Amerika Birleşik Devletleri\'ndeki en saygın kendini savunma kurumlarından birinden çok değerli bir teknik sertifika aldım ve o dönem çalıştığım öğrencileri de bu yolda yanımda getirebildim. Bu işe olan sevgim, antrenörlük yaptığım yıllarda zamanın nasıl geçtiğini hiç fark etmememi sağladı.'],
                 ['year' => '2024', 'title' => 'Spor Fizyolojisi Yüksek Lisansı', 'description' => "Modern spor bilimini dövüş sanatlarıyla birleştirme hedefiyle, İstanbul Fenerbahçe Üniversitesi'nde Spor Fizyolojisi alanında yüksek lisans eğitimine başladım ve sportif antrenmanlarda fizyolojik göstergelerin değerlendirilmesine odaklandım."],
             ])
             <div class="tl" id="tlList">

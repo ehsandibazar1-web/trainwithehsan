@@ -15,11 +15,11 @@
      رشته‌ی حرفیِ داخلِ آن که خودش کاما دارد از وسط قطع می‌شود --}}
 @php($personDescription = "Martial artist and coach with an MSc in Sport Science, {$yearsExperience}+ years in martial arts since 2013, an international Muay Thai certificate from Bangkok, and the creator of the Martial Intelligence approach to self-defense.")
 
-@section('title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
-@section('meta_description', $v('seo_description', "Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with {$yearsExperience}+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
+@section('title', $v('seo_title', 'Ehsan Dibazar | Martial Artist, Coach & Sport Scientist'))
+@section('meta_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
 @section('canonical', url('/about'))
-@section('og_title', $v('seo_title', 'Ehsan Dibazar | Muay Thai & Self-Defense Instructor'))
-@section('og_description', $v('seo_description', "Ehsan Dibazar — Muay Thai, Brazilian Jiu-Jitsu and self-defense instructor with {$yearsExperience}+ years of teaching experience, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
+@section('og_title', $v('seo_title', 'Ehsan Dibazar | Martial Artist, Coach & Sport Scientist'))
+@section('og_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 @section('og_image_width', (string) $v('seo_og_image_width', ''))
 @section('og_image_height', (string) $v('seo_og_image_height', ''))
@@ -58,7 +58,7 @@
   "@@id": @json(url('/').'/#person'),
   "name": "Ehsan Dibazar",
   "url": @json(url('/about')),
-  "jobTitle": "Martial Arts & Self-Defense Instructor",
+  "jobTitle": "Martial Artist, Coach & Sport Scientist",
   "description": @json($personDescription),
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
   "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
@@ -186,9 +186,9 @@ body{background:var(--dark)!important}
             <img id="heroPhoto" class="hero-photo" src="{{ $v('hero_image') ? $optImg($v('hero_image')) : "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Crect width='140' height='140' fill='%232a2416'/%3E%3C/svg%3E" }}" alt="{{ $v('hero_name', 'Ehsan Dibazar') }}" fetchpriority="high" decoding="async">
         </div>
         <h1>{{ $v('hero_name', 'Ehsan Dibazar') }}</h1>
-        <div class="sub">{{ $v('hero_title', 'Martial arts & self-defense instructor, MSc in Sport Science, and developer of the Martial Intelligence concept') }}</div>
+        <div class="sub">{{ $v('hero_title', 'Martial artist, coach & sport scientist, MSc in Sport Science, and developer of the Martial Intelligence concept') }}</div>
         <div class="txt">
-            {{ $v('hero_bio', "Teaching martial arts and building people's self-defense capability has always been one of the most rewarding things I do. Helping people become stronger gives my life meaning. My biggest concern is raising the quality of training and teaching in martial arts and self-defense — especially for beginners — so they keep going with more enjoyment and consistency, and get real, useful results in their lives. I believe martial arts, trained the right way, genuinely make people's lives better.") }}
+            {{ $v('hero_bio', "Martial arts and sport science have shaped my life. I care about raising the quality of training and teaching in martial arts and self-defense — especially for beginners — so people keep going with more enjoyment and consistency.") }}
         </div>
         @if($v('hero_cta_text') && $v('hero_cta_url'))
         <div class="hero-cta">
@@ -197,7 +197,7 @@ body{background:var(--dark)!important}
         @endif
         @php($statsList = !empty($stats) ? $stats : [
             ['value' => "{$yearsExperience}+", 'label' => 'Years teaching experience'],
-            ['value' => 'Thousands', 'label' => 'of in-person & online students'],
+            ['value' => 'Thousands', 'label' => 'of students taught over 13+ years'],
             ['value' => 'Several', 'label' => 'international certifications'],
         ])
         <div class="stat-row">
@@ -243,9 +243,9 @@ body{background:var(--dark)!important}
             <h2>{{ $v('timeline_heading', 'My Journey') }}</h2>
             @php($timelineList = !empty($timeline) ? $timeline : [
                 ['year' => '2013', 'title' => 'Bodyguard & Self-Defense Certificate', 'description' => "After months of training and effort, I received a bodyguard and self-defense certificate from the Istanbul authorities of the time — the starting point of a path that made my passion for martial arts and self-defense teaching burn even brighter. Alongside continuing my own training under the best martial arts coaches, I began teaching others interested in the field."],
-                ['year' => '2016', 'title' => 'Opened a Martial Arts Gym', 'description' => 'I opened my own private martial arts gym, and alongside it, launched a tourism and nature-travel office. My round-the-clock work across both fields — especially teaching many students — eventually led me to a major success.'],
-                ['year' => '2019', 'title' => 'Muay Thai Technical Certificate, Bangkok', 'description' => "After extensive work as a coach and gym owner, I received my Muay Thai technical certificate from Bangkok Muay Thai University. Living and training in Thailand and competing there raised the quality of the training I offered at my own gym considerably. At the same time, I pursued sport science and coaching studies at the University of Tehran's Faculty of Physical Education."],
-                ['year' => '2022', 'title' => 'Brazilian Jiu-Jitsu Self-Defense Technical Certificate, California', 'description' => 'I received a highly respected technical certificate from one of the most reputable self-defense institutions in the United States, and was able to bring my students along with me on this path. My love for this work meant I never noticed time passing in my own classes.'],
+                ['year' => '2016', 'title' => 'Ran a Martial Arts Gym in Iran (2016–2022)', 'description' => 'I ran my own martial arts gym in Iran; this period formed the foundation of my coaching and teaching experience.'],
+                ['year' => '2019', 'title' => 'Muay Thai Technical Certificate, Bangkok', 'description' => "After years working as a coach and gym owner in Iran, I received my Muay Thai technical certificate from Bangkok Muay Thai University. Living and training in Thailand and competing there raised the quality of my coaching work at the time considerably. At the same time, I pursued sport science and coaching studies at the University of Tehran's Faculty of Physical Education."],
+                ['year' => '2022', 'title' => 'Brazilian Jiu-Jitsu Self-Defense Technical Certificate, California', 'description' => 'I received a highly respected technical certificate from one of the most reputable self-defense institutions in the United States, and I was able to bring the students I coached at the time along with me on this path. My love for this work meant I never noticed time passing while I was running my own gym in Iran (2016–2022).'],
                 ['year' => '2024', 'title' => 'MSc in Sport Physiology', 'description' => "With the goal of connecting modern sport science with martial arts, I began a master's degree in Sport Physiology at Fenerbahçe University in Istanbul, focusing on evaluating physiological indicators in athletic training."],
             ])
             <div class="tl" id="tlList">

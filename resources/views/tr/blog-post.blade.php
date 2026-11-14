@@ -232,7 +232,7 @@
                         <div>
                             {{-- متن‌ها از CMS (About Page Settings ← Yazar kutusu)؛ خالی = همین کپیِ پیش‌فرض --}}
                             <div style="font-size:16px;font-weight:800;color:#fff">{{ $authorBox['title'] ?? 'Merhaba, ben Ehsan Dibazar' }}</div>
-                            <div style="font-size:12px;color:var(--gold);margin-top:3px">{{ $authorBox['subtitle'] ?? 'Dövüş Sanatları ve Kendini Savunma Eğitmeni · Spor Bilimleri Yüksek Lisansı' }}</div>
+                            <div style="font-size:12px;color:var(--gold);margin-top:3px">{{ $authorBox['subtitle'] ?? 'Dövüş Sanatçısı, Koç ve Spor Bilimci · Spor Bilimleri Yüksek Lisansı' }}</div>
                         </div>
                     </div>
                     @if($authorBox['text'] ?? null)

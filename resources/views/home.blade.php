@@ -38,7 +38,7 @@
       "@@type": "Person",
       "@@id": @json(url('/').'/#person'),
       "name": "Ehsan Dibazar",
-      "jobTitle": "Martial Arts & Self-Defense Instructor",
+      "jobTitle": "Martial Artist, Coach & Sport Scientist",
       "description": @json($personDescription),
       "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
       "url": @json(url('/about'))

@@ -244,7 +244,7 @@
                         <div>
                             {{-- متن‌ها از CMS (About Page Settings ← Author box)؛ خالی = همین کپیِ پیش‌فرض --}}
                             <div style="font-size:16px;font-weight:800;color:#fff">{{ $authorBox['title'] ?? "Hi, I'm Ehsan Dibazar" }}</div>
-                            <div style="font-size:12px;color:var(--gold);margin-top:3px">{{ $authorBox['subtitle'] ?? 'Martial Arts & Self-Defense Instructor · MSc in Sport Science' }}</div>
+                            <div style="font-size:12px;color:var(--gold);margin-top:3px">{{ $authorBox['subtitle'] ?? 'Martial Artist, Coach & Sport Scientist · MSc in Sport Science' }}</div>
                         </div>
                     </div>
                     @if($authorBox['text'] ?? null)
