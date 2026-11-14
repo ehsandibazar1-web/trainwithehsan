@@ -408,7 +408,7 @@
 
 {{-- منو: از پنل مدیریت (Menu Settings) — در صورت خالی بودن، منوی پیش‌فرض --}}
 @php($menuItems = \App\Models\SiteSetting::getJson('menu.en.items'))
-@php($menuItems = !empty($menuItems) ? $menuItems : [['label' => 'Home', 'url' => '/', 'highlight' => false], ['label' => 'About', 'url' => '/about', 'highlight' => false], ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence', 'highlight' => false], ['label' => 'Courses', 'url' => '/blog', 'highlight' => false], ['label' => 'Blog', 'url' => '/blog', 'highlight' => false], ['label' => 'Contact', 'url' => '/contact', 'highlight' => true]])
+@php($menuItems = !empty($menuItems) ? $menuItems : [['label' => 'Home', 'url' => '/', 'highlight' => false], ['label' => 'About', 'url' => '/about', 'highlight' => false], ['label' => 'Martial Intelligence', 'url' => '/martial-intelligence', 'highlight' => false], ['label' => 'Blog', 'url' => '/blog', 'highlight' => false], ['label' => 'Contact', 'url' => '/contact', 'highlight' => true]])
 {{-- ریشه‌ها ('/' و '/tr') فقط تطبیقِ دقیق — وگرنه «Ana Sayfa» روی هر صفحه‌ی ترکی active می‌شد --}}
 @php($isActive = fn ($u) => in_array($p = ltrim($u ?? '', '/'), ['', 'tr'], true) ? request()->is($p === '' ? '/' : 'tr') : (request()->is($p) || request()->is($p . '/*')))
 
@@ -478,9 +478,6 @@
             ['title' => 'About', 'links' => [
                 ['label' => 'About', 'url' => '/about'],
                 ['label' => 'Contact', 'url' => '/contact'],
-            ]],
-            ['title' => 'Training', 'links' => [
-                ['label' => 'Courses', 'url' => '/blog'],
             ]],
             ['title' => 'Resources', 'links' => [
                 ['label' => 'Blog', 'url' => '/blog'],
