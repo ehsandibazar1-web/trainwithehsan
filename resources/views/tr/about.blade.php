@@ -14,10 +14,10 @@
 @php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Bangkok'tan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
-@section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
+@section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Tayland'dan uluslararası Muay Thai sertifikası sahibi ve Spor Bilimleri Yüksek Lisansı'nı tamamlamak üzere."))
 @section('canonical', url('/tr/about'))
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
-@section('og_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Bangkok'tan uluslararası Muay Thai sertifikası ve Spor Fizyolojisi Yüksek Lisansı sahibi."))
+@section('og_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Tayland'dan uluslararası Muay Thai sertifikası sahibi ve Spor Bilimleri Yüksek Lisansı'nı tamamlamak üzere."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 @section('og_image_width', (string) $v('seo_og_image_width', ''))
 @section('og_image_height', (string) $v('seo_og_image_height', ''))
@@ -36,7 +36,7 @@
     ['title' => 'Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland'],
     ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya"],
     ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya"],
-    ['title' => 'Muay Thai teknik sınav belgesi, Bangkok Muay Thai Üniversitesi'],
+    ['title' => 'Muay Thai 2 (Orta Seviye Kurs) belgesi, Muaythai Institute, Tayland'],
     ['title' => 'Muay Thai eğitim sertifikası, İstanbul'],
     ['title' => "Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması"],
     ['title' => 'Muay Boran online seminerine katılım, ABD'],
@@ -235,9 +235,9 @@ body{background:var(--dark)!important}
             @php($timelineList = !empty($timeline) ? $timeline : [
                 ['year' => '2013', 'title' => 'Koruma ve Kendini Savunma Sertifikası', 'description' => 'Aylarca süren eğitim ve çabanın ardından, dönemin İstanbul yetkililerinden koruma ve kendini savunma sertifikası aldım — dövüş sanatları ve kendini savunma öğretme tutkumu daha da alevlendiren bir yolculuğun başlangıcı. En iyi dövüş sanatları koçları eşliğinde kendi eğitimime devam ederken, bu alana ilgi duyan diğer kişilere de eğitim vermeye başladım.'],
                 ['year' => '2016', 'title' => "2016–2022 — İran'da dövüş sanatları salonu işlettim", 'description' => "İran'da kendi dövüş sanatları salonumu işlettim; bu dönem antrenörlük ve eğitmenlik deneyimimin temelini oluşturdu."],
-                ['year' => '2019', 'title' => 'Muay Thai Teknik Sertifikası, Bangkok', 'description' => "İran'da antrenör ve salon sahibi olarak çalıştığım yıllardan sonra, Bangkok Muay Thai Üniversitesi'nden Muay Thai teknik sertifikamı aldım. Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, o dönemdeki antrenörlük çalışmalarımın kalitesini önemli ölçüde yükseltti. Aynı zamanda Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk eğitimi aldım."],
-                ['year' => '2022', 'title' => 'Brezilya Jiu-Jitsu Kendini Savunma Teknik Sertifikası, Kaliforniya', 'description' => 'Amerika Birleşik Devletleri\'ndeki en saygın kendini savunma kurumlarından birinden çok değerli bir teknik sertifika aldım ve o dönem çalıştığım öğrencileri de bu yolda yanımda getirebildim. Bu işe olan sevgim, antrenörlük yaptığım yıllarda zamanın nasıl geçtiğini hiç fark etmememi sağladı.'],
-                ['year' => '2024', 'title' => 'Spor Fizyolojisi Yüksek Lisansı', 'description' => "Modern spor bilimini dövüş sanatlarıyla birleştirme hedefiyle, İstanbul Fenerbahçe Üniversitesi'nde Spor Fizyolojisi alanında yüksek lisans eğitimine başladım ve sportif antrenmanlarda fizyolojik göstergelerin değerlendirilmesine odaklandım."],
+                ['year' => '2019', 'title' => 'Muay Thai 2 (Orta Seviye Kurs), Tayland', 'description' => "İran'da antrenör ve salon sahibi olarak çalıştığım yıllardan sonra, Muaythai Institute'ten Muay Thai 2 (Orta Seviye Kurs) sertifikamı aldım. Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, o dönemdeki antrenörlük çalışmalarımın kalitesini önemli ölçüde yükseltti. Aynı zamanda Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk eğitimi aldım."],
+                ['year' => '2022', 'title' => 'Gracie Combatives Belt, Gracie University', 'description' => 'En saygın Brezilya Jiu-Jitsu kendini savunma kurumlarından Gracie University\'den Gracie Combatives Belt aldım ve o dönem çalıştığım öğrencileri de bu yolda yanımda getirebildim. Bu işe olan sevgim, antrenörlük yaptığım yıllarda zamanın nasıl geçtiğini hiç fark etmememi sağladı.'],
+                ['year' => '2024', 'title' => 'Spor Bilimleri Yüksek Lisansı', 'description' => "Modern spor bilimini dövüş sanatlarıyla birleştirme hedefiyle, İstanbul Fenerbahçe Üniversitesi'nde Spor Bilimleri alanında yüksek lisans eğitimine başladım ve sportif antrenmanlarda fizyolojik göstergelerin değerlendirilmesine odaklandım."],
             ])
             <div class="tl" id="tlList">
                 @foreach($timelineList as $item)

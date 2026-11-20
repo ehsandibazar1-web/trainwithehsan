@@ -16,10 +16,10 @@
 @php($personDescription = "Martial artist and coach with an MSc in Sport Science, {$yearsExperience}+ years in martial arts since 2013, an international Muay Thai certificate from Bangkok, and the creator of the Martial Intelligence approach to self-defense.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Martial Artist, Coach & Sport Scientist'))
-@section('meta_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
+@section('meta_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Thailand, and is completing an MSc in Sport Science."))
 @section('canonical', url('/about'))
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Martial Artist, Coach & Sport Scientist'))
-@section('og_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Bangkok, and an MSc in Sport Physiology."))
+@section('og_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Thailand, and is completing an MSc in Sport Science."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
 @section('og_image_width', (string) $v('seo_og_image_width', ''))
 @section('og_image_height', (string) $v('seo_og_image_height', ''))
@@ -40,7 +40,7 @@
     ['title' => 'With instructor after passing the Muay Thai technical exam, Thailand'],
     ['title' => 'With an opponent at the Brazilian Jiu-Jitsu World Championship, Russia'],
     ['title' => 'Competing at the Brazilian Jiu-Jitsu World Championship, Russia'],
-    ['title' => 'Muay Thai technical exam transcript, Bangkok Muay Thai University'],
+    ['title' => 'Muay Thai 2 (Intermediate Course) certificate, Muaythai Institute, Thailand'],
     ['title' => 'Muay Thai training certificate, Istanbul'],
     ['title' => 'Workshop at the Faculty of Physical Education, University of Tehran'],
     ['title' => 'Attending the Muay Boran online seminar, USA'],
@@ -244,9 +244,9 @@ body{background:var(--dark)!important}
             @php($timelineList = !empty($timeline) ? $timeline : [
                 ['year' => '2013', 'title' => 'Bodyguard & Self-Defense Certificate', 'description' => "After months of training and effort, I received a bodyguard and self-defense certificate from the Istanbul authorities of the time — the starting point of a path that made my passion for martial arts and self-defense teaching burn even brighter. Alongside continuing my own training under the best martial arts coaches, I began teaching others interested in the field."],
                 ['year' => '2016', 'title' => 'Ran a Martial Arts Gym in Iran (2016–2022)', 'description' => 'I ran my own martial arts gym in Iran; this period formed the foundation of my coaching and teaching experience.'],
-                ['year' => '2019', 'title' => 'Muay Thai Technical Certificate, Bangkok', 'description' => "After years working as a coach and gym owner in Iran, I received my Muay Thai technical certificate from Bangkok Muay Thai University. Living and training in Thailand and competing there raised the quality of my coaching work at the time considerably. At the same time, I pursued sport science and coaching studies at the University of Tehran's Faculty of Physical Education."],
-                ['year' => '2022', 'title' => 'Brazilian Jiu-Jitsu Self-Defense Technical Certificate, California', 'description' => 'I received a highly respected technical certificate from one of the most reputable self-defense institutions in the United States, and I was able to bring the students I coached at the time along with me on this path. My love for this work meant I never noticed time passing while I was running my own gym in Iran (2016–2022).'],
-                ['year' => '2024', 'title' => 'MSc in Sport Physiology', 'description' => "With the goal of connecting modern sport science with martial arts, I began a master's degree in Sport Physiology at Fenerbahçe University in Istanbul, focusing on evaluating physiological indicators in athletic training."],
+                ['year' => '2019', 'title' => 'Muay Thai 2 (Intermediate Course), Thailand', 'description' => "After years working as a coach and gym owner in Iran, I received my Muay Thai 2 (Intermediate Course) certificate from the Muaythai Institute. Living and training in Thailand and competing there raised the quality of my coaching work at the time considerably. At the same time, I pursued sport science and coaching studies at the University of Tehran's Faculty of Physical Education."],
+                ['year' => '2022', 'title' => 'Gracie Combatives Belt, Gracie University', 'description' => 'I earned my Gracie Combatives Belt from Gracie University, one of the most reputable Brazilian Jiu-Jitsu self-defense institutions, and I was able to bring the students I coached at the time along with me on this path. My love for this work meant I never noticed time passing while I was running my own gym in Iran (2016–2022).'],
+                ['year' => '2024', 'title' => 'MSc in Sport Science', 'description' => "With the goal of connecting modern sport science with martial arts, I began a master's degree in Sport Science at Fenerbahçe University in Istanbul, focusing on evaluating physiological indicators in athletic training."],
             ])
             <div class="tl" id="tlList">
                 @foreach($timelineList as $item)
