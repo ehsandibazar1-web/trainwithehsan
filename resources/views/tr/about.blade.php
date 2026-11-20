@@ -11,7 +11,7 @@
 {{-- سالِ تجربه از ۲۰۱۳ محاسبه می‌شود — همان عددی که در نسخه‌ی انگلیسی هم استفاده می‌شود --}}
 @php($yearsExperience = now()->year - 2013)
 {{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد --}}
-@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Bangkok'tan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
+@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Tayland'dan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
 
 @section('title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
 @section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Tayland'dan uluslararası Muay Thai sertifikası sahibi ve Spor Bilimleri Yüksek Lisansı'nı tamamlamak üzere."))
@@ -233,7 +233,7 @@ body{background:var(--dark)!important}
         <div class="container">
             <h2>{{ $v('timeline_heading', 'Yolculuğum') }}</h2>
             @php($timelineList = !empty($timeline) ? $timeline : [
-                ['year' => '2013', 'title' => 'Koruma ve Kendini Savunma Sertifikası', 'description' => 'Aylarca süren eğitim ve çabanın ardından, dönemin İstanbul yetkililerinden koruma ve kendini savunma sertifikası aldım — dövüş sanatları ve kendini savunma öğretme tutkumu daha da alevlendiren bir yolculuğun başlangıcı. En iyi dövüş sanatları koçları eşliğinde kendi eğitimime devam ederken, bu alana ilgi duyan diğer kişilere de eğitim vermeye başladım.'],
+                ['year' => '2013', 'title' => 'Dövüş Sanatları Polis Yöntemleri Uluslararası Diploması', 'description' => 'Aylarca süren eğitim ve çabanın ardından, Ninbudo Aikijutsu Federasyonu\'ndan Dövüş Sanatları Polis Yöntemleri Uluslararası Diploması aldım — dövüş sanatları ve kendini savunma öğretme tutkumu daha da alevlendiren bir yolculuğun başlangıcı. En iyi dövüş sanatları koçları eşliğinde kendi eğitimime devam ederken, bu alana ilgi duyan diğer kişilere de eğitim vermeye başladım.'],
                 ['year' => '2016', 'title' => "2016–2022 — İran'da dövüş sanatları salonu işlettim", 'description' => "İran'da kendi dövüş sanatları salonumu işlettim; bu dönem antrenörlük ve eğitmenlik deneyimimin temelini oluşturdu."],
                 ['year' => '2019', 'title' => 'Muay Thai 2 (Orta Seviye Kurs), Tayland', 'description' => "İran'da antrenör ve salon sahibi olarak çalıştığım yıllardan sonra, Muaythai Institute'ten Muay Thai 2 (Orta Seviye Kurs) sertifikamı aldım. Tayland'da yaşamak, antrenman yapmak ve orada müsabakalara katılmak, o dönemdeki antrenörlük çalışmalarımın kalitesini önemli ölçüde yükseltti. Aynı zamanda Tahran Üniversitesi Beden Eğitimi Fakültesi'nde spor bilimi ve koçluk eğitimi aldım."],
                 ['year' => '2022', 'title' => 'Gracie Combatives Belt, Gracie University', 'description' => 'En saygın Brezilya Jiu-Jitsu kendini savunma kurumlarından Gracie University\'den Gracie Combatives Belt aldım ve o dönem çalıştığım öğrencileri de bu yolda yanımda getirebildim. Bu işe olan sevgim, antrenörlük yaptığım yıllarda zamanın nasıl geçtiğini hiç fark etmememi sağladı.'],
