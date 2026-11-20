@@ -631,7 +631,7 @@
             'title' => $v('insta_showcase_title', 'Follow the Journey'),
             'subtitle' => $v('insta_showcase_subtitle', 'Real training moments, straight from Instagram.'),
             'button_text' => $v('insta_showcase_button_text', 'Follow us on Instagram'),
-            'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'),
+            'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://www.instagram.com/this_is_ehsandibazar'),
             'fallback_image' => $v('insta_showcase_fallback_image') ? $img($v('insta_showcase_fallback_image')) : '',
             'fallback_srcset' => \App\Models\Media::srcsetFor($v('insta_showcase_fallback_image')),
         ],
@@ -643,7 +643,7 @@
             'title' => $v('insta_showcase2_title', 'More From Instagram'),
             'subtitle' => $v('insta_showcase2_subtitle', 'More highlights from our page.'),
             'button_text' => $v('insta_showcase2_button_text', 'Follow us on Instagram'),
-            'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://instagram.com'),
+            'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://www.instagram.com/this_is_ehsandibazar'),
             'fallback_image' => $v('insta_showcase2_fallback_image') ? $img($v('insta_showcase2_fallback_image')) : '',
             'fallback_srcset' => \App\Models\Media::srcsetFor($v('insta_showcase2_fallback_image')),
         ],
@@ -683,7 +683,7 @@
                                 @endif
                                 <div class="insta-embed-fallback-overlay">
                                     <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo" loading="lazy" decoding="async">
-                                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Watch on Instagram</a>
+                                    <a href="{{ $v('insta_url', 'https://www.instagram.com/this_is_ehsandibazar') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Watch on Instagram</a>
                                 </div>
                             </div>
                         @endif

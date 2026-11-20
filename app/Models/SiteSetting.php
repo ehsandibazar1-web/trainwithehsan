@@ -53,7 +53,7 @@ class SiteSetting extends Model
 
         if ($links->isEmpty()) {
             $links = collect([
-                'https://www.instagram.com/ehsandibazarcoaching/',
+                'https://www.instagram.com/this_is_ehsandibazar/',
                 'https://telegram.me/ehsandibazar',
                 'https://youtube.com/channel/UCDT9EOHriR9sHvq0PBdmlog',
             ]);

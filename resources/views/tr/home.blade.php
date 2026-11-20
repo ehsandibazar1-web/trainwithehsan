@@ -622,7 +622,7 @@
             'title' => $v('insta_showcase_title', 'Yolculuğu Takip Edin'),
             'subtitle' => $v('insta_showcase_subtitle', 'Gerçek antrenman anları, doğrudan Instagram\'dan.'),
             'button_text' => $v('insta_showcase_button_text', 'Instagram\'da takip edin'),
-            'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://instagram.com'),
+            'button_url' => $v('insta_showcase_button_url') ?: $v('insta_url', 'https://www.instagram.com/this_is_ehsandibazar'),
             'fallback_image' => $v('insta_showcase_fallback_image') ? $img($v('insta_showcase_fallback_image')) : '',
             'fallback_srcset' => \App\Models\Media::srcsetFor($v('insta_showcase_fallback_image')),
         ],
@@ -634,7 +634,7 @@
             'title' => $v('insta_showcase2_title', 'Instagram\'dan Daha Fazlası'),
             'subtitle' => $v('insta_showcase2_subtitle', 'Sayfamızdan daha fazla öne çıkan an.'),
             'button_text' => $v('insta_showcase2_button_text', 'Instagram\'da takip edin'),
-            'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://instagram.com'),
+            'button_url' => $v('insta_showcase2_button_url') ?: $v('insta_url', 'https://www.instagram.com/this_is_ehsandibazar'),
             'fallback_image' => $v('insta_showcase2_fallback_image') ? $img($v('insta_showcase2_fallback_image')) : '',
             'fallback_srcset' => \App\Models\Media::srcsetFor($v('insta_showcase2_fallback_image')),
         ],
@@ -674,7 +674,7 @@
                                 @endif
                                 <div class="insta-embed-fallback-overlay">
                                     <img src="{{ asset('storage/homepage/logo-inst.png') }}" alt="Instagram" class="insta-showcase-logo" loading="lazy" decoding="async">
-                                    <a href="{{ $v('insta_url', 'https://instagram.com') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Instagram'da izle</a>
+                                    <a href="{{ $v('insta_url', 'https://www.instagram.com/this_is_ehsandibazar') }}" class="insta-showcase-btn" rel="noopener" target="_blank">Instagram'da izle</a>
                                 </div>
                             </div>
                         @endif

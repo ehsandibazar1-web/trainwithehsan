@@ -269,7 +269,7 @@ body{background:var(--dark)!important}
         <p>{{ $v('cta_description') }}</p>
         @endif
         <div class="magnetic-wrap">
-            <a class="magnetic" id="magneticBtn" href="{{ $v('cta_button_url', 'https://www.instagram.com/ehsandibazarcoaching') }}" target="_blank" rel="noopener">{{ $v('cta_button_text', 'Follow on Instagram') }}</a>
+            <a class="magnetic" id="magneticBtn" href="{{ $v('cta_button_url', 'https://www.instagram.com/this_is_ehsandibazar') }}" target="_blank" rel="noopener">{{ $v('cta_button_text', 'Follow on Instagram') }}</a>
         </div>
     </section>
 
