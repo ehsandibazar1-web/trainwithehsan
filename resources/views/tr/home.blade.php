@@ -4,7 +4,7 @@
 @php($yearsExperience = now()->year - 2013)
 {{-- در یک متغیرِ جدا محاسبه می‌شود — دایرکتیوِ json آرگومانش را روی هر کاما می‌شکافد، پس یک
      رشته‌ی حرفیِ داخلِ آن که خودش کاما دارد از وسط قطع می‌شود --}}
-@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Bangkok'tan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
+@php($personDescription = "Spor Bilimleri Yüksek Lisansı, 2013'ten bu yana {$yearsExperience}+ yıldır dövüş sanatları, Tayland'dan uluslararası bir Muay Thai sertifikası ve 'Martial Intelligence' yaklaşımının yaratıcısı olan bir dövüş sanatçısı ve koç.")
 
 @section('title', 'Ehsan Dibazar — Dövüş Sanatçısı, Koç ve Spor Bilimci')
 @section('meta_description', "Ehsan Dibazar — dövüş sanatçısı, koç ve spor bilimci (Yüksek Lisans); {$yearsExperience}+ yıldır dövüş sanatları ve 'Martial Intelligence' yaklaşımının yaratıcısı.")
@@ -33,7 +33,7 @@
       "name": "Ehsan Dibazar",
       "jobTitle": "Martial Artist, Coach & Sport Scientist",
       "description": @json($personDescription),
-      "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri", "Martial Intelligence"],
+      "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Spor Bilimleri", "Martial Intelligence"],
       "url": @json(url('/tr/about'))
     }
   ]

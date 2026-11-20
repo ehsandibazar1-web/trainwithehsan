@@ -52,7 +52,7 @@
   "jobTitle": "Martial Artist, Coach & Sport Scientist",
   "description": @json($personDescription),
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
-  "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Korumalık", "Spor Bilimleri", "Martial Intelligence"],
+  "knowsAbout": ["Kendini Savunma", "Muay Thai", "Brezilya Jiu-Jitsu", "Spor Bilimleri", "Martial Intelligence"],
   @if($v('hero_image') && $v('hero_image_width') && $v('hero_image_height'))
   "image": {
     "@@type": "ImageObject",

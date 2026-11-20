@@ -59,7 +59,7 @@
   "jobTitle": "Martial Artist, Coach & Sport Scientist",
   "description": @json($personDescription),
   "alumniOf": {"@@type": "CollegeOrUniversity", "name": "Fenerbahçe University"},
-  "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
+  "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Sport Science", "Martial Intelligence"],
   @if($v('hero_image') && $v('hero_image_width') && $v('hero_image_height'))
   "image": {
     "@@type": "ImageObject",

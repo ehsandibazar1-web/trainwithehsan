@@ -7,7 +7,7 @@
      آن دایرکتیو آرگومانِ خودش را با انفجار روی هر کاما جدا می‌کند (برای گزینه‌های اختیاریِ
      encoding)، پس یک رشته‌ی حرفی که خودش کاما دارد (اینجا: «Bangkok, based in Istanbul») از وسط
      قطع می‌شود — یک باگِ واقعی که در توسعه‌ی همین تغییر کشف شد --}}
-@php($personDescription = "Martial artist and coach with an MSc in Sport Science, {$yearsExperience}+ years in martial arts since 2013, an international Muay Thai certificate from Bangkok, and the creator of the Martial Intelligence approach to self-defense.")
+@php($personDescription = "Martial artist and coach with an MSc in Sport Science, {$yearsExperience}+ years in martial arts since 2013, an international Muay Thai certificate from Thailand, and the creator of the Martial Intelligence approach to self-defense.")
 
 @section('title', 'Ehsan Dibazar — Martial Artist, Coach & Sport Scientist')
 @section('meta_description', "Ehsan Dibazar — martial artist, coach and sport scientist (MSc), with {$yearsExperience}+ years in martial arts and the creator of the Martial Intelligence approach to self-defense and performance.")
@@ -40,7 +40,7 @@
       "name": "Ehsan Dibazar",
       "jobTitle": "Martial Artist, Coach & Sport Scientist",
       "description": @json($personDescription),
-      "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Bodyguarding", "Sport Science", "Martial Intelligence"],
+      "knowsAbout": ["Self-Defense", "Muay Thai", "Brazilian Jiu-Jitsu", "Sport Science", "Martial Intelligence"],
       "url": @json(url('/about'))
     }
   ]
