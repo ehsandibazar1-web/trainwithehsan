@@ -28,18 +28,16 @@
 @php($__personSameAs = \App\Models\SiteSetting::socialLinks())
 {{-- $certList زودتر محاسبه می‌شود — هم برای hasCredential هم برای رندرِ واقعیِ گالری، یک محاسبه --}}
 @php($certList = !empty($certificates) ? $certificates : [
-    ['title' => 'Brezilya Jiu-Jitsu kendini savunma sertifikası, ABD'],
-    ['title' => 'Muay Thai teknik sertifikası, Tayland Milli Eğitim Bakanlığı'],
-    ['title' => 'Koruma diploması, Türk Askeri Akademisi'],
-    ['title' => 'Temel Koruma Diploması'],
-    ['title' => "Türkiye'de koruma sertifikasını aldıktan sonra"],
+    ['title' => 'Gracie Combatives Belt sertifikası, Gracie University'],
+    ['title' => 'Muay Thai 2 (Orta Seviye Kurs) sertifikası, Muaythai Institute, Tayland'],
+    ['title' => "Türkiye'de Dövüş Sanatları Polis Yöntemleri Uluslararası Diploması'nı aldıktan sonra"],
     ['title' => 'Muay Thai teknik sınavını geçtikten sonra eğitmenle, Tayland'],
     ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda rakibiyle, Rusya"],
     ['title' => "Brezilya Jiu-Jitsu Dünya Şampiyonası'nda, Rusya"],
-    ['title' => 'Muay Thai 2 (Orta Seviye Kurs) belgesi, Muaythai Institute, Tayland'],
-    ['title' => 'Muay Thai eğitim sertifikası, İstanbul'],
+    ['title' => 'Muay Thai 2 (Orta Seviye Kurs) transkripti, Muaythai Institute, Tayland'],
+    ['title' => 'Katılım Onur Belgesi, uyuşturucuyla mücadele kampanyası, WFAAD ve Türkiye Muaythai Federasyonu'],
     ['title' => "Tahran Üniversitesi Beden Eğitimi Fakültesi'nde atölye çalışması"],
-    ['title' => 'Muay Boran online seminerine katılım, ABD'],
+    ['title' => 'Muay Thai – Muay Boran online seminer sertifikası, Thai Kampfkunst Academy (2021)'],
 ])
 @php($__credentialNames = collect($certList)->pluck('title')->filter()->values())
 @php($__credentialSchema = $__credentialNames->map(fn ($name) => ['@type' => 'EducationalOccupationalCredential', 'name' => $name]))
