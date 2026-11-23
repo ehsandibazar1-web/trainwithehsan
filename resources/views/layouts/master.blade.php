@@ -349,6 +349,14 @@
         @@media (min-width:721px){.footer-grid{grid-template-columns:repeat(var(--cols,4),1fr)}}
         /* ستون‌ها: لیست‌ها روی یک خط عمودیِ مشترک (بولت‌ها زیر هم) و عنوان‌ها هم‌تراز */
         @@media (min-width:481px){.footer-grid ul{display:inline-block;text-align:left}}
+        /* دسکتاپ: مثل سایت فارسی — لوگو وسط و بالا، ستون‌ها دو طرفش در همان ردیف */
+        @@media (min-width:901px){
+            .site-footer .wrap{display:grid;grid-template-columns:repeat(var(--l,2),1fr) minmax(280px,340px) repeat(var(--r,1),1fr);column-gap:30px;align-items:start}
+            .footer-grid{display:contents}
+            .footer-grid>div{grid-column:var(--gc);grid-row:1;padding-top:6px}
+            .footer-brand{grid-column:var(--gc);grid-row:1;margin-bottom:0}
+            .footer-note{grid-column:1/-1;grid-row:2}
+        }
         .nl-icon{flex:0 0 auto;color:#000;opacity:.9}
         @@media (max-width:900px){.nl-icon{display:none}}
         .footer-contact{margin-top:10px;font-size:12px;color:#ebebeb;line-height:2;text-align:center}
@@ -490,8 +498,7 @@
 </div>
 
 <footer class="site-footer">
-    <div class="wrap">
-        @php($footerColumnsList = !empty($footerColumns) ? $footerColumns : [
+    @php($footerColumnsList = !empty($footerColumns) ? $footerColumns : [
             ['title' => 'About', 'links' => [
                 ['label' => 'About', 'url' => '/about'],
                 ['label' => 'Contact', 'url' => '/contact'],
@@ -507,9 +514,11 @@
                 ['label' => 'Disclaimer', 'url' => '/disclaimer'],
             ]],
         ])
+    @php($footerHalf = (int) ceil(max(1, count($footerColumnsList)) / 2))
+    <div class="wrap" style="--l:{{ $footerHalf }};--r:{{ max(0, count($footerColumnsList) - $footerHalf) }}">
         <div class="footer-grid" style="--cols:{{ max(1, count($footerColumnsList)) }}">
             @foreach($footerColumnsList as $col)
-            <div>
+            <div style="--gc:{{ $loop->index < $footerHalf ? $loop->index + 1 : $loop->index + 2 }}">
                 <h4>
                     {{ $col['title'] ?? '' }}
                     {{-- فقط زیر ۴۸۰px دیده/فعال می‌شود (CSS بالا) — در دسکتاپ نامرئی و غیرقابل‌تب‌کردن است --}}
@@ -523,7 +532,7 @@
             </div>
             @endforeach
         </div>
-        <div class="footer-brand">
+        <div class="footer-brand" style="--gc:{{ $footerHalf + 1 }}">
             <img src="{{ ($fv('logo', null) ? asset('storage/' . $fv('logo', null)) : asset('images/homepage/logo-header.png').'?v='.@filemtime(public_path('images/homepage/logo-header.png'))) }}" alt="Ehsan Dibazar - Martial Arts Coach" class="footer-logo-img">
             @if($fv('description'))
             <p class="footer-desc">{{ $fv('description') }}</p>
