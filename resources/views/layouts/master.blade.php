@@ -357,6 +357,15 @@
             .footer-brand{grid-column:var(--gc);grid-row:1;margin-bottom:0}
             .footer-note{grid-column:1/-1;grid-row:2}
         }
+        /* موبایل: پس‌زمینه کشیده نشود (تار می‌شد)، ردیف‌ها فشرده‌تر، لوگو متناسب */
+        @@media (max-width:900px){
+            .site-footer{background-size:900px auto;background-repeat:repeat}
+            .footer-logo-img{height:130px}
+        }
+        @@media (max-width:480px){
+            .footer-grid{gap:0;margin-bottom:22px}
+            .footer-grid h4{font-size:16px;padding:14px 2px}
+        }
         .nl-icon{flex:0 0 auto;color:#000;opacity:.9}
         @@media (max-width:900px){.nl-icon{display:none}}
         .footer-contact{margin-top:10px;font-size:12px;color:#ebebeb;line-height:2;text-align:center}
