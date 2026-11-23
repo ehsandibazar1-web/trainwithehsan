@@ -238,11 +238,11 @@
     @@media (max-width:600px){.l-box{flex-basis:85%}}
     /* دسکتاپ: سه کارت کل عرض را پر می‌کنند (مثل سایت اصلی)، نه کارت‌های کوچک چپ‌چین */
     @@media (min-width:768px){
-        .learn-grid{overflow-x:visible;justify-content:center}
+        .learn-grid{overflow:visible;justify-content:center}
         .l-box{flex:0 0 calc((100% - 40px) / 3)}
         .courses-carousel .car-arrow{display:none}
     }
-    @@media (min-width:1200px){.learn-grid{gap:30px}}
+    @@media (min-width:1200px){.learn-grid{gap:30px}.l-box{flex-basis:calc((100% - 60px) / 3)}}
     .img-learn{
         position:relative;overflow:hidden;aspect-ratio:362/241;
         background:linear-gradient(135deg,#4a4a4a 0%,#5d5137 60%,#8a6d1f 170%);
@@ -293,7 +293,7 @@
     /* دسکتاپ: سه کارتِ مقاله تمام‌عرض و وسط‌چین (مثل بخشِ Courses بالاتر و سایت مرجع) — نه
        ۲۷۰pxِ چپ‌چین با فضای خالیِ سمت راست؛ فلش‌های کاروسل هم که دیگر لازم نیستند مخفی می‌شوند */
     @@media (min-width:768px){
-        .news-grid{overflow-x:visible;justify-content:center}
+        .news-grid{overflow:visible;justify-content:center}
         .news-card{flex:0 0 calc((100% - 40px) / 3)}
         .articles-carousel .car-arrow{display:none}
     }
