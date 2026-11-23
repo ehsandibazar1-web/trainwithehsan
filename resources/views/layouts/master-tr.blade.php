@@ -281,9 +281,10 @@
         /* ===== Footer — عیناً مطابق site.min.css سایت اصلی: .footer{background:url(bg-footer.png) #0a0809} ===== */
         .site-footer{
             background:url('{{ asset('storage/' . $fv('bg_image', 'homepage/bg-footer.jpg')) }}') var(--footer);
+            background-size:cover;background-position:center;background-repeat:no-repeat;
             padding:40px 0 24px;color:#fff;
         }
-        .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;text-align:center}
+        .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;align-items:start;text-align:center}
         @@media (max-width:720px){.footer-grid{grid-template-columns:1fr 1fr;gap:24px}}
         @@media (max-width:480px){.footer-grid{grid-template-columns:1fr}}
         /* دکمه‌ی آکاردئون هر ستون فوتر — دسکتاپ همیشه مخفی (دقیقاً مثل .nav-toggle)، فقط زیر
@@ -310,7 +311,7 @@
             .footer-grid>div.open ul{max-height:400px;padding-bottom:14px}
         }
         .footer-brand{text-align:center;margin-bottom:24px}
-        .footer-logo-img{height:130px;width:auto;margin:0 auto;display:block}
+        .footer-logo-img{height:170px;width:auto;margin:0 auto;display:block}
         /* .title-footer span {font-size:15px; color:#fff; font-weight:500} */
         .site-footer h4{font-weight:600;font-size:15px;color:#fff;margin-bottom:12px}
         .site-footer ul{list-style:none}
@@ -327,8 +328,15 @@
         .footer-note .color{color:var(--gold);font-weight:600}
         /* بلوک‌های اختیاری فوتر (توضیح/شبکه‌های اجتماعی/اطلاعات تماس) — تا وقتی در پنل پر نشوند اصلاً رندر نمی‌شوند */
         .footer-desc{color:#ebebeb;font-size:12px;line-height:2;max-width:480px;margin:12px auto 0;text-align:center}
-        .footer-socials{margin-top:12px;text-align:center}
-        .footer-socials li{display:inline-block;margin:0 8px}
+        .footer-socials{margin-top:14px;text-align:center}
+        .footer-socials li{display:inline-block;margin:0 9px}
+        .site-footer .footer-socials li::before{display:none}
+        .footer-socials a{color:var(--gold);display:inline-flex;transition:.3s}
+        .footer-socials a:hover{color:#fff}
+        /* ستون‌ها: لیست‌ها روی یک خط عمودیِ مشترک (بولت‌ها زیر هم) و عنوان‌ها هم‌تراز */
+        @@media (min-width:481px){.footer-grid ul{display:inline-block;text-align:left}}
+        .nl-icon{flex:0 0 auto;color:#000;opacity:.9}
+        @@media (max-width:900px){.nl-icon{display:none}}
         .footer-contact{margin-top:10px;font-size:12px;color:#ebebeb;line-height:2;text-align:center}
         .footer-contact a{color:#ebebeb}
         .footer-contact a:hover{color:var(--gold);transition:.5s linear}
@@ -450,6 +458,7 @@
             <h3>{{ $fv('newsletter_title', 'Son makaleleri alın') }}</h3>
             <p>{{ $fv('newsletter_description', 'Yeni makaleleri ve antrenman ipuçlarını e-posta ile almak için abone olun.') }}</p>
         </div>
+        <svg class="nl-icon" width="84" height="84" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="3"/><polyline points="2 7 12 13 22 7"/></svg>
         <form class="newsletter-form js-newsletter-form" method="post" action="{{ url('/newsletter/subscribe') }}" novalidate
               data-msg-toomany="{{ __('newsletter.too_many', [], 'tr') }}"
               data-msg-error="{{ __('newsletter.error', [], 'tr') }}">
@@ -504,13 +513,7 @@
             @if($fv('description'))
             <p class="footer-desc">{{ $fv('description') }}</p>
             @endif
-            @if(!empty($footerSocials))
-            <ul class="footer-socials">
-                @foreach($footerSocials as $soc)
-                <li><a href="{{ $soc['url'] ?? '#' }}" target="_blank" rel="noopener">{{ $soc['label'] ?? '' }}</a></li>
-                @endforeach
-            </ul>
-            @endif
+            @include('partials.footer-social-icons', ['links' => !empty($footerSocials) ? collect($footerSocials)->pluck('url')->filter()->values()->all() : \App\Models\SiteSetting::socialLinks()])
             @if($fv('contact_email') || $fv('contact_phone') || $fv('contact_address'))
             <div class="footer-contact">
                 @if($fv('contact_email'))<span><a href="mailto:{{ $fv('contact_email') }}">{{ $fv('contact_email') }}</a></span>@endif
