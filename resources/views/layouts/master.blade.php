@@ -344,8 +344,9 @@
         .footer-socials{margin-top:14px;text-align:center}
         .footer-socials li{display:inline-block;margin:0 9px}
         .site-footer .footer-socials li::before{display:none}
-        .footer-socials a{color:var(--gold);display:inline-flex;transition:.3s}
-        .footer-socials a:hover{color:#fff}
+        .site-footer .footer-socials a{color:var(--gold);display:inline-flex;transition:.3s}
+        .site-footer .footer-socials a:hover{color:#fff}
+        @@media (min-width:721px){.footer-grid{display:flex;justify-content:center;gap:90px}}
         /* ستون‌ها: لیست‌ها روی یک خط عمودیِ مشترک (بولت‌ها زیر هم) و عنوان‌ها هم‌تراز */
         @@media (min-width:481px){.footer-grid ul{display:inline-block;text-align:left}}
         .nl-icon{flex:0 0 auto;color:#000;opacity:.9}
