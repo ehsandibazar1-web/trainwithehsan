@@ -574,6 +574,10 @@
                 var col = h4.parentElement;
                 if (!col) return;
                 var expanded = btn.getAttribute('aria-expanded') === 'true';
+                document.querySelectorAll('.footer-grid .footer-col-toggle').forEach(function (other) {
+                    other.setAttribute('aria-expanded', 'false');
+                    if (other.parentElement && other.parentElement.parentElement) other.parentElement.parentElement.classList.remove('open');
+                });
                 btn.setAttribute('aria-expanded', String(!expanded));
                 col.classList.toggle('open', !expanded);
             });
