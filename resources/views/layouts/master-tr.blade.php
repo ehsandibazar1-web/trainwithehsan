@@ -333,7 +333,7 @@
         .site-footer .footer-socials li::before{display:none}
         .site-footer .footer-socials a{color:var(--gold);display:inline-flex;transition:.3s}
         .site-footer .footer-socials a:hover{color:#fff}
-        @@media (min-width:721px){.footer-grid{display:flex;justify-content:center;gap:90px}}
+        @@media (min-width:721px){.footer-grid{grid-template-columns:repeat(var(--cols,4),1fr)}}
         /* ستون‌ها: لیست‌ها روی یک خط عمودیِ مشترک (بولت‌ها زیر هم) و عنوان‌ها هم‌تراز */
         @@media (min-width:481px){.footer-grid ul{display:inline-block;text-align:left}}
         .nl-icon{flex:0 0 auto;color:#000;opacity:.9}
@@ -493,7 +493,7 @@
                 ['label' => 'Sorumluluk Reddi', 'url' => '/tr/disclaimer'],
             ]],
         ])
-        <div class="footer-grid">
+        <div class="footer-grid" style="--cols:{{ max(1, count($footerColumnsList)) }}">
             @foreach($footerColumnsList as $col)
             <div>
                 <h4>
