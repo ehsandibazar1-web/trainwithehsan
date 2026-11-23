@@ -32,6 +32,6 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="{{ trim($__env->yieldContent('og_title')) ?: 'Ehsan Dibazar — Self-Defense & Martial Intelligence' }}">
 <meta name="twitter:description" content="{{ trim($__env->yieldContent('og_description')) ?: 'Ehsan Dibazar — martial artist, coach and creator of the Martial Intelligence approach: decision-making under pressure, not just technique.' }}">
-<meta name="twitter:image" content="{{ trim($__env->yieldContent('og_image')) ?: asset('storage/homepage/logo.header.png') }}">
+<meta name="twitter:image" content="{{ trim($__env->yieldContent('og_image')) ?: asset('images/homepage/logo-header.png') }}">
 @endif
 @endif
