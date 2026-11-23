@@ -11,7 +11,7 @@
 --}}
 @php($__orgId = url('/').'/#organization')
 @php($__personId = url('/').'/#person')
-@php($__orgLogo = asset('storage/homepage/logo.header.png'))
+@php($__orgLogo = asset('images/homepage/logo-header.png'))
 @php($__orgSameAs = \App\Models\SiteSetting::socialLinks())
 {{-- عمداً هیچ areaServed/address/SportsActivityLocation در structured data نیست — سایت یک برندِ
      شخصی است، نه ادعای کسب‌وکار یا مکانِ فیزیکیِ ارائه‌ی خدمت. فقط Organization به‌عنوانِ ناشر؛
