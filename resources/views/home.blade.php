@@ -12,6 +12,7 @@
 @section('title', 'Ehsan Dibazar — Martial Artist, Coach & Sport Scientist')
 @section('meta_description', "Ehsan Dibazar — martial artist, coach and sport scientist (MSc), with {$yearsExperience}+ years in martial arts and the creator of the Martial Intelligence approach to self-defense and performance.")
 @section('canonical', url('/'))
+@section('header_mode', 'site-header--overlay')
 @section('og_title', 'Ehsan Dibazar — Martial Artist, Coach & Sport Scientist')
 @section('og_description', "Ehsan Dibazar — martial artist, coach and sport scientist (MSc), with {$yearsExperience}+ years in martial arts and the creator of the Martial Intelligence approach to self-defense and performance.")
 {{-- og:image یک عکسِ واقعیِ صفحه (بنرِ اولِ هیرو، همان عکسِ LCP) به‌جای همیشه بازگشتن به لوگوی

@@ -16,6 +16,7 @@
 @section('title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
 @section('meta_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Tayland'dan uluslararası Muay Thai sertifikası sahibi ve Spor Bilimleri Yüksek Lisansı'nı tamamlamak üzere."))
 @section('canonical', url('/tr/about'))
+@section('header_mode', 'site-header--overlay site-header--pad')
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Dövüş Sanatçısı, Koç ve Spor Bilimci'))
 @section('og_description', $v('seo_description', "Ehsan Dibazar — {$yearsExperience} yıldır dövüş sanatlarıyla uğraşan bir dövüş sanatçısı, koç ve spor bilimci; Tayland'dan uluslararası Muay Thai sertifikası sahibi ve Spor Bilimleri Yüksek Lisansı'nı tamamlamak üzere."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
