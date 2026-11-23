@@ -9,6 +9,7 @@
 @section('title', 'Ehsan Dibazar — Dövüş Sanatçısı, Koç ve Spor Bilimci')
 @section('meta_description', "Ehsan Dibazar — dövüş sanatçısı, koç ve spor bilimci (Yüksek Lisans); {$yearsExperience}+ yıldır dövüş sanatları ve 'Martial Intelligence' yaklaşımının yaratıcısı.")
 @section('canonical', url('/tr'))
+@section('header_mode', 'site-header--overlay')
 @section('og_title', 'Ehsan Dibazar — Dövüş Sanatçısı, Koç ve Spor Bilimci')
 @section('og_description', "Ehsan Dibazar — dövüş sanatçısı, koç ve spor bilimci (Yüksek Lisans); {$yearsExperience}+ yıldır dövüş sanatları ve 'Martial Intelligence' yaklaşımının yaratıcısı.")
 @section('og_image', !empty($s['hero1_image']) ? \App\Models\Media::optimizedUrl($s['hero1_image']) : '')

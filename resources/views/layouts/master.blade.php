@@ -187,6 +187,13 @@
 
         /* ===== Header — .c-header {background:#1d1d1d} ===== */
         .site-header{background:var(--header);position:sticky;top:0;z-index:100}
+        /* هدرِ شناور (فقط صفحه‌ی اصلی و درباره‌ی من، فقط دسکتاپ): بالای صفحه بی‌رنگ روی محتوا، با اسکرول مشکی.
+           کلاس is-scrolled را اسکریپتِ انتهای صفحه می‌گذارد. موبایل (≤900px) دست‌نخورده می‌ماند. */
+        @@media (min-width:901px){
+            .site-header--overlay{position:fixed;top:0;left:0;right:0;background:transparent;transition:background-color .3s}
+            .site-header--overlay.is-scrolled{background:var(--header)}
+            .site-header--pad + main{padding-top:88px}
+        }
         .nav-bar{display:flex;align-items:center;justify-content:space-between;padding:14px 0}
         .brand-badge{display:flex;align-items:center;gap:12px;order:2}
         .brand-logo-img{height:60px;width:auto;display:block}
@@ -426,7 +433,7 @@
     </ul>
 </nav>
 
-<header class="site-header">
+<header class="site-header @yield('header_mode')">
     <div class="wrap nav-bar">
         <a href="{{ url('/') }}" class="brand-badge">
             <img src="{{ asset('images/homepage/logo-header.png').'?v='.@filemtime(public_path('images/homepage/logo-header.png')) }}" alt="Ehsan Dibazar - Martial Arts Coach" class="brand-logo-img">
@@ -732,5 +739,10 @@
 </script>
 @yield('page-js')
 @include('partials.media-embeds')
+<script>
+(function(){var h=document.querySelector('.site-header--overlay');if(!h)return;
+function f(){h.classList.toggle('is-scrolled',window.pageYOffset>10)}
+f();window.addEventListener('scroll',f,{passive:true});})();
+</script>
 </body>
 </html>

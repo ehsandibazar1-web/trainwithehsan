@@ -18,6 +18,7 @@
 @section('title', $v('seo_title', 'Ehsan Dibazar | Martial Artist, Coach & Sport Scientist'))
 @section('meta_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Thailand, and is completing an MSc in Sport Science."))
 @section('canonical', url('/about'))
+@section('header_mode', 'site-header--overlay site-header--pad')
 @section('og_title', $v('seo_title', 'Ehsan Dibazar | Martial Artist, Coach & Sport Scientist'))
 @section('og_description', $v('seo_description', "Ehsan Dibazar — martial artist, coach and sport scientist with {$yearsExperience}+ years in martial arts, an international Muay Thai certificate from Thailand, and is completing an MSc in Sport Science."))
 @section('og_image', $v('seo_og_image') ? asset('storage/' . $v('seo_og_image')) : '')
