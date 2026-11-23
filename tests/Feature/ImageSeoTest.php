@@ -129,7 +129,7 @@ class ImageSeoTest extends TestCase
         // بدونِ عکسِ شاخص، تگِ هیرو رندر نمی‌شود...
         $this->assertStringNotContainsString('class="post-hero-image"><img', str_replace(["\n", ' '], '', $html));
         // ...ولی og:image به لوگوی برند به‌عنوان پیش‌فرضِ سایت‌گستر برمی‌گردد (هر اشتراک‌گذاری پیش‌نمایشِ تصویری دارد)
-        $this->assertStringContainsString('<meta property="og:image" content="'.asset('storage/homepage/logo.header.png').'">', $html);
+        $this->assertStringContainsString('<meta property="og:image" content="'.asset('images/homepage/logo-header.png').'">', $html);
     }
 
     public function test_home_page_has_a_default_brand_og_image_and_twitter_card(): void
@@ -137,9 +137,9 @@ class ImageSeoTest extends TestCase
         $html = $this->get('/')->assertOk()->getContent();
 
         // صفحه‌ی اصلی عکسِ اختصاصی ندارد → لوگوی برند به‌عنوان og:image و twitter:image پیش‌فرض
-        $this->assertStringContainsString('<meta property="og:image" content="'.asset('storage/homepage/logo.header.png').'">', $html);
+        $this->assertStringContainsString('<meta property="og:image" content="'.asset('images/homepage/logo-header.png').'">', $html);
         $this->assertStringContainsString('<meta name="twitter:card" content="summary_large_image">', $html);
-        $this->assertStringContainsString('<meta name="twitter:image" content="'.asset('storage/homepage/logo.header.png').'">', $html);
+        $this->assertStringContainsString('<meta name="twitter:image" content="'.asset('images/homepage/logo-header.png').'">', $html);
         $this->assertStringContainsString('<meta property="og:locale" content="en_US">', $html);
     }
 

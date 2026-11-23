@@ -415,7 +415,7 @@
 <div class="panel-overlay" id="panelOverlay"></div>
 <nav class="panel-menu" id="panelMenu">
     <div class="panel-menu-head">
-        <a href="{{ url('/') }}" aria-label="Ehsan Dibazar — Home"><img src="{{ asset('images/homepage/logo-header.png') }}" alt="Ehsan Dibazar - Martial Arts Coach" class="panel-menu-logo"></a>
+        <a href="{{ url('/') }}" aria-label="Ehsan Dibazar — Home"><img src="{{ asset('images/homepage/logo-header.png').'?v='.@filemtime(public_path('images/homepage/logo-header.png')) }}" alt="Ehsan Dibazar - Martial Arts Coach" class="panel-menu-logo"></a>
         <button class="panel-close" id="panelClose" aria-label="Close menu">×</button>
     </div>
     <ul>
@@ -429,7 +429,7 @@
 <header class="site-header">
     <div class="wrap nav-bar">
         <a href="{{ url('/') }}" class="brand-badge">
-            <img src="{{ asset('images/homepage/logo-header.png') }}" alt="Ehsan Dibazar - Martial Arts Coach" class="brand-logo-img">
+            <img src="{{ asset('images/homepage/logo-header.png').'?v='.@filemtime(public_path('images/homepage/logo-header.png')) }}" alt="Ehsan Dibazar - Martial Arts Coach" class="brand-logo-img">
         </a>
         <ul class="nav-links">
             @foreach($menuItems as $item)
@@ -507,7 +507,7 @@
             @endforeach
         </div>
         <div class="footer-brand">
-            <img src="{{ ($fv('logo', null) ? asset('storage/' . $fv('logo', null)) : asset('images/homepage/logo-header.png')) }}" alt="Ehsan Dibazar - Martial Arts Coach" class="footer-logo-img">
+            <img src="{{ ($fv('logo', null) ? asset('storage/' . $fv('logo', null)) : asset('images/homepage/logo-header.png').'?v='.@filemtime(public_path('images/homepage/logo-header.png'))) }}" alt="Ehsan Dibazar - Martial Arts Coach" class="footer-logo-img">
             @if($fv('description'))
             <p class="footer-desc">{{ $fv('description') }}</p>
             @endif
