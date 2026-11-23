@@ -351,7 +351,7 @@
         @@media (min-width:481px){.footer-grid ul{display:inline-block;text-align:left}}
         /* دسکتاپ: مثل سایت فارسی — لوگو وسط و بالا، ستون‌ها دو طرفش در همان ردیف */
         @@media (min-width:901px){
-            .site-footer .wrap{display:grid;grid-template-columns:repeat(var(--l,2),1fr) minmax(280px,340px) repeat(var(--r,1),1fr);column-gap:30px;align-items:start}
+            .site-footer .wrap{display:grid;grid-template-columns:repeat(var(--l,2),minmax(0,1fr)) 320px repeat(var(--l,2),minmax(0,1fr));column-gap:30px;align-items:start}
             .footer-grid{display:contents}
             .footer-grid>div{grid-column:var(--gc);grid-row:1;padding-top:6px}
             .footer-brand{grid-column:var(--gc);grid-row:1;margin-bottom:0}
@@ -518,7 +518,7 @@
     <div class="wrap" style="--l:{{ $footerHalf }};--r:{{ max(0, count($footerColumnsList) - $footerHalf) }}">
         <div class="footer-grid" style="--cols:{{ max(1, count($footerColumnsList)) }}">
             @foreach($footerColumnsList as $col)
-            <div style="--gc:{{ $loop->index < $footerHalf ? $loop->index + 1 : $loop->index + 2 }}">
+            <div style="--gc:{{ $loop->index < $footerHalf ? $loop->index + 1 : ($footerHalf + 2 + ($loop->index - $footerHalf) * intdiv($footerHalf, max(1, count($footerColumnsList) - $footerHalf))).' / span '.intdiv($footerHalf, max(1, count($footerColumnsList) - $footerHalf)) }}">
                 <h4>
                     {{ $col['title'] ?? '' }}
                     {{-- فقط زیر ۴۸۰px دیده/فعال می‌شود (CSS بالا) — در دسکتاپ نامرئی و غیرقابل‌تب‌کردن است --}}
