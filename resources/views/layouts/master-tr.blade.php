@@ -280,8 +280,7 @@
 
         /* ===== Footer — عیناً مطابق site.min.css سایت اصلی: .footer{background:url(bg-footer.png) #0a0809} ===== */
         .site-footer{
-            background:url('{{ asset('storage/' . $fv('bg_image', 'homepage/bg-footer.jpg')) }}') var(--footer);
-            background-size:cover;background-position:center;background-repeat:no-repeat;
+            background:url('{{ asset('images/homepage/bg-footer.png') }}') var(--footer);
             padding:40px 0 24px;color:#fff;
         }
         .footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:40px;margin-bottom:36px;align-items:start;text-align:center}
@@ -346,7 +345,6 @@
         }
         /* موبایل: پس‌زمینه کشیده نشود (تار می‌شد)، ردیف‌ها فشرده‌تر، لوگو متناسب */
         @@media (max-width:900px){
-            .site-footer{background-size:900px auto;background-repeat:repeat}
             .footer-logo-img{height:130px}
         }
         @@media (max-width:480px){
